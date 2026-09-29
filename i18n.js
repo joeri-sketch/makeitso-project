@@ -21,6 +21,7 @@
 
     // ----- accessibility labels -----
     ['Skip to content', 'Naar de inhoud', 'Aller au contenu'],
+    ['Loading', 'Laden', 'Chargement'],
     ['Language', 'Taal', 'Langue'],
     ['Make It So, back to top', 'Make It So, terug naar boven', 'Make It So, retour en haut'],
     ['Make It So home', 'Make It So startpagina', 'Make It So accueil'],

@@ -17,6 +17,38 @@
   <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
+  <!-- preloader: robot boots up, then the whole overlay fades out -->
+  <div class="preloader" id="preloader" role="status" aria-label="Loading">
+    <i class="pre-orbit po1" aria-hidden="true"></i><i class="pre-orbit po2" aria-hidden="true"></i>
+    <div class="pre-inner">
+      <svg class="pre-bot" data-mood="think" viewBox="170 30 370 390" aria-hidden="true">
+        <g stroke-linejoin="round" stroke-linecap="round">
+          <path d="M355 154V110" stroke="#150c2e" stroke-width="16"/><path d="M355 154V110" stroke="#c9d2ee" stroke-width="7"/>
+          <path class="spark" d="M355 52l8 22 22 8-22 8-8 22-8-22-22-8 22-8z" fill="#ffb800" stroke="#150c2e" stroke-width="5"/>
+          <circle cx="196" cy="278" r="30" fill="#ff6a1f" stroke="#150c2e" stroke-width="6"/><circle cx="196" cy="278" r="12" fill="#b8410b" stroke="#150c2e" stroke-width="3"/>
+          <circle cx="514" cy="278" r="30" fill="#ff6a1f" stroke="#150c2e" stroke-width="6"/><circle cx="514" cy="278" r="12" fill="#b8410b" stroke="#150c2e" stroke-width="3"/>
+          <rect x="204" y="150" width="302" height="252" rx="98" fill="#e6ebfa" stroke="#150c2e" stroke-width="7"/>
+          <path d="M424 152C482 162 506 202 506 252V304C506 362 470 400 410 402 452 372 464 322 464 252 464 202 450 172 424 152Z" fill="#9ea9d3" opacity=".75"/>
+          <path d="M232 226C234 188 258 168 292 160 264 186 254 216 252 254Z" fill="#fff" opacity=".85"/>
+          <path d="M226 184Q355 138 484 184" fill="none" stroke="#b6c1e6" stroke-width="4"/>
+          <rect x="234" y="184" width="242" height="184" rx="62" fill="#0a0f2a" stroke="#150c2e" stroke-width="6"/>
+          <rect x="234" y="184" width="242" height="184" rx="62" fill="url(#scan)"/>
+          <g class="mood m-think" filter="url(#glow)" fill="#4de4ff">
+            <circle class="dot d1" cx="300" cy="276" r="15"/><circle class="dot d2" cx="355" cy="276" r="15"/><circle class="dot d3" cx="410" cy="276" r="15"/>
+          </g>
+          <g class="mood m-engage" filter="url(#glow)" fill="none" stroke="#4de4ff" stroke-width="11">
+            <path d="M278 278Q297 236 316 278"/><path d="M394 278Q413 236 432 278"/>
+            <path d="M318 314Q356 360 394 314Z" fill="#4de4ff" stroke-width="8"/>
+          </g>
+          <ellipse cx="262" cy="306" rx="16" ry="9" fill="#ff5fa8" opacity=".5"/><ellipse cx="448" cy="306" rx="16" ry="9" fill="#ff5fa8" opacity=".5"/>
+          <path d="M262 206C300 192 340 190 372 194L330 300 252 300Z" fill="#fff" opacity=".1"/>
+        </g>
+      </svg>
+      <p class="pre-word">make it so<em>.</em></p>
+      <div class="pre-track"><i class="pre-fill"></i></div>
+      <span class="pre-pct" aria-hidden="true">0%</span>
+    </div>
+  </div>
   <a class="skip" href="#main">Skip to content</a>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">

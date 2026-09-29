@@ -20,6 +20,56 @@
   const year = $('#year');
   if (year) year.textContent = now.getFullYear();
 
+  /* ---------- preloader: the robot boots up, then the overlay fades out ---------- */
+  let resolveReady;
+  const ready = new Promise((resolve) => { resolveReady = resolve; }); // page animations wait for this
+  const preloader = $('#preloader');
+  if (!preloader) {
+    resolveReady();
+  } else {
+    const fill = $('.pre-fill', preloader);
+    const percent = $('.pre-pct', preloader);
+    const robot = $('.pre-bot', preloader);
+    const minTime = reduceMotion ? 300 : 1600;
+    const started = performance.now();
+    let pageLoaded = document.readyState === 'complete';
+    let fontsReady = !document.fonts;
+    let value = 0;
+    let finished = false;
+
+    if (!pageLoaded) addEventListener('load', () => { pageLoaded = true; }, { once: true });
+    if (document.fonts) document.fonts.ready.then(() => { fontsReady = true; });
+    document.body.style.overflow = 'hidden';
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearInterval(timer);
+      fill.style.width = '100%';
+      percent.textContent = '100%';
+      robot.dataset.mood = 'engage';
+      setTimeout(() => {
+        preloader.classList.add('done');
+        document.body.style.overflow = '';
+        resolveReady();
+        setTimeout(() => preloader.remove(), 1000);
+      }, reduceMotion ? 0 : 600);
+    };
+
+    // a timer (not requestAnimationFrame) so it also completes in background tabs
+    const timer = setInterval(() => {
+      const elapsed = performance.now() - started;
+      const cap = pageLoaded && fontsReady ? 100 : 90;
+      const target = Math.min(cap, (elapsed / minTime) * 100);
+      value += (target - value) * 0.3;
+      if (target >= 100 && value > 99.2) value = 100;
+      fill.style.width = `${value}%`;
+      percent.textContent = `${Math.round(value)}%`;
+      if (value >= 100 && elapsed >= minTime) finish();
+    }, 40);
+    setTimeout(finish, 7000); // fail-safe: never leave visitors on the loader
+  }
+
   /* ---------- scroll reveal ---------- */
   const revealObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
@@ -31,30 +81,32 @@
   }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
   $$('.reveal').forEach((el) => {
     if (el.closest('.hero')) {
-      // hero content plays as soon as the page loads
-      setTimeout(() => el.classList.add('in'), 60);
+      // hero content fades in as soon as the preloader has faded out
+      ready.then(() => setTimeout(() => el.classList.add('in'), 60));
     } else {
       revealObserver.observe(el);
     }
   });
 
   /* ---------- animated counters ---------- */
+  const animateCount = (el) => {
+    const target = Number(el.dataset.count);
+    if (reduceMotion || target === 0) { el.textContent = target + (el.dataset.suffix || ''); return; }
+    const start = performance.now();
+    const duration = 1500;
+    const step = (t) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 4);
+      el.textContent = Math.round(target * eased) + (el.dataset.suffix || '');
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
   const countObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
       countObserver.unobserve(entry.target);
-      const el = entry.target;
-      const target = Number(el.dataset.count);
-      if (reduceMotion || target === 0) { el.textContent = target + (el.dataset.suffix || ''); continue; }
-      const start = performance.now();
-      const duration = 1500;
-      const step = (t) => {
-        const p = Math.min(1, (t - start) / duration);
-        const eased = 1 - Math.pow(1 - p, 4);
-        el.textContent = Math.round(target * eased) + (el.dataset.suffix || '');
-        if (p < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
+      ready.then(() => animateCount(entry.target));
     }
   }, { threshold: 0.6 });
   $$('[data-count]').forEach((el) => countObserver.observe(el));
@@ -296,7 +348,7 @@
       showAll();
     } else {
       const chatObserver = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) { chatObserver.disconnect(); play(); }
+        if (entries[0].isIntersecting) { chatObserver.disconnect(); ready.then(play); }
       }, { threshold: 0.4 });
       chatObserver.observe(chat);
     }
