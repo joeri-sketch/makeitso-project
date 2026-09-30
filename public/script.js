@@ -355,21 +355,52 @@
     $('.replay', chat).addEventListener('click', () => (reduceMotion ? showAll() : play()));
   }
 
-  /* ---------- contact form (static: opens the visitor's mail app) ---------- */
+  /* ---------- contact form ---------- */
+  // Sends the message to the backend (lead in the admin area). If the backend is not reachable
+  // (for example on static hosting), it falls back to opening the visitor's mail app.
   const form = $('#hail');
   if (form) {
     const note = $('#form-note');
-    form.addEventListener('submit', (e) => {
+    const MAIL_NOTE = 'Opening your mail app… if nothing happens, email hello@makeitso.studio directly.';
+    const SENT_NOTE = 'Message received. We reply within a day.';
+    let noteKey = null;
+    const setNote = (key) => { noteKey = key; note.textContent = key ? i18n.t(key) : ''; };
+
+    const sendLead = async (payload) => {
+      try {
+        const res = await fetch('/api/public/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'makeitso' },
+          body: JSON.stringify(payload),
+          signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    };
+
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!form.checkValidity()) { form.reportValidity(); return; }
       const data = new FormData(form);
+      const button = form.querySelector('button[type="submit"]');
+      if (button) button.disabled = true;
+      const sent = await sendLead({
+        name: data.get('name'),
+        email: data.get('email'),
+        message: data.get('message'),
+        language: i18n.lang || 'en',
+        t: Math.round(performance.now())
+      });
+      if (button) button.disabled = false;
+      if (sent) { form.reset(); setNote(SENT_NOTE); return; }
+
       const subject = i18n.t('New mission from {name}', { name: data.get('name') });
       const body = `${data.get('message')}\n\n— ${data.get('name')} (${data.get('email')})`;
-      note.textContent = i18n.t('Opening your mail app… if nothing happens, email hello@makeitso.studio directly.');
+      setNote(MAIL_NOTE);
       window.location.href = `mailto:hello@makeitso.studio?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     });
-    i18n.onChange(() => {
-      if (note.textContent) note.textContent = i18n.t('Opening your mail app… if nothing happens, email hello@makeitso.studio directly.');
-    });
+    i18n.onChange(() => { if (noteKey) setNote(noteKey); });
   }
 })();

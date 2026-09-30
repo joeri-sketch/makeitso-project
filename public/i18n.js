@@ -189,6 +189,7 @@
       'Je e-mailapp wordt geopend… gebeurt er niets, mail dan rechtstreeks naar hello@makeitso.studio.',
       'Ouverture de votre application de messagerie… si rien ne se passe, écrivez directement à hello@makeitso.studio.'],
     ['New mission from {name}', 'Nieuwe missie van {name}', 'Nouvelle mission de {name}'],
+    ['Message received. We reply within a day.', 'Bericht ontvangen. We reageren binnen een dag.', 'Message reçu. Nous répondons sous un jour.'],
 
     // ----- footer -----
     ['Make It So. Creative marketing agency.', 'Make It So. Creatief marketingbureau.', 'Make It So. Agence de marketing créatif.'],

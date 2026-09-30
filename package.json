@@ -1,0 +1,23 @@
+{
+  "name": "makeitso",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Make It So: agency website, admin area and client backend",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/",
+    "create-admin": "node src/cli/create-admin.js",
+    "migrate": "node src/cli/migrate.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}

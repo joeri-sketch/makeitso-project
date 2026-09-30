@@ -1,36 +1,59 @@
 # Make It So
 
-A static, animated website for the creative marketing agency **Make It So**. It has no backend and no build step: plain HTML, CSS and JavaScript.
+Website, admin area and (soon) client portal for the creative marketing agency **Make It So**.
 
-## Features
+- **Website** (`public/`): the animated NL / FR / EN site, served exactly as designed.
+- **Admin area** (`/admin`): clients, contacts, projects, milestones, notes, leads and an activity log, behind password + two-factor login.
+- **Backend** (`src/`): Node 20, Express, PostgreSQL. No build step.
 
-- Electric-blue hero with a warp-speed starfield, an animated robot mascot and a self-typing chat card
-- Departments, mission log, process and contact sections
-- Languages: English, Dutch and French (switcher in the header and footer; remembers the visitor's choice)
-- Responsive layout, keyboard-friendly, respects `prefers-reduced-motion`
+See [docs/PHASE-0-PLAN.md](docs/PHASE-0-PLAN.md) for the plan, decisions, accounts to create and the Belgian / privacy checklist.
 
-## Run it
+## Run it locally
 
-Open `index.html` in a browser, or serve the folder locally:
+Requires Node 20 or newer and pnpm (`corepack enable`).
 
 ```sh
-python -m http.server 5200
+pnpm install
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD="a-long-passphrase" pnpm start
 ```
 
-Then visit <http://127.0.0.1:5200/>. Add `?lang=nl` or `?lang=fr` to open a specific language.
+Open <http://127.0.0.1:3000> for the website and <http://127.0.0.1:3000/admin/> for the admin. With no `DATABASE_URL`, an embedded PostgreSQL (PGlite) stores data in `./data` (git-ignored). The first start creates the admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`; at first sign-in you must set up an authenticator app and save your recovery codes.
 
-## Files
+```sh
+pnpm test                          # 30+ automated tests
+pnpm create-admin "Name" a@b.be "password-of-12+-characters"
+node src/cli/reset-2fa.js a@b.be   # admin lost phone and recovery codes
+```
 
-| File | Purpose |
+## Configuration
+
+Everything is environment variables; see [.env.example](.env.example).
+
+| Variable | Purpose |
 | --- | --- |
-| `index.html` | Page structure and the inline robot mascot |
-| `styles.css` | Design, layout and animations |
-| `script.js` | Starfield, reveal animations, chat, menu and contact form |
-| `i18n.js` | English, Dutch and French text |
+| `DATABASE_URL` | PostgreSQL connection string. Empty means the embedded local database |
+| `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets |
+| `PUBLIC_ORIGIN` | Your site address, e.g. `https://makeitso.studio`. Used for the origin check |
+| `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
+| `PORT`, `TRUST_PROXY` | Set automatically on Railway |
 
-## Before publishing
+## Deploy on Railway
 
-- Replace the placeholder figures in the hero (14 days, 24h, 0 boring decks) with real numbers.
-- Replace the three sample missions with real case studies.
-- Replace `hello@makeitso.studio` with your real address. The contact form only opens the visitor's mail app.
-- Fonts load from Google Fonts, so an internet connection is needed for the intended typography.
+1. Keep this repository **private**.
+2. Railway: New project, Deploy from GitHub repo, pick this repo; add a PostgreSQL database.
+3. Set the variables above (`DATABASE_URL` = reference to the Postgres service, `NODE_ENV=production`).
+4. Add your domain. Check `/healthz`, sign in at `/admin`, then delete `ADMIN_PASSWORD`.
+
+`railway.json` already sets the start command and health check. The app has no Railway-specific code: any host that runs Node 20 plus Postgres works, and `deploy/Dockerfile` is provided as an untested template for container hosts.
+
+## How it fits together
+
+```
+public/            the website (unchanged) + admin app (public/admin)
+src/app.js         Express app: security headers, API, static files
+src/routes/        auth (login, 2FA, password), crm (clients, projects, leads…), public (contact form)
+src/db/            database adapter (pg or PGlite), migrations
+tests/             node:test suites (auth, CRM, security)
+```
+
+The contact form on the website posts to `/api/public/leads`. If the backend is unreachable (static hosting, offline), it falls back to opening the visitor's mail app, so no message is lost.

@@ -1,0 +1,425 @@
+import { Router } from 'express';
+import { audit } from '../lib/audit.js';
+import { HttpError, companyNumber, parse, v, vatNumber } from '../lib/validate.js';
+import { asyncHandler as h } from '../middleware/security.js';
+import { requireAdmin } from '../middleware/session.js';
+
+const LANGS = ['nl', 'fr', 'en'];
+const CLIENT_STATUS = ['prospect', 'active', 'inactive'];
+const PROJECT_STATUS = ['discovery', 'wireframing', 'development', 'review', 'launched', 'on_hold'];
+const MILESTONE_STATUS = ['todo', 'doing', 'done'];
+const LEAD_STATUS = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+
+const like = (q) => `%${String(q).trim().replace(/[\\%_]/g, '\\$&')}%`;
+const url = (x, name) => {
+  const s = v.str(x, name, { max: 200 });
+  if (s !== null && !/^https?:\/\/\S+\.\S+$/i.test(s)) throw new HttpError(400, `${name} must start with http:// or https://`, { field: name });
+  return s;
+};
+
+const clientSchema = {
+  company_name: (x) => v.str(x, 'company_name', { required: true, max: 160 }),
+  legal_form: (x) => v.str(x, 'legal_form', { max: 40 }),
+  vat_number: (x) => vatNumber(x),
+  company_number: (x) => companyNumber(x),
+  email: (x) => v.email(x, 'email'),
+  phone: (x) => v.str(x, 'phone', { max: 40 }),
+  website: (x) => url(x, 'website'),
+  address_line1: (x) => v.str(x, 'address_line1', { max: 160 }),
+  address_line2: (x) => v.str(x, 'address_line2', { max: 160 }),
+  postal_code: (x) => v.str(x, 'postal_code', { max: 12 }),
+  city: (x) => v.str(x, 'city', { max: 80 }),
+  country: (x) => {
+    const s = v.str(x, 'country', { max: 2 });
+    if (s === null) return 'BE';
+    if (!/^[A-Za-z]{2}$/.test(s)) throw new HttpError(400, 'country must be a two-letter code.', { field: 'country' });
+    return s.toUpperCase();
+  },
+  language: (x) => v.oneOf(x, 'language', LANGS) ?? 'nl',
+  status: (x) => v.oneOf(x, 'status', CLIENT_STATUS) ?? 'active'
+};
+
+const contactSchema = {
+  name: (x) => v.str(x, 'name', { required: true, max: 120 }),
+  email: (x) => v.email(x, 'email'),
+  phone: (x) => v.str(x, 'phone', { max: 40 }),
+  role: (x) => v.str(x, 'role', { max: 80 }),
+  is_primary: (x) => v.bool(x)
+};
+
+const projectSchema = {
+  client_id: (x) => v.id(x, 'client_id'),
+  name: (x) => v.str(x, 'name', { required: true, max: 160 }),
+  category: (x) => v.str(x, 'category', { max: 80 }),
+  description: (x) => v.str(x, 'description', { max: 2000 }) ?? '',
+  status: (x) => v.oneOf(x, 'status', PROJECT_STATUS) ?? 'discovery',
+  progress: (x) => v.int(x, 'progress', { min: 0, max: 100 }) ?? 0,
+  next_step: (x) => v.str(x, 'next_step', { max: 240 }) ?? '',
+  target_date: (x) => v.date(x, 'target_date')
+};
+
+const milestoneSchema = {
+  title: (x) => v.str(x, 'title', { required: true, max: 160 }),
+  status: (x) => v.oneOf(x, 'status', MILESTONE_STATUS) ?? 'todo',
+  due_date: (x) => v.date(x, 'due_date'),
+  sort_order: (x) => v.int(x, 'sort_order', { min: 0, max: 100000 }) ?? 0
+};
+
+// table and column names come from the schemas above, never from user input
+async function updateRow(db, table, id, fields, extraSet = '') {
+  const keys = Object.keys(fields);
+  if (!keys.length) throw new HttpError(400, 'Nothing to update.');
+  const sets = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
+  const { rows } = await db.query(`UPDATE ${table} SET ${sets}${extraSet} WHERE id = $1 RETURNING *`, [id, ...keys.map((k) => fields[k])]);
+  if (!rows[0]) throw new HttpError(404, 'Not found.');
+  return rows[0];
+}
+
+async function insertRow(db, table, fields) {
+  const keys = Object.keys(fields);
+  const { rows } = await db.query(
+    `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${keys.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`,
+    keys.map((k) => fields[k])
+  );
+  return rows[0];
+}
+
+export function crmRoutes({ db }) {
+  const r = Router();
+  r.use(requireAdmin);
+
+  // ---------------- dashboard + activity ----------------
+  r.get('/dashboard', h(async (req, res) => {
+    const [counts, byStatus, milestones, activity] = await Promise.all([
+      db.query(`SELECT
+          (SELECT count(*) FROM clients WHERE archived_at IS NULL AND status = 'active')::int AS active_clients,
+          (SELECT count(*) FROM clients WHERE archived_at IS NULL AND status = 'prospect')::int AS prospects,
+          (SELECT count(*) FROM projects WHERE archived_at IS NULL AND status NOT IN ('launched'))::int AS open_projects,
+          (SELECT count(*) FROM leads WHERE status = 'new')::int AS new_leads`),
+      db.query(`SELECT status, count(*)::int AS n FROM projects WHERE archived_at IS NULL GROUP BY status`),
+      db.query(`SELECT m.id, m.title, m.due_date, m.status, p.id AS project_id, p.name AS project_name, c.company_name
+                  FROM milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id
+                 WHERE m.status <> 'done' AND p.archived_at IS NULL
+                 ORDER BY m.due_date NULLS LAST, m.id LIMIT 6`),
+      db.query(`SELECT a.id, a.action, a.entity, a.entity_id, a.meta, a.created_at, u.name AS actor_name
+                  FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
+                 WHERE a.action NOT LIKE 'auth.%' AND a.action NOT LIKE '2fa.%'
+                 ORDER BY a.created_at DESC, a.id DESC LIMIT 10`)
+    ]);
+    res.json({ counts: counts.rows[0], projects_by_status: byStatus.rows, upcoming_milestones: milestones.rows, recent_activity: activity.rows });
+  }));
+
+  r.get('/activity', h(async (req, res) => {
+    const clientId = req.query.client_id ? v.id(req.query.client_id, 'client_id') : null;
+    const projectId = req.query.project_id ? v.id(req.query.project_id, 'project_id') : null;
+    const limit = v.int(req.query.limit, 'limit', { min: 1, max: 100 }) ?? 30;
+    const { rows } = await db.query(
+      `SELECT a.id, a.action, a.entity, a.entity_id, a.meta, a.created_at, u.name AS actor_name
+         FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
+        WHERE ($1::bigint IS NULL OR a.client_id = $1) AND ($2::bigint IS NULL OR a.project_id = $2)
+        ORDER BY a.created_at DESC, a.id DESC LIMIT $3`,
+      [clientId, projectId, limit]
+    );
+    res.json({ activity: rows });
+  }));
+
+  // ---------------- clients ----------------
+  r.get('/clients', h(async (req, res) => {
+    const q = req.query.q ? like(req.query.q) : null;
+    const status = v.oneOf(req.query.status, 'status', CLIENT_STATUS);
+    const archived = v.bool(req.query.archived);
+    const { rows } = await db.query(
+      `SELECT c.*,
+              (SELECT count(*) FROM projects p WHERE p.client_id = c.id AND p.archived_at IS NULL)::int AS project_count,
+              (SELECT name FROM contacts k WHERE k.client_id = c.id ORDER BY is_primary DESC, id LIMIT 1) AS primary_contact
+         FROM clients c
+        WHERE ($1::text IS NULL OR c.company_name ILIKE $1 OR c.email ILIKE $1 OR c.vat_number ILIKE $1 OR c.city ILIKE $1
+               OR EXISTS (SELECT 1 FROM contacts k WHERE k.client_id = c.id AND (k.name ILIKE $1 OR k.email ILIKE $1)))
+          AND ($2::text IS NULL OR c.status = $2)
+          AND ($3::boolean OR c.archived_at IS NULL)
+        ORDER BY lower(c.company_name) LIMIT 500`,
+      [q, status, archived]
+    );
+    res.json({ clients: rows });
+  }));
+
+  r.post('/clients', h(async (req, res) => {
+    const data = parse(req.body, clientSchema);
+    const contact = req.body.contact && req.body.contact.name ? parse(req.body.contact, contactSchema) : null;
+    const client = await db.tx(async (t) => {
+      const created = await insertRow(t, 'clients', data);
+      if (contact) await insertRow(t, 'contacts', { ...contact, client_id: created.id, is_primary: true });
+      await audit(t, req, 'client.created', { entity: 'client', entityId: created.id, clientId: created.id, meta: { name: created.company_name } });
+      return created;
+    });
+    res.status(201).json({ client });
+  }));
+
+  r.get('/clients/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query('SELECT * FROM clients WHERE id = $1', [id]);
+    if (!rows[0]) throw new HttpError(404, 'Client not found.');
+    const [contacts, projects, notes, activity] = await Promise.all([
+      db.query('SELECT * FROM contacts WHERE client_id = $1 ORDER BY is_primary DESC, id', [id]),
+      db.query('SELECT * FROM projects WHERE client_id = $1 ORDER BY archived_at NULLS FIRST, updated_at DESC', [id]),
+      db.query(`SELECT n.*, u.name AS author_name FROM notes n LEFT JOIN users u ON u.id = n.author_id
+                 WHERE n.client_id = $1 ORDER BY n.pinned DESC, n.created_at DESC LIMIT 100`, [id]),
+      db.query(`SELECT a.id, a.action, a.entity, a.meta, a.created_at, u.name AS actor_name
+                  FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
+                 WHERE a.client_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id])
+    ]);
+    res.json({ client: rows[0], contacts: contacts.rows, projects: projects.rows, notes: notes.rows, activity: activity.rows });
+  }));
+
+  r.patch('/clients/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const data = parse(req.body, clientSchema, { partial: true });
+    const client = await updateRow(db, 'clients', id, data, ', updated_at = now()');
+    await audit(db, req, 'client.updated', { entity: 'client', entityId: id, clientId: id, meta: { fields: Object.keys(data) } });
+    res.json({ client });
+  }));
+
+  for (const [path, set, action] of [['archive', 'now()', 'client.archived'], ['restore', 'NULL', 'client.restored']]) {
+    r.post(`/clients/:id/${path}`, h(async (req, res) => {
+      const id = v.id(req.params.id);
+      const { rows } = await db.query(`UPDATE clients SET archived_at = ${set}, updated_at = now() WHERE id = $1 RETURNING *`, [id]);
+      if (!rows[0]) throw new HttpError(404, 'Client not found.');
+      await audit(db, req, action, { entity: 'client', entityId: id, clientId: id, meta: { name: rows[0].company_name } });
+      res.json({ client: rows[0] });
+    }));
+  }
+
+  // ---------------- contacts ----------------
+  r.post('/clients/:id/contacts', h(async (req, res) => {
+    const clientId = v.id(req.params.id);
+    const data = parse(req.body, contactSchema);
+    const contact = await db.tx(async (t) => {
+      const { rows } = await t.query('SELECT id FROM clients WHERE id = $1', [clientId]);
+      if (!rows[0]) throw new HttpError(404, 'Client not found.');
+      if (data.is_primary) await t.query('UPDATE contacts SET is_primary = FALSE WHERE client_id = $1', [clientId]);
+      const created = await insertRow(t, 'contacts', { ...data, client_id: clientId });
+      await audit(t, req, 'contact.created', { entity: 'contact', entityId: created.id, clientId, meta: { name: created.name } });
+      return created;
+    });
+    res.status(201).json({ contact });
+  }));
+
+  r.patch('/contacts/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const data = parse(req.body, contactSchema, { partial: true });
+    const contact = await db.tx(async (t) => {
+      const current = (await t.query('SELECT client_id FROM contacts WHERE id = $1', [id])).rows[0];
+      if (!current) throw new HttpError(404, 'Contact not found.');
+      if (data.is_primary) await t.query('UPDATE contacts SET is_primary = FALSE WHERE client_id = $1 AND id <> $2', [current.client_id, id]);
+      const updated = await updateRow(t, 'contacts', id, data);
+      await audit(t, req, 'contact.updated', { entity: 'contact', entityId: id, clientId: current.client_id });
+      return updated;
+    });
+    res.json({ contact });
+  }));
+
+  r.delete('/contacts/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query('DELETE FROM contacts WHERE id = $1 RETURNING client_id, name', [id]);
+    if (!rows[0]) throw new HttpError(404, 'Contact not found.');
+    await audit(db, req, 'contact.deleted', { entity: 'contact', entityId: id, clientId: rows[0].client_id, meta: { name: rows[0].name } });
+    res.json({ ok: true });
+  }));
+
+  // ---------------- projects ----------------
+  r.get('/projects', h(async (req, res) => {
+    const clientId = req.query.client_id ? v.id(req.query.client_id, 'client_id') : null;
+    const status = v.oneOf(req.query.status, 'status', PROJECT_STATUS);
+    const archived = v.bool(req.query.archived);
+    const q = req.query.q ? like(req.query.q) : null;
+    const { rows } = await db.query(
+      `SELECT p.*, c.company_name,
+              (SELECT count(*) FROM milestones m WHERE m.project_id = p.id)::int AS milestone_count,
+              (SELECT count(*) FROM milestones m WHERE m.project_id = p.id AND m.status = 'done')::int AS milestones_done
+         FROM projects p JOIN clients c ON c.id = p.client_id
+        WHERE ($1::bigint IS NULL OR p.client_id = $1) AND ($2::text IS NULL OR p.status = $2)
+          AND ($3::boolean OR p.archived_at IS NULL) AND ($4::text IS NULL OR p.name ILIKE $4 OR c.company_name ILIKE $4)
+        ORDER BY p.updated_at DESC LIMIT 500`,
+      [clientId, status, archived, q]
+    );
+    res.json({ projects: rows });
+  }));
+
+  r.post('/projects', h(async (req, res) => {
+    const data = parse(req.body, projectSchema);
+    const project = await db.tx(async (t) => {
+      const client = (await t.query('SELECT id FROM clients WHERE id = $1 AND archived_at IS NULL', [data.client_id])).rows[0];
+      if (!client) throw new HttpError(400, 'Choose an existing client.', { field: 'client_id' });
+      const created = await insertRow(t, 'projects', data);
+      await audit(t, req, 'project.created', { entity: 'project', entityId: created.id, clientId: created.client_id, projectId: created.id, meta: { name: created.name } });
+      return created;
+    });
+    res.status(201).json({ project });
+  }));
+
+  r.get('/projects/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query(
+      `SELECT p.*, c.company_name FROM projects p JOIN clients c ON c.id = p.client_id WHERE p.id = $1`, [id]);
+    if (!rows[0]) throw new HttpError(404, 'Project not found.');
+    const [milestones, notes, activity] = await Promise.all([
+      db.query('SELECT * FROM milestones WHERE project_id = $1 ORDER BY sort_order, id', [id]),
+      db.query(`SELECT n.*, u.name AS author_name FROM notes n LEFT JOIN users u ON u.id = n.author_id
+                 WHERE n.project_id = $1 ORDER BY n.pinned DESC, n.created_at DESC LIMIT 100`, [id]),
+      db.query(`SELECT a.id, a.action, a.entity, a.meta, a.created_at, u.name AS actor_name
+                  FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
+                 WHERE a.project_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id])
+    ]);
+    res.json({ project: rows[0], milestones: milestones.rows, notes: notes.rows, activity: activity.rows });
+  }));
+
+  r.patch('/projects/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const data = parse(req.body, projectSchema, { partial: true });
+    const before = (await db.query('SELECT status, client_id FROM projects WHERE id = $1', [id])).rows[0];
+    if (!before) throw new HttpError(404, 'Project not found.');
+    if (data.client_id && data.client_id !== before.client_id) throw new HttpError(400, 'A project cannot move to another client.', { field: 'client_id' });
+    delete data.client_id;
+    const project = await updateRow(db, 'projects', id, data, ', updated_at = now()');
+    const meta = { fields: Object.keys(data) };
+    let action = 'project.updated';
+    if (data.status && data.status !== before.status) { action = 'project.status_changed'; meta.from = before.status; meta.to = data.status; }
+    await audit(db, req, action, { entity: 'project', entityId: id, clientId: before.client_id, projectId: id, meta });
+    res.json({ project });
+  }));
+
+  for (const [path, set, action] of [['archive', 'now()', 'project.archived'], ['restore', 'NULL', 'project.restored']]) {
+    r.post(`/projects/:id/${path}`, h(async (req, res) => {
+      const id = v.id(req.params.id);
+      const { rows } = await db.query(`UPDATE projects SET archived_at = ${set}, updated_at = now() WHERE id = $1 RETURNING *`, [id]);
+      if (!rows[0]) throw new HttpError(404, 'Project not found.');
+      await audit(db, req, action, { entity: 'project', entityId: id, clientId: rows[0].client_id, projectId: id, meta: { name: rows[0].name } });
+      res.json({ project: rows[0] });
+    }));
+  }
+
+  // ---------------- milestones ----------------
+  r.post('/projects/:id/milestones', h(async (req, res) => {
+    const projectId = v.id(req.params.id);
+    const data = parse(req.body, milestoneSchema);
+    const milestone = await db.tx(async (t) => {
+      const project = (await t.query('SELECT client_id FROM projects WHERE id = $1', [projectId])).rows[0];
+      if (!project) throw new HttpError(404, 'Project not found.');
+      if (!('sort_order' in req.body)) {
+        data.sort_order = (await t.query('SELECT COALESCE(MAX(sort_order), 0)::int + 10 AS n FROM milestones WHERE project_id = $1', [projectId])).rows[0].n;
+      }
+      const created = await insertRow(t, 'milestones', { ...data, project_id: projectId, completed_at: data.status === 'done' ? new Date() : null });
+      await audit(t, req, 'milestone.created', { entity: 'milestone', entityId: created.id, clientId: project.client_id, projectId, meta: { title: created.title } });
+      return created;
+    });
+    await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [projectId]);
+    res.status(201).json({ milestone });
+  }));
+
+  r.patch('/milestones/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const data = parse(req.body, milestoneSchema, { partial: true });
+    const current = (await db.query(
+      'SELECT m.project_id, m.status, p.client_id FROM milestones m JOIN projects p ON p.id = m.project_id WHERE m.id = $1', [id])).rows[0];
+    if (!current) throw new HttpError(404, 'Milestone not found.');
+    const set = data.status ? (data.status === 'done' ? ', completed_at = COALESCE(completed_at, now())' : ', completed_at = NULL') : '';
+    const milestone = await updateRow(db, 'milestones', id, data, set);
+    const action = data.status && data.status !== current.status ? 'milestone.status_changed' : 'milestone.updated';
+    await audit(db, req, action, { entity: 'milestone', entityId: id, clientId: current.client_id, projectId: current.project_id, meta: { title: milestone.title, from: current.status, to: milestone.status } });
+    await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [current.project_id]);
+    res.json({ milestone });
+  }));
+
+  r.delete('/milestones/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query(
+      `DELETE FROM milestones m USING projects p WHERE m.id = $1 AND p.id = m.project_id RETURNING m.project_id, m.title, p.client_id`, [id]);
+    if (!rows[0]) throw new HttpError(404, 'Milestone not found.');
+    await audit(db, req, 'milestone.deleted', { entity: 'milestone', entityId: id, clientId: rows[0].client_id, projectId: rows[0].project_id, meta: { title: rows[0].title } });
+    res.json({ ok: true });
+  }));
+
+  // ---------------- notes ----------------
+  r.post('/notes', h(async (req, res) => {
+    const body = v.str(req.body?.body, 'body', { required: true, max: 4000 });
+    const clientId = req.body.client_id ? v.id(req.body.client_id, 'client_id') : null;
+    const projectId = req.body.project_id ? v.id(req.body.project_id, 'project_id') : null;
+    if (!clientId && !projectId) throw new HttpError(400, 'A note must belong to a client or a project.');
+    const note = await db.tx(async (t) => {
+      let owner = clientId;
+      if (projectId) {
+        const p = (await t.query('SELECT client_id FROM projects WHERE id = $1', [projectId])).rows[0];
+        if (!p) throw new HttpError(404, 'Project not found.');
+        owner = p.client_id;
+      } else if (!(await t.query('SELECT 1 FROM clients WHERE id = $1', [clientId])).rows[0]) {
+        throw new HttpError(404, 'Client not found.');
+      }
+      const created = await insertRow(t, 'notes', { client_id: projectId ? null : clientId, project_id: projectId, author_id: req.auth.user.id, body });
+      await audit(t, req, 'note.created', { entity: 'note', entityId: created.id, clientId: owner, projectId });
+      return created;
+    });
+    res.status(201).json({ note: { ...note, author_name: req.auth.user.name } });
+  }));
+
+  r.patch('/notes/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query('UPDATE notes SET pinned = $2 WHERE id = $1 RETURNING *', [id, v.bool(req.body?.pinned)]);
+    if (!rows[0]) throw new HttpError(404, 'Note not found.');
+    res.json({ note: rows[0] });
+  }));
+
+  r.delete('/notes/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query('DELETE FROM notes WHERE id = $1 RETURNING client_id, project_id', [id]);
+    if (!rows[0]) throw new HttpError(404, 'Note not found.');
+    await audit(db, req, 'note.deleted', { entity: 'note', entityId: id, clientId: rows[0].client_id, projectId: rows[0].project_id });
+    res.json({ ok: true });
+  }));
+
+  // ---------------- leads ----------------
+  r.get('/leads', h(async (req, res) => {
+    const status = v.oneOf(req.query.status, 'status', LEAD_STATUS);
+    const { rows } = await db.query(
+      `SELECT l.id, l.name, l.email, l.company, l.message, l.language, l.source, l.status, l.client_id, l.created_at
+         FROM leads l WHERE ($1::text IS NULL OR l.status = $1) ORDER BY l.created_at DESC, l.id DESC LIMIT 200`, [status]);
+    res.json({ leads: rows });
+  }));
+
+  r.patch('/leads/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const status = v.oneOf(req.body?.status, 'status', LEAD_STATUS.filter((s) => s !== 'converted'), { required: true });
+    const { rows } = await db.query(
+      `UPDATE leads SET status = $2, updated_at = now() WHERE id = $1 AND status <> 'converted' RETURNING *`, [id, status]);
+    if (!rows[0]) throw new HttpError(404, 'Lead not found (or already converted).');
+    await audit(db, req, 'lead.status_changed', { entity: 'lead', entityId: id, meta: { to: status } });
+    res.json({ lead: rows[0] });
+  }));
+
+  r.post('/leads/:id/convert', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const result = await db.tx(async (t) => {
+      const lead = (await t.query('SELECT * FROM leads WHERE id = $1 FOR UPDATE', [id])).rows[0];
+      if (!lead) throw new HttpError(404, 'Lead not found.');
+      if (lead.status === 'converted') throw new HttpError(409, 'This lead is already a client.');
+      const client = await insertRow(t, 'clients', {
+        company_name: lead.company || lead.name, email: lead.email, language: lead.language, status: 'prospect'
+      });
+      await insertRow(t, 'contacts', { client_id: client.id, name: lead.name, email: lead.email, is_primary: true });
+      await insertRow(t, 'notes', { client_id: client.id, author_id: req.auth.user.id, body: `First message from the website:\n\n${lead.message}` });
+      await t.query(`UPDATE leads SET status = 'converted', client_id = $2, updated_at = now() WHERE id = $1`, [id, client.id]);
+      await audit(t, req, 'lead.converted', { entity: 'lead', entityId: id, clientId: client.id, meta: { name: lead.name } });
+      return client;
+    });
+    res.status(201).json({ client: result });
+  }));
+
+  r.delete('/leads/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rowCount } = await db.query('DELETE FROM leads WHERE id = $1', [id]);
+    if (!rowCount) throw new HttpError(404, 'Lead not found.');
+    await audit(db, req, 'lead.deleted', { entity: 'lead', entityId: id });
+    res.json({ ok: true });
+  }));
+
+  return r;
+}
