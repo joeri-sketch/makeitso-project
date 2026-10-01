@@ -33,6 +33,8 @@ describe('website, headers and abuse protection', () => {
       const page = await c.get(`/services/${slug}/`);
       assert.equal(page.status, 200, slug);
       assert.match(page.text, new RegExp(`data-service="${slug}"`), slug);
+      assert.match(page.text, /class="cosmos"/, `${slug} has the homepage starfield`);
+      assert.match(page.text, /class="nebula n1"/, `${slug} has ambient nebula layers`);
       assert.match(page.text, /aria-label="Main navigation"/, `${slug} has main-site navigation`);
       assert.match(page.text, /class="menu-btn"/, `${slug} has a responsive menu button`);
       assert.match(page.text, /class="footer service-footer"/, `${slug} has the site footer`);
