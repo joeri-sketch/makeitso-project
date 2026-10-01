@@ -33,8 +33,14 @@ describe('website, headers and abuse protection', () => {
       const page = await c.get(`/services/${slug}/`);
       assert.equal(page.status, 200, slug);
       assert.match(page.text, new RegExp(`data-service="${slug}"`), slug);
+      assert.match(page.text, /aria-label="Main navigation"/, `${slug} has main-site navigation`);
+      assert.match(page.text, /class="menu-btn"/, `${slug} has a responsive menu button`);
+      assert.match(page.text, /class="footer service-footer"/, `${slug} has the site footer`);
+      assert.match(page.text, /href="\/portal\/">Client login/, `${slug} footer has client login`);
+      assert.match(page.text, /href="\/admin">Admin login/, `${slug} footer has admin login`);
+      assert.match(page.text, /class="lang lang-footer"/, `${slug} footer has language controls`);
     }
-    for (const file of ['service-data.js', 'service-page.js']) {
+    for (const file of ['service-data.js', 'service-page.js', 'service-navigation.js']) {
       assert.equal((await c.get(`/services/${file}`)).status, 200, file);
     }
   });
