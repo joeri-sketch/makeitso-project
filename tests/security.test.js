@@ -47,6 +47,25 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('serves linked, separate concept pages for all three sample missions', async () => {
+    const c = new Client(ctx.base);
+    const home = await c.get('/');
+    const missions = ['nova-coffee', 'orbit-fitness', 'luna-records'];
+    for (const slug of missions) {
+      assert.match(home.text, new RegExp(`href="/missions/${slug}/"`), `${slug} has a mission-card link`);
+      const page = await c.get(`/missions/${slug}/`);
+      assert.equal(page.status, 200, slug);
+      assert.match(page.text, new RegExp(`data-mission="${slug}"`), slug);
+      assert.match(page.text, /class="cosmos"/, `${slug} has the homepage starfield`);
+      assert.match(page.text, /aria-label="Main navigation"/, `${slug} has main-site navigation`);
+      assert.match(page.text, /class="footer service-footer"/, `${slug} has the site footer`);
+      assert.match(page.text, /name="description"/, `${slug} has a page description`);
+    }
+    for (const file of ['mission-data.js', 'mission-page.js']) {
+      assert.equal((await c.get(`/missions/${file}`)).status, 200, file);
+    }
+  });
+
   it('serves the client portal without exposing it to search engines', async () => {
     const c = new Client(ctx.base);
     const page = await c.get('/portal/');

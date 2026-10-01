@@ -149,6 +149,7 @@
     ['An immersive release site and a social rollout that turned listeners into a community.',
       'Een meeslepende releasesite en een social rollout die luisteraars tot een community maakte.',
       'Un site de sortie immersif et un déploiement social qui a transformé des auditeurs en communauté.'],
+    ['Open mission profile', 'Bekijk missieprofiel', 'Voir le profil de mission'],
 
     // ----- process -----
     ['03 · Warp factor', '03 · Warpsnelheid', '03 · Vitesse de distorsion'],
