@@ -4,8 +4,10 @@ Website, admin area, client portal and quotes for the creative marketing agency 
 
 - **Website** (`public/`): the animated NL / FR / EN site, served exactly as designed.
 - **Admin area** (`/admin`): clients, contacts, projects, milestones, notes, leads and an activity log, behind password + two-factor login.
-- **Client portal** (`/portal/`): invited clients can follow project progress and milestones, read updates shared with them, and review/respond to quotes.
+- **Client portal** (`/portal/`): invited clients can follow project progress, review quotes and invoices, download invoice PDFs, and manage support conversations.
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
+- **Invoices**: create invoices from scratch or accepted quotes, issue them with sequential numbers, generate PDF copies, and manually record bank-transfer payments. Clients can download issued PDFs from the portal.
+- **Support**: clients can open tickets and reply in the portal; admins can triage, prioritize and respond from the admin area.
 - **Backend** (`src/`): Node 20, Express, PostgreSQL. No build step.
 
 See [docs/PHASE-0-PLAN.md](docs/PHASE-0-PLAN.md) for the plan, decisions, accounts to create and the Belgian / privacy checklist. Quotes are not invoices, and an online quote decision is an audit record—not legal advice about electronic signatures.
@@ -23,8 +25,10 @@ Open <http://127.0.0.1:3000> for the website and <http://127.0.0.1:3000/admin/> 
 
 From a client's record in the admin, invite a saved contact and copy the one-time setup link to send it yourself. No invitation email is sent. The same is true when sharing a quote: it appears in the client's portal, and the admin can copy the portal link to deliver it.
 
+Before issuing invoices, fill in **Invoices → Business details** in the admin and add complete billing addresses to client records. Invoices are PDFs with manual bank-transfer tracking; Peppol is not integrated. Do not assume PDF invoices satisfy Belgian structured e-invoicing requirements. Confirm compliance, retention and correction rules with your accountant.
+
 ```sh
-pnpm test                          # 30+ automated tests
+pnpm test                          # automated tests
 pnpm create-admin "Name" a@b.be "password-of-12+-characters"
 node src/cli/reset-2fa.js a@b.be   # admin lost phone and recovery codes
 ```
@@ -55,9 +59,9 @@ Everything is environment variables; see [.env.example](.env.example).
 ```
 public/            the website (unchanged) + admin app (public/admin)
 src/app.js         Express app: security headers, API, static files
-src/routes/        auth (login, 2FA, password), crm (clients, projects, leads…), public (contact form)
+src/routes/        auth, CRM, public contact form, portal, quotes, invoices/payments, support
 src/db/            database adapter (pg or PGlite), migrations
-tests/             node:test suites (auth, CRM, security)
+tests/             node:test suites (auth, CRM, security, portal, invoices and support)
 ```
 
 The contact form on the website posts to `/api/public/leads`. If the backend is unreachable (static hosting, offline), it falls back to opening the visitor's mail app, so no message is lost.

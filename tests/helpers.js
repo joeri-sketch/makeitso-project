@@ -48,6 +48,7 @@ export class Client {
 
   get(path) { return this.req('GET', path); }
   post(path, body = {}) { return this.req('POST', path, body); }
+  put(path, body) { return this.req('PUT', path, body); }
   patch(path, body = {}) { return this.req('PATCH', path, body); }
   del(path) { return this.req('DELETE', path); }
 }

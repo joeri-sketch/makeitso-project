@@ -1,11 +1,11 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const app = $('#app');
-const state = { user: null, overview: null, language: 'en' };
+const state = { user: null, overview: null, invoices: [], tickets: [], language: 'en' };
 const COPY = {
-  en: { portal: 'Client portal', signIn: 'Sign in', email: 'Email', password: 'Password', continue: 'Continue', dashboard: 'Your projects', signOut: 'Sign out', quotes: 'Quotes', milestones: 'Milestones', updates: 'Project updates', noProjects: 'No active projects yet.', noNotes: 'No shared updates yet.', noQuotes: 'No quotes yet.', progress: 'Progress', next: 'Next step', target: 'Target date', accept: 'Accept quote', decline: 'Decline quote', decision: 'Your decision', valid: 'Valid until', invitation: 'Set up your client account', setPassword: 'Create password', activate: 'Activate account', passwordHelp: 'Use at least 12 characters.', invitationBad: 'This invitation is invalid or expired. Ask your contact for a new one.', admin: 'This is an admin account. Go to the admin area.', quote: 'Quote', subtotal: 'Subtotal', vat: 'VAT', total: 'Total', response: 'Message (optional)', noMilestones: 'No milestones yet.', status: 'Status', description: 'Description', tax: 'VAT', terms: 'Terms', error: 'Something went wrong.' },
-  nl: { portal: 'Klantportaal', signIn: 'Inloggen', email: 'E-mail', password: 'Wachtwoord', continue: 'Doorgaan', dashboard: 'Jouw projecten', signOut: 'Uitloggen', quotes: 'Offertes', milestones: 'Mijlpalen', updates: 'Projectupdates', noProjects: 'Nog geen actieve projecten.', noNotes: 'Nog geen gedeelde updates.', noQuotes: 'Nog geen offertes.', progress: 'Voortgang', next: 'Volgende stap', target: 'Streefdatum', accept: 'Offerte goedkeuren', decline: 'Offerte afwijzen', decision: 'Jouw beslissing', valid: 'Geldig tot', invitation: 'Stel je klantaccount in', setPassword: 'Wachtwoord aanmaken', activate: 'Account activeren', passwordHelp: 'Gebruik minstens 12 tekens.', invitationBad: 'Deze uitnodiging is ongeldig of verlopen. Vraag een nieuwe aan.', admin: 'Dit is een beheerdersaccount. Ga naar de beheeromgeving.', quote: 'Offerte', subtotal: 'Subtotaal', vat: 'BTW', total: 'Totaal', response: 'Bericht (optioneel)', noMilestones: 'Nog geen mijlpalen.', status: 'Status', description: 'Omschrijving', tax: 'btw', terms: 'Voorwaarden', error: 'Er is iets misgegaan.' },
-  fr: { portal: 'Espace client', signIn: 'Connexion', email: 'E-mail', password: 'Mot de passe', continue: 'Continuer', dashboard: 'Vos projets', signOut: 'Déconnexion', quotes: 'Devis', milestones: 'Étapes', updates: 'Actualités du projet', noProjects: 'Aucun projet actif pour le moment.', noNotes: 'Aucune actualité partagée.', noQuotes: 'Aucun devis pour le moment.', progress: 'Progression', next: 'Prochaine étape', target: 'Date cible', accept: 'Accepter le devis', decline: 'Refuser le devis', decision: 'Votre décision', valid: 'Valable jusqu’au', invitation: 'Créer votre compte client', setPassword: 'Créer un mot de passe', activate: 'Activer le compte', passwordHelp: 'Utilisez au moins 12 caractères.', invitationBad: 'Cette invitation est invalide ou expirée. Demandez-en une nouvelle.', admin: 'Ce compte est un compte administrateur. Accédez à l’administration.', quote: 'Devis', subtotal: 'Sous-total', vat: 'TVA', total: 'Total', response: 'Message (facultatif)', noMilestones: 'Aucune étape pour le moment.', status: 'Statut', description: 'Description', tax: 'TVA', terms: 'Conditions', error: 'Une erreur est survenue.' }
+  en: { portal: 'Client portal', signIn: 'Sign in', email: 'Email', password: 'Password', continue: 'Continue', dashboard: 'Your projects', signOut: 'Sign out', quotes: 'Quotes', milestones: 'Milestones', updates: 'Project updates', noProjects: 'No active projects yet.', noNotes: 'No shared updates yet.', noQuotes: 'No quotes yet.', progress: 'Progress', next: 'Next step', target: 'Target date', accept: 'Accept quote', decline: 'Decline quote', decision: 'Your decision', valid: 'Valid until', invitation: 'Set up your client account', setPassword: 'Create password', activate: 'Activate account', passwordHelp: 'Use at least 12 characters.', invitationBad: 'This invitation is invalid or expired. Ask your contact for a new one.', admin: 'This is an admin account. Go to the admin area.', quote: 'Quote', subtotal: 'Subtotal', vat: 'VAT', total: 'Total', response: 'Message (optional)', noMilestones: 'No milestones yet.', status: 'Status', description: 'Description', tax: 'VAT', terms: 'Terms', error: 'Something went wrong.', invoices: 'Invoices', noInvoices: 'No invoices yet.', downloadPdf: 'Download PDF', due: 'Due', balance: 'Balance due', tickets: 'Support', noTickets: 'No support tickets yet.', newTicket: 'Create a support ticket', subject: 'Subject', message: 'Message', send: 'Send', reply: 'Reply', closed: 'This ticket is closed.', priority: 'Priority' },
+  nl: { portal: 'Klantportaal', signIn: 'Inloggen', email: 'E-mail', password: 'Wachtwoord', continue: 'Doorgaan', dashboard: 'Jouw projecten', signOut: 'Uitloggen', quotes: 'Offertes', milestones: 'Mijlpalen', updates: 'Projectupdates', noProjects: 'Nog geen actieve projecten.', noNotes: 'Nog geen gedeelde updates.', noQuotes: 'Nog geen offertes.', progress: 'Voortgang', next: 'Volgende stap', target: 'Streefdatum', accept: 'Offerte goedkeuren', decline: 'Offerte afwijzen', decision: 'Jouw beslissing', valid: 'Geldig tot', invitation: 'Stel je klantaccount in', setPassword: 'Wachtwoord aanmaken', activate: 'Account activeren', passwordHelp: 'Gebruik minstens 12 tekens.', invitationBad: 'Deze uitnodiging is ongeldig of verlopen. Vraag een nieuwe aan.', admin: 'Dit is een beheerdersaccount. Ga naar de beheeromgeving.', quote: 'Offerte', subtotal: 'Subtotaal', vat: 'BTW', total: 'Totaal', response: 'Bericht (optioneel)', noMilestones: 'Nog geen mijlpalen.', status: 'Status', description: 'Omschrijving', tax: 'btw', terms: 'Voorwaarden', error: 'Er is iets misgegaan.', invoices: 'Facturen', noInvoices: 'Nog geen facturen.', downloadPdf: 'Download PDF', due: 'Vervaldatum', balance: 'Openstaand', tickets: 'Ondersteuning', noTickets: 'Nog geen supporttickets.', newTicket: 'Nieuw supportticket', subject: 'Onderwerp', message: 'Bericht', send: 'Versturen', reply: 'Antwoorden', closed: 'Dit ticket is gesloten.', priority: 'Prioriteit' },
+  fr: { portal: 'Espace client', signIn: 'Connexion', email: 'E-mail', password: 'Mot de passe', continue: 'Continuer', dashboard: 'Vos projets', signOut: 'Déconnexion', quotes: 'Devis', milestones: 'Étapes', updates: 'Actualités du projet', noProjects: 'Aucun projet actif pour le moment.', noNotes: 'Aucune actualité partagée.', noQuotes: 'Aucun devis pour le moment.', progress: 'Progression', next: 'Prochaine étape', target: 'Date cible', accept: 'Accepter le devis', decline: 'Refuser le devis', decision: 'Votre décision', valid: 'Valable jusqu’au', invitation: 'Créer votre compte client', setPassword: 'Créer un mot de passe', activate: 'Activer le compte', passwordHelp: 'Utilisez au moins 12 caractères.', invitationBad: 'Cette invitation est invalide ou expirée. Demandez-en une nouvelle.', admin: 'Ce compte est un compte administrateur. Accédez à l’administration.', quote: 'Devis', subtotal: 'Sous-total', vat: 'TVA', total: 'Total', response: 'Message (facultatif)', noMilestones: 'Aucune étape pour le moment.', status: 'Statut', description: 'Description', tax: 'TVA', terms: 'Conditions', error: 'Une erreur est survenue.', invoices: 'Factures', noInvoices: 'Aucune facture pour le moment.', downloadPdf: 'Télécharger le PDF', due: 'Échéance', balance: 'Solde dû', tickets: 'Assistance', noTickets: 'Aucun ticket pour le moment.', newTicket: 'Créer un ticket d’assistance', subject: 'Sujet', message: 'Message', send: 'Envoyer', reply: 'Répondre', closed: 'Ce ticket est fermé.', priority: 'Priorité' }
 };
 const t = (key) => COPY[state.language]?.[key] || COPY.en[key] || key;
 const STATUS = {
@@ -82,8 +82,14 @@ function showInvitation(token, message = '') {
 }
 
 async function loadOverview() {
-  const data = await api('GET', '/portal/overview');
+  const [data, invoiceData, ticketData] = await Promise.all([
+    api('GET', '/portal/overview'),
+    api('GET', '/portal/invoices'),
+    api('GET', '/portal/tickets')
+  ]);
   state.overview = data;
+  state.invoices = invoiceData.invoices;
+  state.tickets = ticketData.tickets;
   state.language = ['nl', 'fr', 'en'].includes(data.client.language) ? data.client.language : 'en';
   renderDashboard();
 }
@@ -106,29 +112,86 @@ function renderDashboard() {
   const notes = data.notes.length
     ? data.notes.map((note) => `<article class="note"><p>${esc(note.body)}</p><small>${esc(note.project_name || data.client.company_name)} · ${esc(note.author_name || 'Make It So')} · ${date(note.created_at)}</small></article>`).join('')
     : `<p class="empty">${t('noNotes')}</p>`;
+  const invoices = state.invoices.length
+    ? `<ul class="list">${state.invoices.map((invoice) => `<li><span class="grow"><strong>${esc(invoice.invoice_number)}</strong> · ${esc(invoice.title)}<span class="sub">${t('due')}: ${date(invoice.due_date)} · ${t('balance')}: ${money(invoice.balance_cents)}</span></span>${status(invoice.display_status)}<a class="btn small" href="/api/portal/invoices/${esc(invoice.id)}/pdf">${t('downloadPdf')}</a></li>`).join('')}</ul>`
+    : `<p class="empty">${t('noInvoices')}</p>`;
+  const tickets = state.tickets.length
+    ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
+    : `<p class="empty">${t('noTickets')}</p>`;
   app.innerHTML = `<header class="top">${brand()}<div><strong>${esc(data.client.company_name)}</strong><br><small>${esc(state.user.name)} · ${t('portal')}</small></div><button id="logout" class="btn">${t('signOut')}</button></header>
     <main class="wrap"><header class="page-head"><div><h1>${t('dashboard')}</h1><p class="muted">${esc(data.client.company_name)}</p></div></header>
       <section class="stack">${projects}</section>
       <div class="grid two" style="margin-top:16px"><section class="card"><header><h2>${t('quotes')}</h2></header>${quotes}</section>
         <section class="card"><header><h2>${t('updates')}</h2></header>${notes || ''}</section></div>
+      <div class="grid two" style="margin-top:16px"><section class="card"><header><h2>${t('invoices')}</h2></header>${invoices}</section>
+        <section class="card"><header><h2>${t('tickets')}</h2></header>
+          <form id="ticket-create" class="stack"><label class="field">${t('subject')}<input name="subject" maxlength="160" required></label>
+            <label class="field">${t('message')}<textarea name="message" maxlength="5000" required></textarea></label>
+            <p class="error" role="alert"></p><button class="btn primary">${t('newTicket')}</button></form>
+          ${tickets}</section></div>
       <section id="quote-detail" class="card" hidden style="margin-top:16px"></section>
+      <section id="ticket-detail" class="card" hidden style="margin-top:16px"></section>
     </main>`;
   $('#logout').onclick = async () => { await api('POST', '/auth/logout'); location.reload(); };
-  app.onclick = handleQuoteClick;
+  $('#ticket-create').onsubmit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = $('button', form);
+    button.disabled = true;
+    try {
+      const { ticket } = await api('POST', '/portal/tickets', { subject: form.subject.value, message: form.message.value });
+      await loadOverview();
+      location.hash = `#ticket-${ticket.id}`;
+    } catch (error) {
+      $('.error', form).textContent = error.message;
+      button.disabled = false;
+    }
+  };
+  app.onclick = handlePortalClick;
   const deepLink = location.hash.match(/^#quote-(\d+)$/);
   if (deepLink) openQuote(deepLink[1]).catch((error) => window.alert(error.message));
+  const ticketLink = location.hash.match(/^#ticket-(\d+)$/);
+  if (ticketLink) openTicket(ticketLink[1]).catch((error) => window.alert(error.message));
 }
 
-async function handleQuoteClick(event) {
+async function handlePortalClick(event) {
   const link = event.target.closest('a[href^="#quote-"]');
-  if (!link) return;
-  event.preventDefault();
-  const quoteId = link.getAttribute('href').slice('#quote-'.length);
-  try {
-    await openQuote(quoteId);
-  } catch (error) {
-    window.alert(error.message);
+  if (link) {
+    event.preventDefault();
+    const quoteId = link.getAttribute('href').slice('#quote-'.length);
+    try { await openQuote(quoteId); } catch (error) { window.alert(error.message); }
+    return;
   }
+  const ticketLink = event.target.closest('a[href^="#ticket-"]');
+  if (!ticketLink) return;
+  event.preventDefault();
+  try { await openTicket(ticketLink.getAttribute('href').slice('#ticket-'.length)); }
+  catch (error) { window.alert(error.message); }
+}
+
+async function openTicket(ticketId) {
+  const { ticket } = await api('GET', `/portal/tickets/${encodeURIComponent(ticketId)}`);
+  const panel = $('#ticket-detail');
+  panel.hidden = false;
+  panel.innerHTML = `<header><div><h2>#${esc(ticket.id)} · ${esc(ticket.subject)}</h2><p class="muted">${t('priority')}: ${esc(ticket.priority)}</p></div>${status(ticket.status)}</header>
+    <section class="stack">${ticket.messages.map((message) => `<article class="note"><p>${esc(message.body)}</p><small>${esc(message.author_name || 'Make It So')} · ${date(message.created_at)}</small></article>`).join('')}</section>
+    ${ticket.status === 'closed' ? `<p class="notice">${t('closed')}</p>` : `<form id="ticket-reply" class="stack" style="margin-top:16px"><label class="field">${t('message')}<textarea name="message" maxlength="5000" required></textarea></label>
+      <p class="error" role="alert"></p><button class="btn primary">${t('reply')}</button></form>`}`;
+  $('#ticket-reply', panel)?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = $('button', form);
+    button.disabled = true;
+    try {
+      await api('POST', `/portal/tickets/${encodeURIComponent(ticket.id)}/messages`, { message: form.message.value });
+      await loadOverview();
+      location.hash = `#ticket-${ticket.id}`;
+    } catch (error) {
+      $('.error', form).textContent = error.message;
+      button.disabled = false;
+    }
+  });
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function openQuote(quoteId) {

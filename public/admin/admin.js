@@ -24,6 +24,9 @@ const LABEL = {
   discovery: 'Discovery', wireframing: 'Wireframing', development: 'Development', review: 'Review', launched: 'Launched', on_hold: 'On hold',
   todo: 'To do', doing: 'Doing', done: 'Done',
   new: 'New', contacted: 'Contacted', qualified: 'Qualified', converted: 'Converted', lost: 'Lost',
+  draft: 'Draft', issued: 'Issued', paid: 'Paid', overdue: 'Overdue', void: 'Void',
+  open: 'Open', in_progress: 'In progress', waiting_client: 'Waiting for client', resolved: 'Resolved', closed: 'Closed',
+  low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent',
   nl: 'Nederlands', fr: 'Français', en: 'English'
 };
 const label = (k) => LABEL[k] ?? k;
@@ -52,6 +55,7 @@ async function api(method, path, body) {
 }
 const get = (p) => api('GET', p);
 const post = (p, b = {}) => api('POST', p, b);
+const put = (p, b) => api('PUT', p, b);
 const patch = (p, b = {}) => api('PATCH', p, b);
 const del = (p) => api('DELETE', p);
 
@@ -254,7 +258,7 @@ async function logout() {
   loginScreen();
 }
 
-const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/quotes', 'Quotes'], ['#/leads', 'Leads'], ['#/account', 'Account']];
+const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/tickets', 'Support'], ['#/leads', 'Leads'], ['#/account', 'Account']];
 
 function shell() {
   show(app, html`<div class="shell">
@@ -287,6 +291,10 @@ const routes = [
   [/^#\/projects\/(\d+)$/, projectView],
   [/^#\/quotes$/, quotesView],
   [/^#\/quotes\/(\d+)$/, quoteView],
+  [/^#\/invoices$/, invoicesView],
+  [/^#\/invoices\/(\d+)$/, invoiceView],
+  [/^#\/tickets$/, ticketsView],
+  [/^#\/tickets\/(\d+)$/, ticketView],
   [/^#\/leads$/, leadsView],
   [/^#\/account$/, accountView]
 ];
@@ -760,7 +768,7 @@ async function quoteView(view, id) {
   show(view, html`<a class="back" href="#/quotes">← All quotes</a>
     <header class="page-head"><div><h1>${quote.quote_number}</h1><p>${quote.title} · ${chip(quote.display_status)} <span class="muted">for ${quote.company_name}</span></p></div>
       <div class="actions">${isDraft ? html`<button class="btn" data-action="edit">Edit draft</button><button class="btn primary" data-action="send">Share with client</button>` :
-        html`<button class="btn" data-action="share">Copy portal link</button>`}</div></header>
+        html`${quote.status === 'accepted' ? html`<button class="btn primary" data-action="create-invoice">Create invoice</button>` : ''}<button class="btn" data-action="share">Copy portal link</button>`}</div></header>
     <div class="grid two">
       <section class="card"><header><h2>Quote details</h2></header><dl class="details"><dt>Valid until</dt><dd>${date(quote.valid_until) || 'No expiry'}</dd><dt>Created</dt><dd>${date(quote.created_at)}</dd>
         ${quote.sent_at ? html`<dt>Shared</dt><dd>${date(quote.sent_at)}</dd>` : ''}${quote.decision_at ? html`<dt>Client decision</dt><dd>${quote.display_status} · ${date(quote.decision_at)}</dd>` : ''}</dl>
@@ -774,6 +782,11 @@ async function quoteView(view, id) {
       ${quote.terms ? html`<h3 style="margin-top:24px">Terms</h3><p style="white-space:pre-wrap">${quote.terms}</p>` : ''}</section>`);
   actions(view, {
     edit: () => showQuoteForm(quote),
+    'create-invoice': async () => {
+      const result = await post(`/quotes/${id}/invoice`);
+      toast('Invoice draft created from accepted quote');
+      location.hash = `#/invoices/${result.invoice.id}`;
+    },
     send: async () => {
       if (!confirm('Share this quote with the client in their portal? They will be able to accept or decline it.')) return;
       await post(`/quotes/${id}/send`);
@@ -791,6 +804,186 @@ async function quoteView(view, id) {
       url: `${location.origin}/portal/#quote-${id}`
     })
   });
+}
+
+/* ---------------- invoices ---------------- */
+const invoiceMoney = (cents) => new Intl.NumberFormat('en-BE', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
+const invoiceToday = () => new Date().toISOString().slice(0, 10);
+
+async function invoiceProfileForm() {
+  const { profile } = await get('/business-profile');
+  openForm({
+    title: 'Invoice business details',
+    submit: 'Save details',
+    fields: [
+      { name: 'legal_name', label: 'Legal business name', required: true, max: 160, full: true },
+      { name: 'vat_number', label: 'VAT number', max: 30 },
+      { name: 'company_number', label: 'Company number (KBO/BCE)', max: 20 },
+      { name: 'address_line1', label: 'Address', required: true, max: 160, full: true },
+      { name: 'address_line2', label: 'Address line 2', max: 160, full: true },
+      { name: 'postal_code', label: 'Postal code', required: true, max: 20 },
+      { name: 'city', label: 'City', required: true, max: 100 },
+      { name: 'country', label: 'Country code', required: true, max: 2 },
+      { name: 'email', label: 'Business email', type: 'email' },
+      { name: 'phone', label: 'Phone', max: 40 },
+      { name: 'iban', label: 'IBAN for bank transfers', max: 40, full: true },
+      { name: 'payment_instructions', label: 'Payment instructions', type: 'textarea', max: 1000, full: true },
+      { name: 'default_payment_days', label: 'Default payment term (days)', type: 'number', required: true, min: 0, max: 365 }
+    ],
+    values: profile,
+    onSubmit: async (values) => { await put('/business-profile', values); toast('Invoice business details saved'); }
+  });
+}
+
+async function showInvoiceForm(invoice = null) {
+  let clients = (await get('/clients')).clients;
+  if (invoice && !clients.some((client) => Number(client.id) === Number(invoice.client_id))) {
+    clients = [{ id: invoice.client_id, company_name: invoice.company_name }, ...clients];
+  }
+  if (!clients.length) { toast('Create a client first', 'error'); return; }
+  const lines = invoice?.items?.length ? invoice.items : [{ description: '', quantity: 1, unit_price: 0, vat_rate: 21 }];
+  const dlg = $('#modal');
+  show(dlg, html`<form class="modal-form quote-modal">
+    <header><h2>${invoice ? 'Edit invoice draft' : 'New invoice draft'}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
+    <div class="form-grid">
+      <label class="field full"><span>Client *</span><select name="client_id" required>${clients.map((client) => html`<option value="${client.id}" ${Number(client.id) === Number(invoice?.client_id) ? 'selected' : ''}>${client.company_name}</option>`)}</select></label>
+      <label class="field full"><span>Title *</span><input name="title" maxlength="160" value="${invoice?.title ?? ''}" required></label>
+      <label class="field"><span>Due date</span><input name="due_date" type="date" value="${invoice?.due_date ?? ''}"></label>
+      <label class="field full"><span>Notes</span><textarea name="notes" maxlength="4000">${invoice?.notes ?? ''}</textarea></label>
+    </div>
+    <section><header class="line-head"><h3>Line items</h3><button type="button" class="btn small" id="add-invoice-line">+ Add item</button></header>
+      <div id="invoice-lines">${lines.map((item) => quoteLineHtml(item))}</div></section>
+    <p class="form-error" role="alert"></p>
+    <footer><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${invoice ? 'Save draft' : 'Create draft'}</button></footer>
+  </form>`);
+  const form = $('form', dlg);
+  const lineContainer = $('#invoice-lines', form);
+  dlg.onclick = (event) => {
+    if (event.target.closest('[data-close]') || event.target === dlg) dlg.close();
+    if (event.target.closest('#add-invoice-line')) lineContainer.append(quoteLineHtml({ quantity: 1, unit_price: 0, vat_rate: 21 }).s);
+    if (event.target.closest('[data-remove-line]')) {
+      if (lineContainer.children.length === 1) return toast('An invoice needs at least one item', 'error');
+      event.target.closest('[data-quote-line]').remove();
+    }
+  };
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const button = $('button.primary', form);
+    button.disabled = true;
+    $('.form-error', form).textContent = '';
+    const payload = {
+      client_id: Number(form.elements.client_id.value),
+      title: form.elements.title.value,
+      due_date: form.elements.due_date.value || null,
+      notes: form.elements.notes.value,
+      items: [...lineContainer.querySelectorAll('[data-quote-line]')].map((row) => ({
+        description: $('[data-item="description"]', row).value,
+        quantity: Number($('[data-item="quantity"]', row).value),
+        unit_price: Number($('[data-item="unit_price"]', row).value),
+        vat_rate: Number($('[data-item="vat_rate"]', row).value)
+      }))
+    };
+    try {
+      const result = invoice ? await patch(`/invoices/${invoice.id}`, payload) : await post('/invoices', payload);
+      dlg.close();
+      toast(invoice ? 'Invoice draft saved' : 'Invoice draft created');
+      location.hash = `#/invoices/${result.invoice.id}`;
+    } catch (error) {
+      $('.form-error', form).textContent = error.message;
+      button.disabled = false;
+    }
+  };
+  dlg.showModal();
+}
+
+async function invoicesView(view) {
+  const { invoices } = await get('/invoices');
+  show(view, html`<header class="page-head"><div><h1>Invoices</h1><p class="muted">Issue invoices, download PDFs, and record bank transfers.</p></div>
+    <div class="actions"><button class="btn" data-action="profile">Business details</button><button class="btn primary" data-action="new">+ New invoice</button></div></header>
+    <div class="notice" style="margin-bottom:16px">PDF invoices only; Peppol delivery is not configured. Confirm legal and e-invoicing requirements with your accountant before using these for Belgian B2B invoicing.</div>
+    <div class="table-wrap">${invoices.length ? html`<table><thead><tr><th>Invoice</th><th>Client</th><th>Status</th><th>Due</th><th>Total</th><th>Balance</th></tr></thead><tbody>
+      ${invoices.map((invoice) => html`<tr class="link" data-href="#/invoices/${invoice.id}"><td><strong>${invoice.invoice_number || 'Draft'}</strong><span class="sub">${invoice.title}</span></td><td>${invoice.company_name}</td><td>${chip(invoice.display_status)}</td><td>${date(invoice.due_date) || '—'}</td><td>${invoiceMoney(invoice.total_cents)}</td><td>${invoiceMoney(invoice.balance_cents)}</td></tr>`)}</tbody></table>` : html`<div class="empty">No invoices yet.</div>`}</div>`);
+  actions(view, { new: () => showInvoiceForm(), profile: invoiceProfileForm });
+}
+
+async function invoiceView(view, id) {
+  const { invoice } = await get(`/invoices/${id}`);
+  const isDraft = invoice.status === 'draft';
+  show(view, html`<a class="back" href="#/invoices">← All invoices</a>
+    <header class="page-head"><div><h1>${invoice.invoice_number || 'Invoice draft'}</h1><p>${invoice.title} · ${chip(invoice.display_status)} <span class="muted">for ${invoice.company_name}</span></p></div>
+      <div class="actions">${isDraft ? html`<button class="btn" data-action="edit">Edit draft</button><button class="btn primary" data-action="issue">Issue invoice</button>` : html`<a class="btn" href="/api/invoices/${invoice.id}/pdf" target="_blank" rel="noopener">Download PDF</a>${invoice.status === 'issued' ? html`<button class="btn" data-action="payment">Record payment</button><button class="btn danger" data-action="void">Void invoice</button>` : ''}`}</div></header>
+    <div class="grid two"><section class="card"><header><h2>${invoice.company_name}</h2></header><dl class="details">
+      <dt>Issue date</dt><dd>${date(invoice.issue_date) || 'Not issued'}</dd><dt>Due date</dt><dd>${date(invoice.due_date) || '—'}</dd>
+      ${invoice.quote_id ? html`<dt>Based on quote</dt><dd><a href="#/quotes/${invoice.quote_id}">Open quote</a></dd>` : ''}
+      ${invoice.void_reason ? html`<dt>Void reason</dt><dd>${invoice.void_reason}</dd>` : ''}</dl>
+      ${invoice.notes ? html`<p style="white-space:pre-wrap;margin-top:12px">${invoice.notes}</p>` : ''}</section>
+      <section class="card"><header><h2>Totals</h2></header><dl class="details"><dt>Subtotal</dt><dd>${invoiceMoney(invoice.subtotal_cents)}</dd><dt>VAT</dt><dd>${invoiceMoney(invoice.vat_cents)}</dd><dt>Total</dt><dd><strong>${invoiceMoney(invoice.total_cents)}</strong></dd><dt>Paid</dt><dd>${invoiceMoney(invoice.paid_cents)}</dd><dt>Balance due</dt><dd><strong>${invoiceMoney(invoice.balance_cents)}</strong></dd></dl></section></div>
+    <section class="card" style="margin-top:16px"><header><h2>Line items</h2></header><div class="table-wrap"><table><thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>VAT</th><th>Total</th></tr></thead><tbody>
+      ${invoice.items.map((item) => html`<tr><td>${item.description}</td><td>${item.quantity}</td><td>${invoiceMoney(Math.round(Number(item.unit_price) * 100))}</td><td>${item.vat_rate}%</td><td>${invoiceMoney(Math.round(Number(item.quantity) * Number(item.unit_price) * 100) + Math.round(Number(item.quantity) * Number(item.unit_price) * Number(item.vat_rate)))}</td></tr>`)}</tbody></table></div></section>
+    <section class="card" style="margin-top:16px"><header><h2>Payment history</h2></header>${invoice.payments.length ? html`<ul class="list">${invoice.payments.map((payment) => html`<li><span class="grow"><strong>${invoiceMoney(Math.round(Number(payment.amount) * 100))}</strong> · ${date(payment.paid_on)}<span class="sub">${payment.reference || 'Bank transfer'}${payment.note ? ` · ${payment.note}` : ''}</span></span></li>`)}</ul>` : html`<p class="muted">No payments recorded.</p>`}</section>`);
+  actions(view, {
+    edit: () => showInvoiceForm(invoice),
+    issue: async () => {
+      if (!confirm('Issue this invoice? It will receive a permanent number and cannot be edited or deleted.')) return;
+      await post(`/invoices/${id}/issue`);
+      toast('Invoice issued');
+      invoiceView(view, id);
+    },
+    payment: () => openForm({
+      title: 'Record bank transfer',
+      fields: [
+        { name: 'amount', label: `Amount (€), balance ${invoiceMoney(invoice.balance_cents)}`, type: 'number', required: true, min: 0.01, max: 10000000 },
+        { name: 'paid_on', label: 'Payment date', type: 'date', required: true },
+        { name: 'reference', label: 'Bank reference', max: 120 },
+        { name: 'note', label: 'Note', type: 'textarea', max: 1000, full: true }
+      ],
+      values: { paid_on: invoiceToday() },
+      submit: 'Save payment',
+      onSubmit: async (values) => { await post(`/invoices/${id}/payments`, values); toast('Payment recorded'); invoiceView(view, id); }
+    }),
+    void: () => openForm({
+      title: 'Void invoice',
+      fields: [{ name: 'reason', label: 'Reason for voiding', type: 'textarea', required: true, max: 1000, full: true }],
+      submit: 'Void invoice',
+      onSubmit: async ({ reason }) => { await post(`/invoices/${id}/void`, { reason }); toast('Invoice voided'); invoiceView(view, id); }
+    })
+  });
+}
+
+/* ---------------- support ---------------- */
+const TICKET_STATUS = ['open', 'in_progress', 'waiting_client', 'resolved', 'closed'];
+const TICKET_PRIORITY = ['low', 'normal', 'high', 'urgent'];
+
+async function ticketsView(view) {
+  const { tickets } = await get('/tickets');
+  show(view, html`<header class="page-head"><div><h1>Support</h1><p class="muted">Client support conversations.</p></div></header>
+    <div class="table-wrap">${tickets.length ? html`<table><thead><tr><th>Ticket</th><th>Client</th><th>Priority</th><th>Status</th><th>Updated</th></tr></thead><tbody>
+      ${tickets.map((ticket) => html`<tr class="link" data-href="#/tickets/${ticket.id}"><td><strong>#${ticket.id} ${ticket.subject}</strong><span class="sub">${ticket.message_count} messages</span></td><td>${ticket.company_name}</td><td>${chip(ticket.priority)}</td><td>${chip(ticket.status)}</td><td>${ago(ticket.updated_at)}</td></tr>`)}</tbody></table>` : html`<div class="empty">No support tickets yet.</div>`}</div>`);
+  actions(view, {});
+}
+
+async function ticketView(view, id) {
+  const { ticket } = await get(`/tickets/${id}`);
+  show(view, html`<a class="back" href="#/tickets">← All tickets</a>
+    <header class="page-head"><div><h1>#${ticket.id} · ${ticket.subject}</h1><p class="muted">${ticket.company_name} · created ${date(ticket.created_at)}</p></div>
+      <div class="actions"><label class="field">Status<select id="ticket-status" data-ticket-field="status">${TICKET_STATUS.map((value) => html`<option value="${value}" ${value === ticket.status ? 'selected' : ''}>${label(value)}</option>`)}</select></label>
+      <label class="field">Priority<select id="ticket-priority" data-ticket-field="priority">${TICKET_PRIORITY.map((value) => html`<option value="${value}" ${value === ticket.priority ? 'selected' : ''}>${label(value)}</option>`)}</select></label></div></header>
+    <section class="stack">${ticket.messages.map((message) => html`<article class="card"><header><strong>${message.author_name || (message.author_role === 'admin' ? 'Make It So' : 'Client')}</strong><span class="muted">${ago(message.created_at)}</span></header><p class="msg">${message.body}</p></article>`)}</section>
+    ${ticket.status !== 'closed' ? html`<form class="card stack" id="ticket-reply" style="margin-top:16px"><label class="field">Reply<textarea name="message" maxlength="5000" required></textarea></label><button class="btn primary">Send reply</button></form>` : html`<p class="notice" style="margin-top:16px">This ticket is closed. Reopen it to reply.</p>`}`);
+  for (const element of view.querySelectorAll('[data-ticket-field]')) {
+    element.onchange = async () => {
+      try {
+        await patch(`/tickets/${id}`, { [element.dataset.ticketField]: element.value });
+        toast('Ticket updated');
+      } catch (error) { toast(error.message, 'error'); ticketView(view, id); }
+    };
+  }
+  const form = $('#ticket-reply', view);
+  if (form) form.onsubmit = async (event) => {
+    event.preventDefault();
+    try { await post(`/tickets/${id}/messages`, { message: form.elements.message.value }); ticketView(view, id); }
+    catch (error) { toast(error.message, 'error'); }
+  };
 }
 
 /* ---------------- leads ---------------- */

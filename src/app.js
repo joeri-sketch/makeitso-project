@@ -3,9 +3,11 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { authRoutes } from './routes/auth.js';
 import { crmRoutes } from './routes/crm.js';
+import { invoiceRoutes, portalInvoiceRoutes } from './routes/invoices.js';
 import { portalRoutes } from './routes/portal.js';
 import { quoteRoutes } from './routes/quotes.js';
 import { publicRoutes } from './routes/public.js';
+import { supportRoutes } from './routes/support.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
 
@@ -48,7 +50,10 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
   app.use('/api/auth', authRoutes({ db, config, limits }));
   app.use('/api/public', publicRoutes({ db, config, limits }));
   app.use('/api/portal', portalRoutes({ db, config, limits }));
+  app.use('/api/portal', portalInvoiceRoutes({ db }));
+  app.use('/api', supportRoutes({ db, limits }));
   app.use('/api', crmRoutes({ db, config }));
+  app.use('/api', invoiceRoutes({ db }));
   app.use('/api', quoteRoutes({ db }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 

@@ -111,6 +111,9 @@ td .sub { display: block; color: var(--muted); font-size: 13px; }
 .s-wireframing, .s-doing, .s-contacted { background: #e6e0ff; color: #4a3db8; }
 .s-development { background: #ffe3d1; color: #b8410b; }
 .s-review { background: #fff0c2; color: #8a6100; }
+.s-accepted, .s-paid, .s-resolved { background: #cffbe9; color: #0b7a55; }
+.s-issued, .s-in_progress, .s-waiting_client, .s-high { background: #fff0c2; color: #8a6100; }
+.s-overdue, .s-urgent, .s-void, .s-closed { background: #ffe1e8; color: #9e1f42; }
 .s-inactive, .s-on_hold, .s-todo, .s-lost { background: #ececf5; color: #555b7a; }
 progress { width: 100%; height: 8px; border: 0; border-radius: 99px; overflow: hidden; background: var(--line); accent-color: var(--orange); }
 progress::-webkit-progress-bar { background: var(--line); }
