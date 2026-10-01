@@ -3,6 +3,8 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { authRoutes } from './routes/auth.js';
 import { crmRoutes } from './routes/crm.js';
+import { portalRoutes } from './routes/portal.js';
+import { quoteRoutes } from './routes/quotes.js';
 import { publicRoutes } from './routes/public.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
@@ -45,7 +47,9 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
   app.use('/api/public', publicRoutes({ db, config, limits }));
-  app.use('/api', crmRoutes({ db }));
+  app.use('/api/portal', portalRoutes({ db, config, limits }));
+  app.use('/api', crmRoutes({ db, config }));
+  app.use('/api', quoteRoutes({ db }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 
   // ---- website + admin UI (static files) ----

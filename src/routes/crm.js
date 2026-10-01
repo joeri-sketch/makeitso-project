@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomToken, sha256 } from '../lib/crypto.js';
 import { audit } from '../lib/audit.js';
 import { HttpError, companyNumber, parse, v, vatNumber } from '../lib/validate.js';
 import { asyncHandler as h } from '../middleware/security.js';
@@ -84,7 +85,7 @@ async function insertRow(db, table, fields) {
   return rows[0];
 }
 
-export function crmRoutes({ db }) {
+export function crmRoutes({ db, config }) {
   const r = Router();
   r.use(requireAdmin);
 
@@ -159,16 +160,79 @@ export function crmRoutes({ db }) {
     const id = v.id(req.params.id);
     const { rows } = await db.query('SELECT * FROM clients WHERE id = $1', [id]);
     if (!rows[0]) throw new HttpError(404, 'Client not found.');
-    const [contacts, projects, notes, activity] = await Promise.all([
+    const [contacts, projects, notes, activity, accounts] = await Promise.all([
       db.query('SELECT * FROM contacts WHERE client_id = $1 ORDER BY is_primary DESC, id', [id]),
       db.query('SELECT * FROM projects WHERE client_id = $1 ORDER BY archived_at NULLS FIRST, updated_at DESC', [id]),
       db.query(`SELECT n.*, u.name AS author_name FROM notes n LEFT JOIN users u ON u.id = n.author_id
                  WHERE n.client_id = $1 ORDER BY n.pinned DESC, n.created_at DESC LIMIT 100`, [id]),
       db.query(`SELECT a.id, a.action, a.entity, a.meta, a.created_at, u.name AS actor_name
                   FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
-                 WHERE a.client_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id])
+                 WHERE a.client_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id]),
+      db.query('SELECT id, email, name, active, created_at FROM users WHERE client_id = $1 ORDER BY created_at', [id])
     ]);
-    res.json({ client: rows[0], contacts: contacts.rows, projects: projects.rows, notes: notes.rows, activity: activity.rows });
+    res.json({ client: rows[0], contacts: contacts.rows, projects: projects.rows, notes: notes.rows, activity: activity.rows, accounts: accounts.rows });
+  }));
+
+  r.post('/clients/:id/invitations', h(async (req, res) => {
+    const clientId = v.id(req.params.id);
+    const email = v.email(req.body?.email, 'email', { required: true });
+    const contact = await db.query(
+      `SELECT k.name, k.email, c.language FROM contacts k JOIN clients c ON c.id = k.client_id
+        WHERE c.id = $1 AND c.archived_at IS NULL AND lower(k.email) = lower($2)
+        ORDER BY k.is_primary DESC, k.id LIMIT 1`,
+      [clientId, email]
+    );
+    if (!contact.rows[0]) throw new HttpError(400, 'Choose an email address saved on this client’s contacts.', { field: 'email' });
+    const existing = (await db.query('SELECT id, client_id, role, active FROM users WHERE lower(email) = lower($1)', [email])).rows[0];
+    if (existing && (existing.role !== 'client' || Number(existing.client_id) !== clientId || existing.active)) {
+      throw new HttpError(409, 'An active account already exists for this email.');
+    }
+    const token = randomToken(32);
+    await db.tx(async (t) => {
+      await t.query(
+        `UPDATE client_invitations SET expires_at = now()
+          WHERE client_id = $1 AND lower(email) = lower($2) AND accepted_at IS NULL AND expires_at > now()`,
+        [clientId, email]
+      );
+      await t.query(
+        `INSERT INTO client_invitations (client_id, email, name, token_hash, created_by, expires_at)
+         VALUES ($1, $2, $3, $4, $5, now() + interval '7 days')`,
+        [clientId, email, contact.rows[0].name, sha256(token), req.auth.user.id]
+      );
+      await audit(t, req, 'portal.invitation_created', {
+        entity: 'client', entityId: clientId, clientId, meta: { email }
+      });
+    });
+    const origin = config.publicOrigin || `${req.protocol}://${req.get('host')}`;
+    res.status(201).json({
+      invitation_url: `${origin}/portal/?invite=${encodeURIComponent(token)}&lang=${contact.rows[0].language}`,
+      expires_in_days: 7
+    });
+  }));
+
+  r.post('/clients/:id/access/revoke', h(async (req, res) => {
+    const clientId = v.id(req.params.id);
+    const userId = req.body?.user_id ? v.id(req.body.user_id, 'user_id') : null;
+    if (!userId) throw new HttpError(400, 'Choose a client account to revoke.', { field: 'user_id' });
+    const revoked = await db.tx(async (t) => {
+      const user = (await t.query(
+        `UPDATE users SET active = FALSE WHERE id = $1 AND client_id = $2 AND role = 'client'
+         RETURNING id, email, name`,
+        [userId, clientId]
+      )).rows[0];
+      if (!user) throw new HttpError(404, 'Client account not found.');
+      await t.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+      await t.query(
+        `UPDATE client_invitations SET expires_at = now()
+          WHERE client_id = $1 AND lower(email) = lower($2) AND accepted_at IS NULL`,
+        [clientId, user.email]
+      );
+      await audit(t, req, 'portal.access_revoked', {
+        entity: 'user', entityId: userId, clientId, meta: { email: user.email }
+      });
+      return user;
+    });
+    res.json({ account: revoked });
   }));
 
   r.patch('/clients/:id', h(async (req, res) => {
@@ -342,6 +406,7 @@ export function crmRoutes({ db }) {
   // ---------------- notes ----------------
   r.post('/notes', h(async (req, res) => {
     const body = v.str(req.body?.body, 'body', { required: true, max: 4000 });
+    const clientVisible = v.bool(req.body?.client_visible);
     const clientId = req.body.client_id ? v.id(req.body.client_id, 'client_id') : null;
     const projectId = req.body.project_id ? v.id(req.body.project_id, 'project_id') : null;
     if (!clientId && !projectId) throw new HttpError(400, 'A note must belong to a client or a project.');
@@ -354,7 +419,9 @@ export function crmRoutes({ db }) {
       } else if (!(await t.query('SELECT 1 FROM clients WHERE id = $1', [clientId])).rows[0]) {
         throw new HttpError(404, 'Client not found.');
       }
-      const created = await insertRow(t, 'notes', { client_id: projectId ? null : clientId, project_id: projectId, author_id: req.auth.user.id, body });
+      const created = await insertRow(t, 'notes', {
+        client_id: projectId ? null : clientId, project_id: projectId, author_id: req.auth.user.id, body, client_visible: clientVisible
+      });
       await audit(t, req, 'note.created', { entity: 'note', entityId: created.id, clientId: owner, projectId });
       return created;
     });
@@ -363,8 +430,27 @@ export function crmRoutes({ db }) {
 
   r.patch('/notes/:id', h(async (req, res) => {
     const id = v.id(req.params.id);
-    const { rows } = await db.query('UPDATE notes SET pinned = $2 WHERE id = $1 RETURNING *', [id, v.bool(req.body?.pinned)]);
+    const data = {};
+    if (Object.hasOwn(req.body || {}, 'pinned')) data.pinned = v.bool(req.body.pinned);
+    if (Object.hasOwn(req.body || {}, 'client_visible')) data.client_visible = v.bool(req.body.client_visible);
+    if (!Object.keys(data).length) throw new HttpError(400, 'Nothing to update.');
+    const current = (await db.query(
+      `SELECT n.client_id, n.project_id, COALESCE(n.client_id, p.client_id) AS owner_client_id
+         FROM notes n LEFT JOIN projects p ON p.id = n.project_id WHERE n.id = $1`,
+      [id]
+    )).rows[0];
+    if (!current) throw new HttpError(404, 'Note not found.');
+    const { rows } = await db.query(
+      'UPDATE notes SET pinned = COALESCE($2, pinned), client_visible = COALESCE($3, client_visible) WHERE id = $1 RETURNING *',
+      [id, data.pinned ?? null, data.client_visible ?? null]
+    );
     if (!rows[0]) throw new HttpError(404, 'Note not found.');
+    if (Object.hasOwn(data, 'client_visible') && data.client_visible !== rows[0].client_visible) {
+      await audit(db, req, 'note.visibility_changed', {
+        entity: 'note', entityId: id, clientId: current.owner_client_id, projectId: current.project_id,
+        meta: { visible: rows[0].client_visible }
+      });
+    }
     res.json({ note: rows[0] });
   }));
 

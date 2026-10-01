@@ -117,6 +117,29 @@ function openForm({ title, fields, values = {}, submit = 'Save', onSubmit }) {
   form.querySelector('input:not([type=hidden]), select, textarea')?.focus();
 }
 
+function showCopyLink({ title, description, url }) {
+  const dlg = $('#modal');
+  show(dlg, html`<form class="modal-form">
+    <header><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
+    <p class="muted">${description}</p>
+    <label class="field full"><span>Link</span><input id="invitation-link" value="${url}" readonly></label>
+    <footer><button type="button" class="btn" data-close>Close</button><button type="button" class="btn primary" id="copy-invitation">Copy link</button></footer>
+  </form>`);
+  dlg.onclick = (event) => { if (event.target.closest('[data-close]') || event.target === dlg) dlg.close(); };
+  $('#copy-invitation').onclick = async () => {
+    const input = $('#invitation-link');
+    try {
+      await navigator.clipboard.writeText(input.value);
+      toast('Link copied');
+    } catch {
+      input.focus();
+      input.select();
+      toast('Select and copy the invitation link');
+    }
+  };
+  dlg.showModal();
+}
+
 /* ---------------- app state + shell ---------------- */
 const app = $('#app');
 const state = { user: null, auth: 'anonymous', leads: 0 };
@@ -130,6 +153,7 @@ async function boot() {
   } catch {
     state.auth = 'anonymous';
   }
+  if (state.user?.role === 'client') { location.replace('/portal/'); return; }
   if (state.auth === 'anonymous') return loginScreen();
   if (state.auth === 'verify_2fa') return verifyScreen();
   if (state.auth === 'setup_2fa') return setupScreen();
@@ -230,7 +254,7 @@ async function logout() {
   loginScreen();
 }
 
-const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/leads', 'Leads'], ['#/account', 'Account']];
+const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/quotes', 'Quotes'], ['#/leads', 'Leads'], ['#/account', 'Account']];
 
 function shell() {
   show(app, html`<div class="shell">
@@ -261,6 +285,8 @@ const routes = [
   [/^#\/clients\/(\d+)$/, clientView],
   [/^#\/projects$/, projectsView],
   [/^#\/projects\/(\d+)$/, projectView],
+  [/^#\/quotes$/, quotesView],
+  [/^#\/quotes\/(\d+)$/, quoteView],
   [/^#\/leads$/, leadsView],
   [/^#\/account$/, accountView]
 ];
@@ -325,6 +351,14 @@ const ACTIVITY = {
   'milestone.deleted': (m) => `removed milestone ${q(m.title)}`,
   'note.created': () => 'added a note',
   'note.deleted': () => 'deleted a note',
+  'note.visibility_changed': (m) => `${m.visible ? 'shared' : 'made private'} a note`,
+  'portal.invitation_created': () => 'created a client portal invitation',
+  'portal.access_revoked': () => 'revoked client portal access',
+  'quote.created': (m) => `created quote ${q(m.quote_number)}`,
+  'quote.updated': (m) => `updated quote ${q(m.quote_number || '')}`,
+  'quote.sent': (m) => `sent quote ${q(m.quote_number)}`,
+  'quote.accepted': (m) => `client accepted quote ${q(m.quote_number)}`,
+  'quote.declined': (m) => `client declined quote ${q(m.quote_number)}`,
   'lead.created': () => 'a new message came in from the website',
   'lead.status_changed': (m) => `set a lead to ${label(m.to)}`,
   'lead.converted': (m) => `converted lead ${q(m.name)} into a client`,
@@ -480,6 +514,11 @@ async function clientView(view, id) {
           ${d.contacts.length ? html`<ul class="list">${d.contacts.map((k) => html`<li><span class="grow"><strong>${k.name}</strong> ${k.is_primary ? html`<span class="chip s-active">Primary</span>` : ''}<span class="sub">${[k.role, k.email, k.phone].filter(Boolean).join(' · ')}</span></span>
             <span class="row-actions"><button class="btn small" data-action="edit-contact" data-id="${k.id}">Edit</button><button class="btn small danger" data-action="delete-contact" data-id="${k.id}">Remove</button></span></li>`)}</ul>` : html`<p class="muted">No contacts yet.</p>`}
         </section>
+        <section class="card"><header><h2>Client portal access</h2><button class="btn small primary" data-action="invite" ${c.archived_at ? 'disabled' : ''}>+ Invite contact</button></header>
+          <p class="muted">Invitation links are one-time and expire after 7 days. Share them with the client yourself.</p>
+          ${d.accounts.length ? html`<ul class="list">${d.accounts.map((account) => html`<li><span class="grow"><strong>${account.name}</strong><span class="sub">${account.email} · ${account.active ? 'Portal access active' : 'Access revoked'}</span></span>
+            ${account.active ? html`<button class="btn small danger" data-action="revoke-access" data-id="${account.id}">Revoke</button>` : chip('inactive')}</li>`)}</ul>` : html`<p class="muted" style="margin-top:12px">No client logins yet.</p>`}
+        </section>
         <section class="card"><header><h2>Activity</h2></header>${activityList(d.activity)}</section>
       </div>
       <div class="stack">
@@ -487,8 +526,8 @@ async function clientView(view, id) {
           ${d.projects.length ? html`<ul class="list">${d.projects.map((p) => html`<li><span class="grow"><a href="#/projects/${p.id}"><strong>${p.name}</strong></a>${p.archived_at ? html` <span class="chip">Archived</span>` : ''}<span class="sub">${p.category || ''}${p.target_date ? ` · target ${date(p.target_date)}` : ''}</span></span>${chip(p.status)}</li>`)}</ul>` : html`<p class="muted">No projects yet.</p>`}
         </section>
         <section class="card"><header><h2>Notes</h2></header>
-          <form class="note-form" id="note-form"><label class="sr-only" for="note-body">New note</label><textarea id="note-body" placeholder="Add a private note about this client…" maxlength="4000"></textarea><button class="btn small">Add note</button></form>
-          ${d.notes.map((n) => html`<div class="note ${n.pinned ? 'pinned' : ''}"><p>${n.body}</p><div class="meta"><span>${n.author_name || 'Someone'} · ${ago(n.created_at)}</span><span class="row-actions"><button class="btn small ghost" data-action="pin-note" data-id="${n.id}" data-pinned="${n.pinned}">${n.pinned ? 'Unpin' : 'Pin'}</button><button class="btn small ghost" data-action="delete-note" data-id="${n.id}">Delete</button></span></div></div>`)}
+          <form class="note-form" id="note-form"><label class="sr-only" for="note-body">New note</label><textarea id="note-body" placeholder="Add a private note about this client…" maxlength="4000"></textarea><label class="check"><input type="checkbox" id="note-visible"> Share this update with the client</label><button class="btn small">Add note</button></form>
+          ${d.notes.map((n) => html`<div class="note ${n.pinned ? 'pinned' : ''}"><p>${n.body}</p><div class="meta"><span>${n.author_name || 'Someone'} · ${ago(n.created_at)} · ${n.client_visible ? 'Visible to client' : 'Private'}</span><span class="row-actions"><button class="btn small ghost" data-action="toggle-note-visibility" data-id="${n.id}" data-visible="${n.client_visible}">${n.client_visible ? 'Make private' : 'Share with client'}</button><button class="btn small ghost" data-action="pin-note" data-id="${n.id}" data-pinned="${n.pinned}">${n.pinned ? 'Unpin' : 'Pin'}</button><button class="btn small ghost" data-action="delete-note" data-id="${n.id}">Delete</button></span></div></div>`)}
         </section>
       </div>
     </div>`);
@@ -498,17 +537,42 @@ async function clientView(view, id) {
     e.preventDefault();
     const body = $('#note-body').value.trim();
     if (!body) return;
-    try { await post('/notes', { client_id: id, body }); reload(); } catch (err) { toast(err.message, 'error'); }
+    try { await post('/notes', { client_id: id, body, client_visible: $('#note-visible').checked }); reload(); } catch (err) { toast(err.message, 'error'); }
   };
   actions(view, {
     edit: () => openForm({ title: 'Edit client', fields: clientFields, values: c, onSubmit: async (v) => { await patch(`/clients/${id}`, v); toast('Saved'); reload(); } }),
     archive: async () => { if (confirm('Archive this client? Their data is kept and can be restored.')) { await post(`/clients/${id}/archive`); toast('Client archived'); reload(); } },
     restore: async () => { await post(`/clients/${id}/restore`); toast('Client restored'); reload(); },
+    invite: () => {
+      const choices = d.contacts.filter((k) => k.email).map((k) => [k.email, `${k.name} · ${k.email}`]);
+      if (!choices.length) { toast('Add a contact with an email address first', 'error'); return; }
+      openForm({
+        title: 'Invite client contact',
+        fields: [{ name: 'email', label: 'Contact email', type: 'select', options: choices, required: true, full: true }],
+        submit: 'Create invitation',
+        onSubmit: async ({ email }) => {
+          const invitation = await post(`/clients/${id}/invitations`, { email });
+          toast('Invitation link created');
+          setTimeout(() => showCopyLink({
+            title: 'Invitation link created',
+            description: 'Copy this one-time link and send it to the client yourself. It expires in 7 days. The link is not sent by email.',
+            url: invitation.invitation_url
+          }), 0);
+        }
+      });
+    },
+    'revoke-access': async (_, userId) => {
+      if (!confirm('Revoke this client account’s access immediately?')) return;
+      await post(`/clients/${id}/access/revoke`, { user_id: userId });
+      toast('Client access revoked');
+      reload();
+    },
     'new-project': () => newProject(reload, id),
     'add-contact': () => openForm({ title: 'Add contact', fields: contactFields, values: { is_primary: !d.contacts.length }, submit: 'Add contact', onSubmit: async (v) => { await post(`/clients/${id}/contacts`, v); reload(); } }),
     'edit-contact': (_, cid) => openForm({ title: 'Edit contact', fields: contactFields, values: contact(cid), onSubmit: async (v) => { await patch(`/contacts/${cid}`, v); reload(); } }),
     'delete-contact': async (_, cid) => { if (confirm('Remove this contact?')) { await del(`/contacts/${cid}`); reload(); } },
     'pin-note': async (el, nid) => { await patch(`/notes/${nid}`, { pinned: el.dataset.pinned !== 'true' }); reload(); },
+    'toggle-note-visibility': async (el, nid) => { await patch(`/notes/${nid}`, { client_visible: el.dataset.visible !== 'true' }); reload(); },
     'delete-note': async (_, nid) => { if (confirm('Delete this note?')) { await del(`/notes/${nid}`); reload(); } }
   });
 }
@@ -566,8 +630,8 @@ async function projectView(view, id) {
       </div>
       <div class="stack">
         <section class="card"><header><h2>Notes</h2></header>
-          <form class="note-form" id="note-form"><label class="sr-only" for="note-body">New note</label><textarea id="note-body" placeholder="Add a private note about this project…" maxlength="4000"></textarea><button class="btn small">Add note</button></form>
-          ${d.notes.map((n) => html`<div class="note ${n.pinned ? 'pinned' : ''}"><p>${n.body}</p><div class="meta"><span>${n.author_name || 'Someone'} · ${ago(n.created_at)}</span><span class="row-actions"><button class="btn small ghost" data-action="pin-note" data-id="${n.id}" data-pinned="${n.pinned}">${n.pinned ? 'Unpin' : 'Pin'}</button><button class="btn small ghost" data-action="delete-note" data-id="${n.id}">Delete</button></span></div></div>`)}
+          <form class="note-form" id="note-form"><label class="sr-only" for="note-body">New note</label><textarea id="note-body" placeholder="Add a private note about this project…" maxlength="4000"></textarea><label class="check"><input type="checkbox" id="note-visible"> Share this update with the client</label><button class="btn small">Add note</button></form>
+          ${d.notes.map((n) => html`<div class="note ${n.pinned ? 'pinned' : ''}"><p>${n.body}</p><div class="meta"><span>${n.author_name || 'Someone'} · ${ago(n.created_at)} · ${n.client_visible ? 'Visible to client' : 'Private'}</span><span class="row-actions"><button class="btn small ghost" data-action="toggle-note-visibility" data-id="${n.id}" data-visible="${n.client_visible}">${n.client_visible ? 'Make private' : 'Share with client'}</button><button class="btn small ghost" data-action="pin-note" data-id="${n.id}" data-pinned="${n.pinned}">${n.pinned ? 'Unpin' : 'Pin'}</button><button class="btn small ghost" data-action="delete-note" data-id="${n.id}">Delete</button></span></div></div>`)}
         </section>
         <section class="card"><header><h2>Activity</h2></header>${activityList(d.activity)}</section>
       </div>
@@ -578,7 +642,7 @@ async function projectView(view, id) {
     e.preventDefault();
     const body = $('#note-body').value.trim();
     if (!body) return;
-    try { await post('/notes', { project_id: id, body }); reload(); } catch (err) { toast(err.message, 'error'); }
+    try { await post('/notes', { project_id: id, body, client_visible: $('#note-visible').checked }); reload(); } catch (err) { toast(err.message, 'error'); }
   };
   actions(view, {
     'quick-save': async () => {
@@ -593,7 +657,139 @@ async function projectView(view, id) {
     'cycle-milestone': async (el, mid) => { await patch(`/milestones/${mid}`, { status: NEXT[el.dataset.status] }); reload(); },
     'delete-milestone': async (_, mid) => { if (confirm('Delete this milestone?')) { await del(`/milestones/${mid}`); reload(); } },
     'pin-note': async (el, nid) => { await patch(`/notes/${nid}`, { pinned: el.dataset.pinned !== 'true' }); reload(); },
+    'toggle-note-visibility': async (el, nid) => { await patch(`/notes/${nid}`, { client_visible: el.dataset.visible !== 'true' }); reload(); },
     'delete-note': async (_, nid) => { if (confirm('Delete this note?')) { await del(`/notes/${nid}`); reload(); } }
+  });
+}
+
+/* ---------------- quotes ---------------- */
+function quoteLineHtml(item = {}) {
+  return html`<div class="quote-line" data-quote-line>
+    <label class="field"><span>Description</span><input data-item="description" value="${item.description ?? ''}" maxlength="240" required></label>
+    <label class="field"><span>Quantity</span><input data-item="quantity" type="number" min="0.01" max="10000" step="0.01" value="${item.quantity ?? 1}" required></label>
+    <label class="field"><span>Unit price (€)</span><input data-item="unit_price" type="number" min="0" max="1000000" step="0.01" value="${item.unit_price ?? 0}" required></label>
+    <label class="field"><span>VAT %</span><input data-item="vat_rate" type="number" min="0" max="100" step="0.01" value="${item.vat_rate ?? 21}" required></label>
+    <button type="button" class="btn small danger" data-remove-line aria-label="Remove line item">Remove</button>
+  </div>`;
+}
+
+async function showQuoteForm(quote = null) {
+  let clients = (await get('/clients')).clients;
+  if (quote && !clients.some((client) => client.id === quote.client_id)) {
+    clients = [{ id: quote.client_id, company_name: quote.company_name }, ...clients];
+  }
+  if (!clients.length) { toast('Create a client first', 'error'); return; }
+  const items = quote?.items?.length ? quote.items : [{ description: '', quantity: 1, unit_price: 0, vat_rate: 21 }];
+  const dlg = $('#modal');
+  const clientOptions = clients.map((client) => html`<option value="${client.id}" ${Number(client.id) === Number(quote?.client_id) ? 'selected' : ''}>${client.company_name}</option>`);
+  show(dlg, html`<form class="modal-form quote-modal">
+    <header><h2>${quote ? 'Edit draft quote' : 'New quote'}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
+    <div class="form-grid">
+      <label class="field full"><span>Client *</span><select name="client_id" required>${clientOptions}</select></label>
+      <label class="field full"><span>Title *</span><input name="title" maxlength="160" value="${quote?.title ?? ''}" required></label>
+      <label class="field"><span>Valid until</span><input name="valid_until" type="date" value="${quote?.valid_until ?? ''}"></label>
+      <label class="field full"><span>Introduction</span><textarea name="introduction" maxlength="2000">${quote?.introduction ?? ''}</textarea></label>
+      <label class="field full"><span>Terms</span><textarea name="terms" maxlength="4000">${quote?.terms ?? ''}</textarea></label>
+    </div>
+    <section><header class="line-head"><h3>Line items</h3><button type="button" class="btn small" id="add-quote-line">+ Add item</button></header>
+      <div id="quote-lines">${items.map((item) => quoteLineHtml(item))}</div></section>
+    <p class="form-error" role="alert"></p>
+    <footer><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${quote ? 'Save draft' : 'Create draft'}</button></footer>
+  </form>`);
+  const form = $('form', dlg);
+  const lines = $('#quote-lines', form);
+  dlg.onclick = (event) => {
+    if (event.target.closest('[data-close]') || event.target === dlg) dlg.close();
+    if (event.target.closest('#add-quote-line')) lines.append(quoteLineHtml({ quantity: 1, unit_price: 0, vat_rate: 21 }).s);
+    if (event.target.closest('[data-remove-line]')) {
+      if (lines.children.length === 1) return toast('A quote needs at least one item', 'error');
+      event.target.closest('[data-quote-line]').remove();
+    }
+  };
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const button = $('button.primary', form);
+    button.disabled = true;
+    $('.form-error', form).textContent = '';
+    const payload = {
+      client_id: Number(form.elements.client_id.value),
+      title: form.elements.title.value,
+      valid_until: form.elements.valid_until.value || null,
+      introduction: form.elements.introduction.value,
+      terms: form.elements.terms.value,
+      items: [...lines.querySelectorAll('[data-quote-line]')].map((row) => ({
+        description: $('[data-item="description"]', row).value,
+        quantity: Number($('[data-item="quantity"]', row).value),
+        unit_price: Number($('[data-item="unit_price"]', row).value),
+        vat_rate: Number($('[data-item="vat_rate"]', row).value)
+      }))
+    };
+    try {
+      const result = quote
+        ? await patch(`/quotes/${quote.id}`, payload)
+        : await post('/quotes', payload);
+      dlg.close();
+      toast(quote ? 'Draft quote updated' : 'Draft quote created');
+      location.hash = `#/quotes/${result.quote.id}`;
+    } catch (error) {
+      $('.form-error', form).textContent = error.message;
+      button.disabled = false;
+    }
+  };
+  dlg.showModal();
+}
+
+const quoteMoney = (cents) => new Intl.NumberFormat('en-BE', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
+
+async function quotesView(view) {
+  const { quotes } = await get('/quotes');
+  show(view, html`<header class="page-head"><div><h1>Quotes</h1><p class="muted">Prepare offers, share them in the client portal, and track decisions.</p></div>
+    <button class="btn primary" data-action="new">+ New quote</button></header>
+    <div class="table-wrap">${quotes.length ? html`<table><thead><tr><th>Quote</th><th>Client</th><th>Status</th><th>Valid until</th><th>Total</th></tr></thead><tbody>
+      ${quotes.map((quote) => html`<tr class="link" data-href="#/quotes/${quote.id}"><td><strong>${quote.quote_number}</strong><span class="sub">${quote.title}</span></td><td>${quote.company_name}</td><td>${chip(quote.display_status)}</td><td>${date(quote.valid_until) || '—'}</td><td>${quoteMoney(quote.total_cents)}</td></tr>`)}</tbody></table>` : html`<div class="empty">No quotes yet. Create a draft quote for a client.</div>`}</div>`);
+  actions(view, { new: () => showQuoteForm() });
+}
+
+async function quoteView(view, id) {
+  const { quote } = await get(`/quotes/${id}`);
+  const isDraft = quote.status === 'draft';
+  const subtotal = quoteMoney(quote.subtotal_cents);
+  const vat = quoteMoney(quote.vat_cents);
+  const total = quoteMoney(quote.total_cents);
+  show(view, html`<a class="back" href="#/quotes">← All quotes</a>
+    <header class="page-head"><div><h1>${quote.quote_number}</h1><p>${quote.title} · ${chip(quote.display_status)} <span class="muted">for ${quote.company_name}</span></p></div>
+      <div class="actions">${isDraft ? html`<button class="btn" data-action="edit">Edit draft</button><button class="btn primary" data-action="send">Share with client</button>` :
+        html`<button class="btn" data-action="share">Copy portal link</button>`}</div></header>
+    <div class="grid two">
+      <section class="card"><header><h2>Quote details</h2></header><dl class="details"><dt>Valid until</dt><dd>${date(quote.valid_until) || 'No expiry'}</dd><dt>Created</dt><dd>${date(quote.created_at)}</dd>
+        ${quote.sent_at ? html`<dt>Shared</dt><dd>${date(quote.sent_at)}</dd>` : ''}${quote.decision_at ? html`<dt>Client decision</dt><dd>${quote.display_status} · ${date(quote.decision_at)}</dd>` : ''}</dl>
+        ${quote.decision_note ? html`<p class="notice" style="margin-top:14px">Client message: ${quote.decision_note}</p>` : ''}</section>
+      <section class="card"><header><h2>${quote.company_name}</h2></header>${quote.introduction ? html`<p style="white-space:pre-wrap">${quote.introduction}</p>` : html`<p class="muted">No introduction.</p>`}</section>
+    </div>
+    <section class="card" style="margin-top:16px"><header><h2>Line items</h2></header>
+      <div class="table-wrap"><table><thead><tr><th>Description</th><th>Quantity</th><th>Unit price</th><th>VAT</th><th>Amount incl. VAT</th></tr></thead><tbody>
+        ${quote.items.map((item) => html`<tr><td>${item.description}</td><td>${item.quantity}</td><td>${quoteMoney(Math.round(Number(item.unit_price) * 100))}</td><td>${item.vat_rate}%</td><td>${quoteMoney(Math.round(Number(item.quantity) * Number(item.unit_price) * 100) + Math.round(Number(item.quantity) * Number(item.unit_price) * Number(item.vat_rate)))}</td></tr>`)}</tbody></table></div>
+      <dl class="details quote-totals"><dt>Subtotal</dt><dd>${subtotal}</dd><dt>VAT</dt><dd>${vat}</dd><dt><strong>Total</strong></dt><dd><strong>${total}</strong></dd></dl>
+      ${quote.terms ? html`<h3 style="margin-top:24px">Terms</h3><p style="white-space:pre-wrap">${quote.terms}</p>` : ''}</section>`);
+  actions(view, {
+    edit: () => showQuoteForm(quote),
+    send: async () => {
+      if (!confirm('Share this quote with the client in their portal? They will be able to accept or decline it.')) return;
+      await post(`/quotes/${id}/send`);
+      toast('Quote shared in the client portal');
+      showCopyLink({
+        title: 'Quote shared',
+        description: 'The quote is now visible in the client portal. Copy this link and send it to the client; email is not configured.',
+        url: `${location.origin}/portal/#quote-${id}`
+      });
+      quoteView(view, id);
+    },
+    share: () => showCopyLink({
+      title: 'Client portal link',
+      description: 'Copy this link and send it to the client. They must sign in to view the quote.',
+      url: `${location.origin}/portal/#quote-${id}`
+    })
   });
 }
 

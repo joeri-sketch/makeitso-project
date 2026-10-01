@@ -1,12 +1,14 @@
 # Make It So
 
-Website, admin area and (soon) client portal for the creative marketing agency **Make It So**.
+Website, admin area, client portal and quotes for the creative marketing agency **Make It So**.
 
 - **Website** (`public/`): the animated NL / FR / EN site, served exactly as designed.
 - **Admin area** (`/admin`): clients, contacts, projects, milestones, notes, leads and an activity log, behind password + two-factor login.
+- **Client portal** (`/portal/`): invited clients can follow project progress and milestones, read updates shared with them, and review/respond to quotes.
+- **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
 - **Backend** (`src/`): Node 20, Express, PostgreSQL. No build step.
 
-See [docs/PHASE-0-PLAN.md](docs/PHASE-0-PLAN.md) for the plan, decisions, accounts to create and the Belgian / privacy checklist.
+See [docs/PHASE-0-PLAN.md](docs/PHASE-0-PLAN.md) for the plan, decisions, accounts to create and the Belgian / privacy checklist. Quotes are not invoices, and an online quote decision is an audit record—not legal advice about electronic signatures.
 
 ## Run it locally
 
@@ -18,6 +20,8 @@ ADMIN_EMAIL=you@example.com ADMIN_PASSWORD="a-long-passphrase" pnpm start
 ```
 
 Open <http://127.0.0.1:3000> for the website and <http://127.0.0.1:3000/admin/> for the admin. With no `DATABASE_URL`, an embedded PostgreSQL (PGlite) stores data in `./data` (git-ignored). The first start creates the admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`; at first sign-in you must set up an authenticator app and save your recovery codes.
+
+From a client's record in the admin, invite a saved contact and copy the one-time setup link to send it yourself. No invitation email is sent. The same is true when sharing a quote: it appears in the client's portal, and the admin can copy the portal link to deliver it.
 
 ```sh
 pnpm test                          # 30+ automated tests

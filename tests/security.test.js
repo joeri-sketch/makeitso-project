@@ -24,6 +24,17 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('serves the client portal without exposing it to search engines', async () => {
+    const c = new Client(ctx.base);
+    const page = await c.get('/portal/');
+    assert.equal(page.status, 200);
+    assert.match(page.text, /name="robots" content="noindex, nofollow"/);
+    for (const file of ['portal.js', 'portal.css']) {
+      const asset = await c.get(`/portal/${file}`);
+      assert.equal(asset.status, 200, file);
+    }
+  });
+
   it('sends strict security headers that still allow the site to work', async () => {
     const res = await new Client(ctx.base).get('/');
     const csp = res.headers.get('content-security-policy');
