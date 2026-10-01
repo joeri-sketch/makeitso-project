@@ -31,7 +31,7 @@ Everything is environment variables; see [.env.example](.env.example).
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection string. Empty means the embedded local database |
+| `DATABASE_URL` | PostgreSQL connection string. **Required in production.** Locally, empty means the embedded database |
 | `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets |
 | `PUBLIC_ORIGIN` | Your site address, e.g. `https://makeitso.studio`. Used for the origin check |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
