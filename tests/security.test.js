@@ -24,6 +24,21 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('serves linked, separate pages for all six departments', async () => {
+    const c = new Client(ctx.base);
+    const home = await c.get('/');
+    const slugs = ['brand-strategy', 'social-content', 'paid-media', 'web-landing-pages', 'video-motion', 'growth-analytics'];
+    for (const slug of slugs) {
+      assert.match(home.text, new RegExp(`href="/services/${slug}/"`), `${slug} has a department-card link`);
+      const page = await c.get(`/services/${slug}/`);
+      assert.equal(page.status, 200, slug);
+      assert.match(page.text, new RegExp(`data-service="${slug}"`), slug);
+    }
+    for (const file of ['service-data.js', 'service-page.js']) {
+      assert.equal((await c.get(`/services/${file}`)).status, 200, file);
+    }
+  });
+
   it('serves the client portal without exposing it to search engines', async () => {
     const c = new Client(ctx.base);
     const page = await c.get('/portal/');

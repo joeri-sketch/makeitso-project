@@ -84,6 +84,7 @@
     ['01 · Departments', '01 · Afdelingen', '01 · Départements'],
     ['Every department.', 'Elke afdeling.', 'Chaque département.'],
     ['One crew.', 'Eén team.', 'Un seul équipage.'],
+    ['Explore service', 'Bekijk de afdeling', 'Explorer le service'],
     ['From the first spark of an idea to the campaign that everyone is talking about — one small, senior team, zero hand-offs.',
       'Van de eerste vonk van een idee tot de campagne waar iedereen over praat — één klein, ervaren team, nul overdrachten.',
       'De la première étincelle d\'une idée à la campagne dont tout le monde parle — une petite équipe senior, zéro relais.'],

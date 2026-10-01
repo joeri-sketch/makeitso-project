@@ -7,6 +7,15 @@
 
   /* ---------- translations (i18n.js loads first; fall back to English if missing) ---------- */
   const i18n = window.i18n || { t: (key) => key, onChange() {} };
+  const updateServiceLinks = () => {
+    $$('[data-service-path]').forEach((link) => {
+      const url = new URL(link.dataset.servicePath, location.origin);
+      url.searchParams.set('lang', i18n.lang || 'en');
+      link.href = `${url.pathname}${url.search}`;
+    });
+  };
+  updateServiceLinks();
+  i18n.onChange(updateServiceLinks);
 
   /* ---------- stardate + year ---------- */
   const now = new Date();
