@@ -69,11 +69,23 @@ export function portalRoutes({ db, config, limits }) {
 
   r.get('/overview', h(async (req, res) => {
     const clientId = req.auth.clientId;
-    const [client, projects, milestones, notes, quotes] = await Promise.all([
+    const [client, projects, workItems, milestones, notes, quotes] = await Promise.all([
       db.query('SELECT company_name, language FROM clients WHERE id = $1 AND archived_at IS NULL', [clientId]),
       db.query(
-        `SELECT id, name, category, description, status, progress, next_step, target_date, updated_at
-           FROM projects WHERE client_id = $1 AND archived_at IS NULL ORDER BY updated_at DESC, id DESC`,
+        `SELECT p.id, p.name, p.category, p.description, p.status,
+                CASE WHEN EXISTS (SELECT 1 FROM work_items wi WHERE wi.project_id = p.id AND wi.client_visible)
+                     THEN (SELECT round(100.0 * count(*) FILTER (WHERE wi.status = 'done') / count(*))::int
+                             FROM work_items wi WHERE wi.project_id = p.id AND wi.client_visible)
+                     ELSE p.progress END AS progress,
+                p.next_step, p.target_date, p.updated_at
+           FROM projects p WHERE p.client_id = $1 AND p.archived_at IS NULL ORDER BY p.updated_at DESC, p.id DESC`,
+        [clientId]
+      ),
+      db.query(
+        `SELECT wi.id, wi.project_id, wi.title, wi.status, wi.due_date, p.name AS project_name
+           FROM work_items wi JOIN projects p ON p.id = wi.project_id
+          WHERE p.client_id = $1 AND p.archived_at IS NULL AND wi.client_visible
+          ORDER BY p.updated_at DESC, wi.due_date NULLS LAST, wi.sort_order, wi.id`,
         [clientId]
       ),
       db.query(
@@ -107,6 +119,7 @@ export function portalRoutes({ db, config, limits }) {
     res.json({
       client: client.rows[0],
       projects: projects.rows,
+      work_items: workItems.rows,
       milestones: milestones.rows,
       notes: notes.rows,
       quotes: quotes.rows.map((quote) => ({ ...quote, total: CURRENCY.format(Number(quote.total_cents) / 100) }))

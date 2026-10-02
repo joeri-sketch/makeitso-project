@@ -103,6 +103,63 @@ describe('CRM: clients, contacts, projects, milestones, notes', () => {
     assert.equal((await api.del(`/api/milestones/${m2.id}`)).status, 200);
   });
 
+  it('tracks work items, derives project progress, and manages scoped time entries', async () => {
+    const client = (await api.post('/api/clients', { company_name: 'Work Tracking Co' })).json.client;
+    const otherClient = (await api.post('/api/clients', { company_name: 'Other Work Co' })).json.client;
+    const project = (await api.post('/api/projects', { client_id: client.id, name: 'Tracked site', progress: 23 })).json.project;
+    const otherProject = (await api.post('/api/projects', { client_id: otherClient.id, name: 'Other site' })).json.project;
+
+    const first = await api.post(`/api/projects/${project.id}/work-items`, {
+      title: 'Build the homepage', estimate_minutes: 120, client_visible: true, priority: 'high'
+    });
+    assert.equal(first.status, 201);
+    assert.equal(first.json.work_item.status, 'todo');
+    const second = (await api.post(`/api/projects/${project.id}/work-items`, {
+      title: 'Internal QA', status: 'done', client_visible: false
+    })).json.work_item;
+    const otherWorkItem = (await api.post(`/api/projects/${otherProject.id}/work-items`, { title: 'Other task' })).json.work_item;
+    assert.ok(second.completed_at);
+    assert.equal((await api.post(`/api/projects/${project.id}/work-items`, { title: 'Invalid', status: 'unknown' })).status, 400);
+
+    let detail = (await api.get(`/api/projects/${project.id}`)).json;
+    assert.equal(detail.project.progress, 50);
+    assert.equal(detail.project.work_item_count, 2);
+    assert.equal(detail.project.work_items_done, 1);
+    const done = await api.patch(`/api/work-items/${first.json.work_item.id}`, { status: 'done' });
+    assert.ok(done.json.work_item.completed_at);
+    assert.equal((await api.get(`/api/projects/${project.id}`)).json.project.progress, 100);
+    await api.patch(`/api/work-items/${first.json.work_item.id}`, { status: 'in_review' });
+    assert.equal((await api.get(`/api/projects/${project.id}`)).json.project.progress, 50);
+
+    const entry = await api.post('/api/time-entries', {
+      project_id: project.id, work_item_id: first.json.work_item.id, entry_date: '2026-05-12',
+      duration_minutes: 90, description: 'Homepage implementation'
+    });
+    assert.equal(entry.status, 201);
+    assert.equal(entry.json.time_entry.billable, true);
+    assert.equal((await api.post('/api/time-entries', {
+      project_id: project.id, work_item_id: otherWorkItem.id, entry_date: '2026-05-12',
+      duration_minutes: 30, description: 'Wrong project task'
+    })).status, 400);
+    assert.equal((await api.post('/api/time-entries', {
+      project_id: project.id, work_item_id: first.json.work_item.id, entry_date: '2026-05-12',
+      duration_minutes: 0, description: 'Invalid duration'
+    })).status, 400);
+
+    const list = await api.get('/api/time-entries?from=2026-05-01&to=2026-05-31');
+    assert.equal(list.status, 200);
+    assert.equal(list.json.time_entries.length, 1);
+    assert.equal(list.json.totals.minutes, 90);
+    assert.equal(list.json.totals.billable_minutes, 90);
+    assert.equal((await api.patch(`/api/time-entries/${entry.json.time_entry.id}`, { billable: false, duration_minutes: 60 })).status, 200);
+    const updated = (await api.get(`/api/projects/${project.id}`)).json;
+    assert.equal(updated.project.logged_minutes, 60);
+    assert.equal(updated.project.billable_minutes, 0);
+    assert.equal((await api.del(`/api/time-entries/${entry.json.time_entry.id}`)).status, 200);
+    assert.equal((await api.del(`/api/work-items/${second.id}`)).status, 200);
+    assert.equal((await api.get(`/api/projects/${otherProject.id}`)).json.project.progress, 0);
+  });
+
   it('stores notes on clients and projects, and refuses clients with projects being hard-deleted', async () => {
     const client = (await api.post('/api/clients', { company_name: 'Notes Co' })).json.client;
     const project = (await api.post('/api/projects', { client_id: client.id, name: 'P' })).json.project;

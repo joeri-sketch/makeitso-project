@@ -10,6 +10,8 @@ const CLIENT_STATUS = ['prospect', 'active', 'inactive'];
 const PROJECT_STATUS = ['discovery', 'wireframing', 'development', 'review', 'launched', 'on_hold'];
 const MILESTONE_STATUS = ['todo', 'doing', 'done'];
 const LEAD_STATUS = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+const WORK_ITEM_STATUS = ['todo', 'in_progress', 'in_review', 'done', 'blocked'];
+const PRIORITIES = ['low', 'normal', 'high', 'urgent'];
 
 const like = (q) => `%${String(q).trim().replace(/[\\%_]/g, '\\$&')}%`;
 const url = (x, name) => {
@@ -65,6 +67,29 @@ const milestoneSchema = {
   due_date: (x) => v.date(x, 'due_date'),
   sort_order: (x) => v.int(x, 'sort_order', { min: 0, max: 100000 }) ?? 0
 };
+
+const workItemSchema = {
+  title: (x) => v.str(x, 'title', { required: true, max: 200 }),
+  description: (x) => v.str(x, 'description', { max: 2000 }) ?? '',
+  status: (x) => v.oneOf(x, 'status', WORK_ITEM_STATUS) ?? 'todo',
+  priority: (x) => v.oneOf(x, 'priority', PRIORITIES) ?? 'normal',
+  due_date: (x) => v.date(x, 'due_date'),
+  estimate_minutes: (x) => v.int(x, 'estimate_minutes', { min: 1, max: 1440 }),
+  client_visible: (x) => v.bool(x),
+  sort_order: (x) => v.int(x, 'sort_order', { min: 0, max: 100000 }) ?? 0
+};
+
+const timeEntrySchema = {
+  entry_date: (x) => v.date(x, 'entry_date', { required: true }),
+  duration_minutes: (x) => v.int(x, 'duration_minutes', { min: 1, max: 1440, required: true }),
+  description: (x) => v.str(x, 'description', { required: true, min: 2, max: 500 }),
+  billable: (x) => x === undefined ? true : v.bool(x),
+  work_item_id: (x) => x === null || x === '' ? null : v.id(x, 'work_item_id')
+};
+
+const projectProgress = `(CASE WHEN (SELECT count(*) FROM work_items wi WHERE wi.project_id = p.id) > 0
+  THEN (SELECT round(100.0 * count(*) FILTER (WHERE wi.status = 'done') / count(*))::int FROM work_items wi WHERE wi.project_id = p.id)
+  ELSE p.progress END)`;
 
 // table and column names come from the schemas above, never from user input
 async function updateRow(db, table, id, fields, extraSet = '') {
@@ -297,9 +322,12 @@ export function crmRoutes({ db, config }) {
     const archived = v.bool(req.query.archived);
     const q = req.query.q ? like(req.query.q) : null;
     const { rows } = await db.query(
-      `SELECT p.*, c.company_name,
+      `SELECT p.*, ${projectProgress} AS progress, c.company_name,
               (SELECT count(*) FROM milestones m WHERE m.project_id = p.id)::int AS milestone_count,
-              (SELECT count(*) FROM milestones m WHERE m.project_id = p.id AND m.status = 'done')::int AS milestones_done
+              (SELECT count(*) FROM milestones m WHERE m.project_id = p.id AND m.status = 'done')::int AS milestones_done,
+              (SELECT count(*) FROM work_items wi WHERE wi.project_id = p.id)::int AS work_item_count,
+              (SELECT count(*) FROM work_items wi WHERE wi.project_id = p.id AND wi.status = 'done')::int AS work_items_done,
+              (SELECT COALESCE(sum(te.duration_minutes), 0)::int FROM time_entries te WHERE te.project_id = p.id) AS logged_minutes
          FROM projects p JOIN clients c ON c.id = p.client_id
         WHERE ($1::bigint IS NULL OR p.client_id = $1) AND ($2::text IS NULL OR p.status = $2)
           AND ($3::boolean OR p.archived_at IS NULL) AND ($4::text IS NULL OR p.name ILIKE $4 OR c.company_name ILIKE $4)
@@ -324,17 +352,25 @@ export function crmRoutes({ db, config }) {
   r.get('/projects/:id', h(async (req, res) => {
     const id = v.id(req.params.id);
     const { rows } = await db.query(
-      `SELECT p.*, c.company_name FROM projects p JOIN clients c ON c.id = p.client_id WHERE p.id = $1`, [id]);
+      `SELECT p.*, ${projectProgress} AS progress, c.company_name,
+              (SELECT count(*) FROM work_items wi WHERE wi.project_id = p.id)::int AS work_item_count,
+              (SELECT count(*) FROM work_items wi WHERE wi.project_id = p.id AND wi.status = 'done')::int AS work_items_done,
+              (SELECT COALESCE(sum(wi.estimate_minutes), 0)::int FROM work_items wi WHERE wi.project_id = p.id) AS estimate_minutes,
+              (SELECT COALESCE(sum(te.duration_minutes), 0)::int FROM time_entries te WHERE te.project_id = p.id) AS logged_minutes,
+              (SELECT COALESCE(sum(te.duration_minutes) FILTER (WHERE te.billable), 0)::int FROM time_entries te WHERE te.project_id = p.id) AS billable_minutes
+         FROM projects p JOIN clients c ON c.id = p.client_id WHERE p.id = $1`, [id]);
     if (!rows[0]) throw new HttpError(404, 'Project not found.');
-    const [milestones, notes, activity] = await Promise.all([
+    const [milestones, workItems, timeEntries, notes, activity] = await Promise.all([
       db.query('SELECT * FROM milestones WHERE project_id = $1 ORDER BY sort_order, id', [id]),
+      db.query('SELECT * FROM work_items WHERE project_id = $1 ORDER BY CASE status WHEN \'in_progress\' THEN 0 WHEN \'in_review\' THEN 1 WHEN \'blocked\' THEN 2 WHEN \'todo\' THEN 3 ELSE 4 END, due_date NULLS LAST, sort_order, id', [id]),
+      db.query('SELECT te.*, wi.title AS work_item_title FROM time_entries te LEFT JOIN work_items wi ON wi.id = te.work_item_id WHERE te.project_id = $1 ORDER BY te.entry_date DESC, te.id DESC LIMIT 100', [id]),
       db.query(`SELECT n.*, u.name AS author_name FROM notes n LEFT JOIN users u ON u.id = n.author_id
                  WHERE n.project_id = $1 ORDER BY n.pinned DESC, n.created_at DESC LIMIT 100`, [id]),
       db.query(`SELECT a.id, a.action, a.entity, a.meta, a.created_at, u.name AS actor_name
                   FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
                  WHERE a.project_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id])
     ]);
-    res.json({ project: rows[0], milestones: milestones.rows, notes: notes.rows, activity: activity.rows });
+    res.json({ project: rows[0], milestones: milestones.rows, work_items: workItems.rows, time_entries: timeEntries.rows, notes: notes.rows, activity: activity.rows });
   }));
 
   r.patch('/projects/:id', h(async (req, res) => {
@@ -400,6 +436,129 @@ export function crmRoutes({ db, config }) {
       `DELETE FROM milestones m USING projects p WHERE m.id = $1 AND p.id = m.project_id RETURNING m.project_id, m.title, p.client_id`, [id]);
     if (!rows[0]) throw new HttpError(404, 'Milestone not found.');
     await audit(db, req, 'milestone.deleted', { entity: 'milestone', entityId: id, clientId: rows[0].client_id, projectId: rows[0].project_id, meta: { title: rows[0].title } });
+    res.json({ ok: true });
+  }));
+
+  // ---------------- project work items + time tracking ----------------
+  r.get('/work-items', h(async (req, res) => {
+    const status = req.query.status ? v.oneOf(req.query.status, 'status', WORK_ITEM_STATUS) : null;
+    const projectId = req.query.project_id ? v.id(req.query.project_id, 'project_id') : null;
+    const { rows } = await db.query(
+      `SELECT wi.*, p.name AS project_name, p.client_id, c.company_name
+         FROM work_items wi JOIN projects p ON p.id = wi.project_id JOIN clients c ON c.id = p.client_id
+        WHERE p.archived_at IS NULL AND ($1::bigint IS NULL OR wi.project_id = $1)
+          AND ($2::text IS NULL OR wi.status = $2)
+        ORDER BY CASE wi.status WHEN 'in_progress' THEN 0 WHEN 'in_review' THEN 1 WHEN 'blocked' THEN 2 WHEN 'todo' THEN 3 ELSE 4 END,
+                 wi.due_date NULLS LAST, wi.updated_at DESC, wi.id DESC LIMIT 500`,
+      [projectId, status]
+    );
+    res.json({ work_items: rows });
+  }));
+
+  r.post('/projects/:id/work-items', h(async (req, res) => {
+    const projectId = v.id(req.params.id, 'project_id');
+    const data = parse(req.body, workItemSchema);
+    const item = await db.tx(async (t) => {
+      const project = (await t.query('SELECT client_id FROM projects WHERE id = $1', [projectId])).rows[0];
+      if (!project) throw new HttpError(404, 'Project not found.');
+      if (!Object.hasOwn(req.body, 'sort_order')) {
+        data.sort_order = (await t.query('SELECT COALESCE(MAX(sort_order), 0)::int + 10 AS n FROM work_items WHERE project_id = $1', [projectId])).rows[0].n;
+      }
+      const created = await insertRow(t, 'work_items', { ...data, project_id: projectId, completed_at: data.status === 'done' ? new Date() : null });
+      await audit(t, req, 'work_item.created', { entity: 'work_item', entityId: created.id, clientId: project.client_id, projectId, meta: { title: created.title } });
+      return created;
+    });
+    await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [projectId]);
+    res.status(201).json({ work_item: item });
+  }));
+
+  r.patch('/work-items/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const data = parse(req.body, workItemSchema, { partial: true });
+    const current = (await db.query(
+      'SELECT wi.project_id, wi.status, p.client_id FROM work_items wi JOIN projects p ON p.id = wi.project_id WHERE wi.id = $1', [id])).rows[0];
+    if (!current) throw new HttpError(404, 'Work item not found.');
+    const set = data.status ? (data.status === 'done' ? ', completed_at = COALESCE(completed_at, now())' : ', completed_at = NULL') : '';
+    const item = await updateRow(db, 'work_items', id, data, `${set}, updated_at = now()`);
+    const action = data.status && data.status !== current.status ? 'work_item.status_changed' : 'work_item.updated';
+    await audit(db, req, action, { entity: 'work_item', entityId: id, clientId: current.client_id, projectId: current.project_id, meta: { title: item.title, from: current.status, to: item.status } });
+    await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [current.project_id]);
+    res.json({ work_item: item });
+  }));
+
+  r.delete('/work-items/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query(
+      `DELETE FROM work_items wi USING projects p
+        WHERE wi.id = $1 AND p.id = wi.project_id
+        RETURNING wi.project_id, wi.title, p.client_id`, [id]);
+    if (!rows[0]) throw new HttpError(404, 'Work item not found.');
+    await audit(db, req, 'work_item.deleted', { entity: 'work_item', entityId: id, clientId: rows[0].client_id, projectId: rows[0].project_id, meta: { title: rows[0].title } });
+    await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [rows[0].project_id]);
+    res.json({ ok: true });
+  }));
+
+  r.get('/time-entries', h(async (req, res) => {
+    const projectId = req.query.project_id ? v.id(req.query.project_id, 'project_id') : null;
+    const from = req.query.from ? v.date(req.query.from, 'from') : null;
+    const to = req.query.to ? v.date(req.query.to, 'to') : null;
+    const { rows } = await db.query(
+      `SELECT te.*, wi.title AS work_item_title, p.name AS project_name, p.client_id, c.company_name,
+              u.name AS author_name
+         FROM time_entries te JOIN projects p ON p.id = te.project_id JOIN clients c ON c.id = p.client_id
+         LEFT JOIN work_items wi ON wi.id = te.work_item_id LEFT JOIN users u ON u.id = te.created_by
+        WHERE ($1::bigint IS NULL OR te.project_id = $1)
+          AND ($2::date IS NULL OR te.entry_date >= $2) AND ($3::date IS NULL OR te.entry_date <= $3)
+        ORDER BY te.entry_date DESC, te.id DESC LIMIT 1000`,
+      [projectId, from, to]
+    );
+    res.json({
+      time_entries: rows,
+      totals: {
+        minutes: rows.reduce((total, entry) => total + entry.duration_minutes, 0),
+        billable_minutes: rows.reduce((total, entry) => total + (entry.billable ? entry.duration_minutes : 0), 0)
+      }
+    });
+  }));
+
+  r.post('/time-entries', h(async (req, res) => {
+    const projectId = v.id(req.body?.project_id, 'project_id');
+    const data = parse(req.body, timeEntrySchema);
+    const entry = await db.tx(async (t) => {
+      const project = (await t.query('SELECT client_id FROM projects WHERE id = $1', [projectId])).rows[0];
+      if (!project) throw new HttpError(404, 'Project not found.');
+      if (data.work_item_id) {
+        const item = (await t.query('SELECT id FROM work_items WHERE id = $1 AND project_id = $2', [data.work_item_id, projectId])).rows[0];
+        if (!item) throw new HttpError(400, 'Choose a work item from this project.', { field: 'work_item_id' });
+      }
+      const created = await insertRow(t, 'time_entries', { ...data, project_id: projectId, created_by: req.auth.user.id });
+      await audit(t, req, 'time_entry.created', { entity: 'time_entry', entityId: created.id, clientId: project.client_id, projectId, meta: { duration_minutes: created.duration_minutes, billable: created.billable } });
+      return created;
+    });
+    res.status(201).json({ time_entry: entry });
+  }));
+
+  r.patch('/time-entries/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const data = parse(req.body, timeEntrySchema, { partial: true });
+    const current = (await db.query(
+      'SELECT te.project_id, p.client_id FROM time_entries te JOIN projects p ON p.id = te.project_id WHERE te.id = $1', [id])).rows[0];
+    if (!current) throw new HttpError(404, 'Time entry not found.');
+    if (Object.hasOwn(data, 'work_item_id') && data.work_item_id) {
+      const item = (await db.query('SELECT id FROM work_items WHERE id = $1 AND project_id = $2', [data.work_item_id, current.project_id])).rows[0];
+      if (!item) throw new HttpError(400, 'Choose a work item from this project.', { field: 'work_item_id' });
+    }
+    const entry = await updateRow(db, 'time_entries', id, data, ', updated_at = now()');
+    await audit(db, req, 'time_entry.updated', { entity: 'time_entry', entityId: id, clientId: current.client_id, projectId: current.project_id, meta: { duration_minutes: entry.duration_minutes, billable: entry.billable } });
+    res.json({ time_entry: entry });
+  }));
+
+  r.delete('/time-entries/:id', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const { rows } = await db.query(
+      'DELETE FROM time_entries te USING projects p WHERE te.id = $1 AND p.id = te.project_id RETURNING te.project_id, te.duration_minutes, p.client_id', [id]);
+    if (!rows[0]) throw new HttpError(404, 'Time entry not found.');
+    await audit(db, req, 'time_entry.deleted', { entity: 'time_entry', entityId: id, clientId: rows[0].client_id, projectId: rows[0].project_id, meta: { duration_minutes: rows[0].duration_minutes } });
     res.json({ ok: true });
   }));
 

@@ -3,8 +3,8 @@
 Website, admin area, client portal and quotes for the creative marketing agency **Make It So**.
 
 - **Website** (`public/`): the animated NL / FR / EN site, with six color-matched department detail pages and concept examples.
-- **Admin area** (`/admin`): clients, contacts, projects, milestones, notes, leads and an activity log, behind password + two-factor login.
-- **Client portal** (`/portal/`): invited clients can follow project progress, review quotes and invoices, download invoice PDFs, and manage support conversations.
+- **Admin area** (`/admin`): clients, contacts, projects, milestones, work-item status boards, project timesheets, notes, leads and an activity log, behind password + two-factor login. Project progress is calculated from work items when present; otherwise it can be updated manually.
+- **Client portal** (`/portal/`): invited clients can follow project progress, see explicitly shared work items, review quotes and invoices, download invoice PDFs, and manage support conversations. Time entries remain admin-only.
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
 - **Invoices**: create invoices from scratch or accepted quotes, issue them with sequential numbers, generate PDF copies, and manually record bank-transfer payments. Clients can download issued PDFs from the portal.
 - **Support**: clients can open tickets and reply in the portal; admins can triage, prioritize and respond from the admin area.

@@ -23,6 +23,7 @@ const LABEL = {
   prospect: 'Prospect', active: 'Active', inactive: 'Inactive',
   discovery: 'Discovery', wireframing: 'Wireframing', development: 'Development', review: 'Review', launched: 'Launched', on_hold: 'On hold',
   todo: 'To do', doing: 'Doing', done: 'Done',
+  in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked',
   new: 'New', contacted: 'Contacted', qualified: 'Qualified', converted: 'Converted', lost: 'Lost',
   draft: 'Draft', issued: 'Issued', paid: 'Paid', overdue: 'Overdue', void: 'Void',
   open: 'Open', in_progress: 'In progress', waiting_client: 'Waiting for client', resolved: 'Resolved', closed: 'Closed',
@@ -35,6 +36,8 @@ const options = (keys) => keys.map((k) => [k, label(k)]);
 const CLIENT_STATUS = options(['prospect', 'active', 'inactive']);
 const PROJECT_STATUS = options(['discovery', 'wireframing', 'development', 'review', 'launched', 'on_hold']);
 const LANGUAGES = options(['nl', 'fr', 'en']);
+const WORK_ITEM_STATUS = options(['todo', 'in_progress', 'in_review', 'done', 'blocked']);
+const PRIORITIES = options(['low', 'normal', 'high', 'urgent']);
 
 /* ---------------- API ---------------- */
 async function api(method, path, body) {
@@ -80,7 +83,7 @@ function fieldHtml(f, value) {
   } else if (f.type === 'checkbox') {
     return html`<label class="check full" for="${id}"><input type="checkbox" id="${id}" name="${f.name}" ${v ? 'checked' : ''}> ${f.label}</label>`;
   } else {
-    control = html`<input id="${id}" name="${f.name}" type="${f.type || 'text'}" value="${v}" ${f.required ? 'required' : ''} ${f.min !== undefined ? html`min="${f.min}"` : ''} ${f.max !== undefined && f.type === 'number' ? html`max="${f.max}"` : ''} autocomplete="off">`;
+    control = html`<input id="${id}" name="${f.name}" type="${f.type || 'text'}" value="${v}" ${f.required ? 'required' : ''} ${f.min !== undefined ? html`min="${f.min}"` : ''} ${f.max !== undefined && f.type === 'number' ? html`max="${f.max}"` : ''} ${f.step !== undefined ? html`step="${f.step}"` : ''} autocomplete="off">`;
   }
   return html`<label class="field ${f.full ? 'full' : ''}" for="${id}"><span>${f.label}${f.required ? ' *' : ''}</span>${control}${f.hint ? html`<small>${f.hint}</small>` : ''}</label>`;
 }
@@ -258,7 +261,7 @@ async function logout() {
   loginScreen();
 }
 
-const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/tickets', 'Support'], ['#/leads', 'Leads'], ['#/account', 'Account']];
+const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/work', 'Current work'], ['#/timesheets', 'Timesheets'], ['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/tickets', 'Support'], ['#/leads', 'Leads'], ['#/account', 'Account']];
 
 function shell() {
   show(app, html`<div class="shell">
@@ -289,6 +292,8 @@ const routes = [
   [/^#\/clients\/(\d+)$/, clientView],
   [/^#\/projects$/, projectsView],
   [/^#\/projects\/(\d+)$/, projectView],
+  [/^#\/work$/, workView],
+  [/^#\/timesheets$/, timesheetsView],
   [/^#\/quotes$/, quotesView],
   [/^#\/quotes\/(\d+)$/, quoteView],
   [/^#\/invoices$/, invoicesView],
@@ -357,6 +362,13 @@ const ACTIVITY = {
   'milestone.updated': () => 'updated a milestone',
   'milestone.status_changed': (m) => `set milestone ${q(m.title)} to ${label(m.to)}`,
   'milestone.deleted': (m) => `removed milestone ${q(m.title)}`,
+  'work_item.created': (m) => `added work item ${q(m.title)}`,
+  'work_item.updated': (m) => `updated work item ${q(m.title)}`,
+  'work_item.status_changed': (m) => `moved work item ${q(m.title)} to ${label(m.to)}`,
+  'work_item.deleted': (m) => `removed work item ${q(m.title)}`,
+  'time_entry.created': (m) => `logged ${duration(m.duration_minutes)} of time`,
+  'time_entry.updated': (m) => `updated a ${duration(m.duration_minutes)} time entry`,
+  'time_entry.deleted': (m) => `removed a ${duration(m.duration_minutes)} time entry`,
   'note.created': () => 'added a note',
   'note.deleted': () => 'deleted a note',
   'note.visibility_changed': (m) => `${m.visible ? 'shared' : 'made private'} a note`,
@@ -413,6 +425,105 @@ const milestoneFields = [
   { name: 'due_date', label: 'Due date', type: 'date' },
   { name: 'status', label: 'Status', type: 'select', options: options(['todo', 'doing', 'done']), default: 'todo' }
 ];
+const workItemFields = [
+  { name: 'title', label: 'Work item', required: true, full: true },
+  { name: 'description', label: 'Description', type: 'textarea', full: true, max: 2000 },
+  { name: 'status', label: 'Status', type: 'select', options: WORK_ITEM_STATUS, default: 'todo' },
+  { name: 'priority', label: 'Priority', type: 'select', options: PRIORITIES, default: 'normal' },
+  { name: 'due_date', label: 'Due date', type: 'date' },
+  { name: 'estimate_hours', label: 'Estimate (hours)', type: 'number', min: 0.25, max: 24, step: 0.25 },
+  { name: 'client_visible', label: 'Show this work item in the client portal', type: 'checkbox', full: true }
+];
+
+const localDate = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const duration = (minutes) => `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${String(minutes % 60).padStart(2, '0')}m` : ''}`;
+
+function workItemValues(item = {}) {
+  return { ...item, estimate_hours: item.estimate_minutes == null ? '' : item.estimate_minutes / 60 };
+}
+
+function saveWorkItemValues(values) {
+  const { estimate_hours, ...data } = values;
+  data.estimate_minutes = estimate_hours == null || estimate_hours === '' ? null : Math.round(estimate_hours * 60);
+  return data;
+}
+
+function newWorkItem(projectId, projects, after) {
+  const fields = projectId
+    ? workItemFields
+    : [{ name: 'project_id', label: 'Project', type: 'select', options: projects.map((p) => [p.id, `${p.name} · ${p.company_name}`]), full: true }, ...workItemFields];
+  if (!projectId && !projects.length) { toast('Create a project first', 'error'); return; }
+  openForm({
+    title: 'Add work item', fields, submit: 'Add work item',
+    values: { ...(projectId ? {} : { project_id: projects[0]?.id }), status: 'todo', priority: 'normal' },
+    onSubmit: async (values) => {
+      const targetProject = projectId || Number(values.project_id);
+      delete values.project_id;
+      await post(`/projects/${targetProject}/work-items`, saveWorkItemValues(values));
+      toast('Work item added');
+      after();
+    }
+  });
+}
+
+async function openTimeEntryForm(entry, projects, allItems, after) {
+  const entryProject = entry && (projects.find((project) => Number(project.id) === Number(entry.project_id))
+    || { id: entry.project_id, name: entry.project_name, company_name: entry.company_name || '' });
+  const formProjects = entry ? [entryProject] : projects.filter((project) => !project.archived_at);
+  if (!formProjects.length) { toast('Create a project first', 'error'); return; }
+  const formItems = entry?.work_item_id && !allItems.some((item) => Number(item.id) === Number(entry.work_item_id))
+    ? [...allItems, { id: entry.work_item_id, project_id: entry.project_id, title: entry.work_item_title }]
+    : allItems;
+  const fields = [
+    { name: 'project_id', label: 'Project', type: 'select', options: formProjects.map((p) => [p.id, `${p.name} · ${p.company_name}`]), full: true },
+    { name: 'work_item_id', label: 'Related work item', type: 'select', options: [], full: true },
+    { name: 'entry_date', label: 'Date', type: 'date', required: true },
+    { name: 'duration_hours', label: 'Time (hours)', type: 'number', min: 0.25, max: 24, step: 0.25, required: true },
+    { name: 'description', label: 'What did you work on?', type: 'textarea', required: true, full: true, max: 500 },
+    { name: 'billable', label: 'Billable time', type: 'checkbox', default: true, full: true }
+  ];
+  openForm({
+    title: entry ? 'Edit time entry' : 'Log time', fields,
+    values: {
+      project_id: entry?.project_id ?? formProjects[0].id,
+      work_item_id: entry?.work_item_id ?? '',
+      entry_date: entry?.entry_date?.slice(0, 10) ?? localDate(),
+      duration_hours: entry ? entry.duration_minutes / 60 : '',
+      description: entry?.description ?? '',
+      billable: entry?.billable ?? true
+    },
+    onSubmit: async (values) => {
+      const body = {
+        ...values,
+        project_id: Number(values.project_id),
+        work_item_id: values.work_item_id || null,
+        duration_minutes: Math.round(values.duration_hours * 60)
+      };
+      delete body.duration_hours;
+      if (entry) await patch(`/time-entries/${entry.id}`, body);
+      else await post('/time-entries', body);
+      toast(entry ? 'Time entry updated' : 'Time logged');
+      after();
+    }
+  });
+  const form = $('#modal form');
+  const projectSelect = form.elements.project_id;
+  const itemSelect = form.elements.work_item_id;
+  const syncItems = () => {
+    const selectedProject = Number(projectSelect.value);
+    const selectedItem = itemSelect.value;
+    itemSelect.replaceChildren(new Option('No work item', ''));
+    for (const item of formItems.filter((work) => Number(work.project_id) === selectedProject)) {
+      itemSelect.add(new Option(item.title, item.id));
+    }
+    itemSelect.value = [...itemSelect.options].some((option) => option.value === String(selectedItem)) ? selectedItem : '';
+  };
+  projectSelect.addEventListener('change', syncItems);
+  syncItems();
+}
 
 function newClient(after) {
   openForm({
@@ -611,10 +722,121 @@ async function projectsView(view) {
   await load();
 }
 
+async function workView(view) {
+  const [{ projects }, { work_items: initialItems }] = await Promise.all([get('/projects'), get('/work-items')]);
+  show(view, html`
+    <header class="page-head"><div><h1>Current work</h1><p class="muted">A live overview of tasks across active projects.</p></div>
+      <div class="actions"><button class="btn" data-action="new-time">Log time</button><button class="btn primary" data-action="new-item">+ Add work item</button></div></header>
+    <div class="grid kpis">
+      <div class="card kpi"><span>Open work items</span><strong id="work-open">0</strong></div>
+      <div class="card kpi"><span>In progress</span><strong id="work-active">0</strong></div>
+      <div class="card kpi"><span>Blocked</span><strong id="work-blocked">0</strong></div>
+      <div class="card kpi"><span>Completed</span><strong id="work-done">0</strong></div>
+    </div>
+    <div class="work-board" id="work-board"></div>`);
+  const reload = () => workView(view);
+  const render = (items) => {
+    $('#work-open').textContent = items.filter((item) => item.status !== 'done').length;
+    $('#work-active').textContent = items.filter((item) => item.status === 'in_progress').length;
+    $('#work-blocked').textContent = items.filter((item) => item.status === 'blocked').length;
+    $('#work-done').textContent = items.filter((item) => item.status === 'done').length;
+    show($('#work-board'), html`${WORK_ITEM_STATUS.map(([statusKey, title]) => {
+      const statusItems = items.filter((item) => item.status === statusKey);
+      return html`<section class="work-column"><header><h2>${title}</h2><span class="chip">${statusItems.length}</span></header>
+        ${statusItems.length ? statusItems.map((item) => html`<article class="work-card">
+          <div class="work-card-head"><strong>${item.title}</strong>${chip(item.priority)}</div>
+          <a class="sub" href="#/projects/${item.project_id}">${item.project_name} · ${item.company_name}</a>
+          ${item.due_date ? html`<span class="sub">Due ${date(item.due_date)}</span>` : ''}
+          ${item.client_visible ? html`<span class="work-visible">Visible to client</span>` : ''}
+          <div class="row-actions"><button class="btn small" data-action="edit" data-id="${item.id}">Edit</button>
+            ${statusKey !== 'done' ? html`<button class="btn small" data-action="advance" data-id="${item.id}" data-status="${statusKey}">${statusKey === 'blocked' ? 'Unblock' : 'Move forward'}</button>` : ''}</div>
+        </article>`) : html`<p class="work-empty">No items</p>`}
+      </section>`;
+    })}`);
+  };
+  render(initialItems);
+  actions(view, {
+    'new-item': () => newWorkItem(null, projects, reload),
+    'new-time': async () => {
+      const [{ projects: currentProjects }, { work_items: items }] = await Promise.all([get('/projects'), get('/work-items')]);
+      await openTimeEntryForm(null, currentProjects, items, reload);
+    },
+    edit: (_, id) => {
+      const item = initialItems.find((entry) => Number(entry.id) === id);
+      if (!item) return;
+      openForm({ title: 'Edit work item', fields: workItemFields, values: workItemValues(item), onSubmit: async (values) => { await patch(`/work-items/${id}`, saveWorkItemValues(values)); toast('Work item updated'); reload(); } });
+    },
+    advance: async (el, id) => {
+      const next = { todo: 'in_progress', in_progress: 'in_review', in_review: 'done', blocked: 'todo' }[el.dataset.status];
+      await patch(`/work-items/${id}`, { status: next });
+      reload();
+    }
+  });
+}
+
+async function timesheetsView(view) {
+  const [{ projects }, { work_items: allItems }] = await Promise.all([get('/projects?archived=true'), get('/work-items')]);
+  const now = new Date();
+  const monthDefault = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  show(view, html`
+    <header class="page-head"><div><h1>Timesheets</h1><p class="muted">Review and manage time logged across projects.</p></div>
+      <div class="actions"><button class="btn" data-action="export">Export CSV</button><button class="btn primary" data-action="new">+ Log time</button></div></header>
+    <div class="toolbar"><label class="field"><span>Month</span><input id="timesheet-month" type="month" value="${monthDefault}"></label>
+      <label class="field"><span>Project</span><select id="timesheet-project"><option value="">All projects</option>${projects.map((p) => html`<option value="${p.id}">${p.name} · ${p.company_name}</option>`)}</select></label></div>
+    <div class="grid kpis">
+      <div class="card kpi"><span>Total time</span><strong id="timesheet-total">0h</strong></div>
+      <div class="card kpi"><span>Billable</span><strong id="timesheet-billable">0h</strong></div>
+      <div class="card kpi"><span>Entries</span><strong id="timesheet-count">0</strong></div>
+    </div>
+    <div class="table-wrap" id="timesheet-table"></div>`);
+  let entries = [];
+  const load = async () => {
+    const month = $('#timesheet-month').value;
+    const params = new URLSearchParams();
+    if (month) {
+      const [year, monthNumber] = month.split('-').map(Number);
+      params.set('from', `${month}-01`);
+      params.set('to', `${year}-${String(monthNumber).padStart(2, '0')}-${String(new Date(year, monthNumber, 0).getDate()).padStart(2, '0')}`);
+    }
+    if ($('#timesheet-project').value) params.set('project_id', $('#timesheet-project').value);
+    const result = await get(`/time-entries?${params}`);
+    entries = result.time_entries;
+    $('#timesheet-total').textContent = duration(result.totals.minutes);
+    $('#timesheet-billable').textContent = duration(result.totals.billable_minutes);
+    $('#timesheet-count').textContent = entries.length;
+    show($('#timesheet-table'), entries.length ? html`<table><thead><tr><th>Date</th><th>Project / task</th><th>Description</th><th>Time</th><th>Billable</th><th>Actions</th></tr></thead><tbody>
+      ${entries.map((entry) => html`<tr><td>${date(entry.entry_date)}</td><td><a href="#/projects/${entry.project_id}">${entry.project_name}</a>${entry.work_item_title ? html`<span class="sub">${entry.work_item_title}</span>` : ''}</td><td>${entry.description}<span class="sub">${entry.author_name || 'Former team member'}</span></td><td>${duration(entry.duration_minutes)}</td><td>${entry.billable ? 'Yes' : 'No'}</td><td class="row-actions"><button class="btn small" data-action="edit" data-id="${entry.id}">Edit</button><button class="btn small danger" data-action="delete" data-id="${entry.id}">Delete</button></td></tr>`)}</tbody></table>` : html`<div class="empty">No time entries for this period.</div>`);
+  };
+  $('#timesheet-month').onchange = load;
+  $('#timesheet-project').onchange = load;
+  actions(view, {
+    new: async () => await openTimeEntryForm(null, projects, allItems, load),
+    edit: async (_, id) => {
+      const entry = entries.find((item) => Number(item.id) === id);
+      if (entry) await openTimeEntryForm(entry, projects, allItems, load);
+    },
+    delete: async (_, id) => {
+      if (confirm('Delete this time entry?')) { await del(`/time-entries/${id}`); toast('Time entry deleted'); load(); }
+    },
+    export: () => {
+      const quote = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+      const rows = [['Date', 'Project', 'Work item', 'Description', 'Minutes', 'Billable'], ...entries.map((entry) => [String(entry.entry_date).slice(0, 10), entry.project_name, entry.work_item_title, entry.description, entry.duration_minutes, entry.billable ? 'Yes' : 'No'])];
+      const blob = new Blob([rows.map((row) => row.map(quote).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `make-it-so-timesheet-${$('#timesheet-month').value || 'all'}.csv`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    }
+  });
+  await load();
+}
+
 async function projectView(view, id) {
   const d = await get(`/projects/${id}`);
   const p = d.project;
   const done = d.milestones.filter((m) => m.status === 'done').length;
+  const workDone = d.work_items.filter((item) => item.status === 'done').length;
   show(view, html`
     <a class="back" href="#/clients/${p.client_id}">← ${p.company_name}</a>
     <header class="page-head"><div><h1>${p.name}</h1><p>${chip(p.status)} ${p.archived_at ? html`<span class="chip">Archived</span>` : ''} <span class="muted">${p.category || 'Project'}${p.target_date ? ` · target ${date(p.target_date)}` : ''}</span></p></div>
@@ -624,13 +846,20 @@ async function projectView(view, id) {
       <div class="stack">
         <section class="card"><header><h2>Status</h2></header>
           <div class="prog" style="margin-bottom:14px"><progress max="100" value="${p.progress}"></progress><strong>${p.progress}%</strong></div>
+          ${d.work_items.length ? html`<p class="muted work-progress-note">Progress is calculated from work items (${workDone}/${d.work_items.length} complete).</p>` : ''}
           <div class="form-grid">
             <label class="field"><span>Stage</span><select id="quick-status">${PROJECT_STATUS.map(([k, t]) => html`<option value="${k}" ${k === p.status ? 'selected' : ''}>${t}</option>`)}</select></label>
-            <label class="field"><span>Progress (%)</span><input id="quick-progress" type="number" min="0" max="100" value="${p.progress}"></label>
+            ${d.work_items.length ? '' : html`<label class="field"><span>Progress (%)</span><input id="quick-progress" type="number" min="0" max="100" value="${p.progress}"></label>`}
             <label class="field full"><span>Next step</span><input id="quick-next" value="${p.next_step}" maxlength="240"></label>
           </div>
           <p style="margin-top:12px"><button class="btn small primary" data-action="quick-save">Save changes</button></p>
           ${p.description ? html`<p class="muted" style="margin-top:14px;white-space:pre-wrap">${p.description}</p>` : ''}
+        </section>
+        <section class="card"><header><h2>Work items <span class="muted">${workDone}/${d.work_items.length}</span></h2><button class="btn small" data-action="add-work-item">+ Add</button></header>
+          ${d.work_items.length ? html`<ul class="list">${d.work_items.map((item) => html`<li class="work-row"><span class="grow"><strong>${item.title}</strong><span class="sub">${chip(item.status)} ${chip(item.priority)}${item.due_date ? ` · Due ${date(item.due_date)}` : ''}${item.estimate_minutes ? ` · Estimate ${duration(item.estimate_minutes)}` : ''}${item.client_visible ? ' · Visible to client' : ''}</span></span><span class="row-actions"><button class="btn small" data-action="edit-work-item" data-id="${item.id}">Edit</button>${item.status !== 'done' ? html`<button class="btn small" data-action="advance-work-item" data-id="${item.id}" data-status="${item.status}">Next status</button>` : ''}<button class="btn small danger" data-action="delete-work-item" data-id="${item.id}">✕</button></span></li>`)}</ul>` : html`<p class="muted">Add work items to track tasks, priorities and progress. Work-item progress updates automatically.</p>`}
+        </section>
+        <section class="card"><header><h2>Time entries <span class="muted">${duration(Number(p.logged_minutes) || 0)} logged</span></h2><button class="btn small" data-action="add-time-entry">+ Log time</button></header>
+          ${d.time_entries.length ? html`<ul class="list">${d.time_entries.map((entry) => html`<li><span class="grow"><strong>${entry.description}</strong><span class="sub">${date(entry.entry_date)} · ${duration(entry.duration_minutes)} · ${entry.billable ? 'Billable' : 'Non-billable'}${entry.work_item_title ? ` · ${entry.work_item_title}` : ''}</span></span><span class="row-actions"><button class="btn small" data-action="edit-time-entry" data-id="${entry.id}">Edit</button><button class="btn small danger" data-action="delete-time-entry" data-id="${entry.id}">✕</button></span></li>`)}</ul>` : html`<p class="muted">No time logged for this project yet.</p>`}
         </section>
         <section class="card"><header><h2>Milestones <span class="muted">${done}/${d.milestones.length}</span></h2><button class="btn small" data-action="add-milestone">+ Add</button></header>
           ${d.milestones.length ? html`<ul class="list">${d.milestones.map((m) => html`<li class="milestone ${m.status}"><button class="state" data-action="cycle-milestone" data-id="${m.id}" data-status="${m.status}" aria-label="Status: ${label(m.status)}. Click to change">${m.status === 'done' ? '✓' : m.status === 'doing' ? '•' : ''}</button><span class="grow"><span class="title">${m.title}</span><span class="sub">${m.due_date ? `Due ${date(m.due_date)}` : 'No due date'} · ${label(m.status)}</span></span><span class="row-actions"><button class="btn small" data-action="edit-milestone" data-id="${m.id}">Edit</button><button class="btn small danger" data-action="delete-milestone" data-id="${m.id}">✕</button></span></li>`)}</ul>` : html`<p class="muted">No milestones yet. Break the project into steps your client can follow.</p>`}
@@ -654,12 +883,31 @@ async function projectView(view, id) {
   };
   actions(view, {
     'quick-save': async () => {
-      await patch(`/projects/${id}`, { status: $('#quick-status').value, progress: Number($('#quick-progress').value), next_step: $('#quick-next').value });
+      const update = { status: $('#quick-status').value, next_step: $('#quick-next').value };
+      if (!d.work_items.length) update.progress = Number($('#quick-progress').value);
+      await patch(`/projects/${id}`, update);
       toast('Project updated'); reload();
     },
     edit: () => openForm({ title: 'Edit project', fields: projectFields(null), values: p, onSubmit: async (v) => { await patch(`/projects/${id}`, v); toast('Saved'); reload(); } }),
     archive: async () => { if (confirm('Archive this project?')) { await post(`/projects/${id}/archive`); reload(); } },
     restore: async () => { await post(`/projects/${id}/restore`); reload(); },
+    'add-work-item': () => newWorkItem(id, null, reload),
+    'edit-work-item': (_, wid) => {
+      const item = d.work_items.find((work) => Number(work.id) === wid);
+      if (item) openForm({ title: 'Edit work item', fields: workItemFields, values: workItemValues(item), onSubmit: async (values) => { await patch(`/work-items/${wid}`, saveWorkItemValues(values)); toast('Work item updated'); reload(); } });
+    },
+    'advance-work-item': async (el, wid) => {
+      const next = { todo: 'in_progress', in_progress: 'in_review', in_review: 'done', blocked: 'todo' }[el.dataset.status];
+      await patch(`/work-items/${wid}`, { status: next });
+      reload();
+    },
+    'delete-work-item': async (_, wid) => { if (confirm('Delete this work item?')) { await del(`/work-items/${wid}`); reload(); } },
+    'add-time-entry': async () => await openTimeEntryForm(null, [p], d.work_items, reload),
+    'edit-time-entry': async (_, entryId) => {
+      const entry = d.time_entries.find((timeEntry) => Number(timeEntry.id) === entryId);
+      if (entry) await openTimeEntryForm(entry, [p], d.work_items, reload);
+    },
+    'delete-time-entry': async (_, entryId) => { if (confirm('Delete this time entry?')) { await del(`/time-entries/${entryId}`); reload(); } },
     'add-milestone': () => openForm({ title: 'Add milestone', fields: milestoneFields, submit: 'Add', onSubmit: async (v) => { await post(`/projects/${id}/milestones`, v); reload(); } }),
     'edit-milestone': (_, mid) => openForm({ title: 'Edit milestone', fields: milestoneFields, values: d.milestones.find((m) => m.id === mid), onSubmit: async (v) => { await patch(`/milestones/${mid}`, v); reload(); } }),
     'cycle-milestone': async (el, mid) => { await patch(`/milestones/${mid}`, { status: NEXT[el.dataset.status] }); reload(); },

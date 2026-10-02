@@ -115,6 +115,8 @@ td .sub { display: block; color: var(--muted); font-size: 13px; }
 .s-issued, .s-in_progress, .s-waiting_client, .s-high { background: #fff0c2; color: #8a6100; }
 .s-overdue, .s-urgent, .s-void, .s-closed { background: #ffe1e8; color: #9e1f42; }
 .s-inactive, .s-on_hold, .s-todo, .s-lost { background: #ececf5; color: #555b7a; }
+.s-in_review, .s-normal { background: #e6e0ff; color: #4a3db8; }
+.s-blocked { background: #ffe1e8; color: #9e1f42; }
 progress { width: 100%; height: 8px; border: 0; border-radius: 99px; overflow: hidden; background: var(--line); accent-color: var(--orange); }
 progress::-webkit-progress-bar { background: var(--line); }
 progress::-webkit-progress-value { background: linear-gradient(90deg, var(--orange), var(--lav)); border-radius: 99px; }
@@ -144,6 +146,22 @@ progress::-moz-progress-bar { background: var(--orange); border-radius: 99px; }
 .lead { display: grid; gap: 10px; }
 .lead .msg { white-space: pre-wrap; background: var(--bg); border-radius: 12px; padding: 12px 14px; }
 .lead-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: baseline; }
+.work-board { display: grid; grid-template-columns: repeat(5, minmax(190px, 1fr)); gap: 12px; overflow-x: auto; align-items: start; padding-bottom: 8px; }
+.work-column { min-width: 190px; padding: 12px; border-radius: 16px; background: #e9ecf8; }
+.work-column > header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 10px; }
+.work-column h2 { font-size: 15px; }
+.work-card { display: grid; gap: 8px; padding: 12px; margin-top: 8px; border-radius: 12px; background: #fff; box-shadow: 0 1px 0 var(--line); }
+.work-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.work-card .sub { color: var(--muted); font-size: 12px; text-decoration: none; }
+.work-card a.sub:hover { color: var(--blue); }
+.work-card .row-actions { flex-wrap: wrap; }
+.work-visible { width: fit-content; padding: 2px 7px; border-radius: 99px; background: #cffbe9; color: #0b7a55; font-size: 11px; }
+.work-empty { padding: 10px 0; color: var(--muted); font-size: 13px; }
+.work-row { align-items: flex-start !important; }
+.work-progress-note { margin: -4px 0 12px; font-size: 13px; }
+#timesheet-table td { min-width: 100px; }
+#timesheet-table td:nth-child(3) { min-width: 210px; }
+#timesheet-table td:last-child { min-width: 150px; }
 
 /* modal + toast */
 dialog { border: 0; border-radius: 24px; padding: 0; width: min(560px, calc(100% - 24px)); box-shadow: 0 40px 90px -20px rgba(3, 12, 90, .55); }
@@ -167,6 +185,7 @@ dialog::backdrop { background: rgba(5, 8, 23, .6); }
   .shell { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px; gap: 4px; }
   .sidebar .brand { padding: 0 10px 0 4px; }
+  .sidebar nav { display: flex; flex-wrap: wrap; }
   .side-foot { margin: 0 0 0 auto; border: 0; padding: 0; display: flex; align-items: center; }
   .side-foot .muted { display: none; }
   .nav-link { padding: 8px 12px; }
@@ -175,5 +194,7 @@ dialog::backdrop { background: rgba(5, 8, 23, .6); }
   .details dd { margin-bottom: 10px; }
   .quote-line { grid-template-columns: 1fr 1fr; }
   .quote-line .field:first-child { grid-column: 1 / -1; }
+  .work-board { grid-template-columns: repeat(5, minmax(210px, 1fr)); }
+  .toolbar > .field { min-width: 180px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

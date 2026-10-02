@@ -23,6 +23,8 @@ describe('client portal and quotes', () => {
     })).json.client;
     const project = (await admin.post('/api/projects', { client_id: client1.id, name: 'New website', progress: 45, next_step: 'Review prototype' })).json.project;
     await admin.post(`/api/projects/${project.id}/milestones`, { title: 'Prototype', status: 'doing' });
+    const sharedWork = (await admin.post(`/api/projects/${project.id}/work-items`, { title: 'Build the prototype', status: 'in_progress', client_visible: true })).json.work_item;
+    await admin.post(`/api/projects/${project.id}/work-items`, { title: 'Private budget review', status: 'done', client_visible: false });
     const privateNote = (await admin.post('/api/notes', { client_id: client1.id, body: 'Internal budget note.' })).json.note;
     await admin.post('/api/notes', { project_id: project.id, body: 'The prototype is ready to review.', client_visible: true });
 
@@ -48,7 +50,10 @@ describe('client portal and quotes', () => {
     const overview1 = (await portal1.get('/api/portal/overview')).json;
     assert.equal(overview1.client.company_name, 'Northstar Studio');
     assert.equal(overview1.projects.length, 1);
-    assert.equal(overview1.projects[0].progress, 45);
+    assert.equal(overview1.projects[0].progress, 0);
+    assert.equal(overview1.work_items.length, 1);
+    assert.equal(overview1.work_items[0].title, 'Build the prototype');
+    assert.equal(overview1.work_items[0].project_id, project.id);
     assert.equal(overview1.milestones.length, 1);
     assert.equal(overview1.notes.length, 1);
     assert.equal(overview1.notes[0].body, 'The prototype is ready to review.');
@@ -63,6 +68,15 @@ describe('client portal and quotes', () => {
     const portal2 = new Client(ctx.base);
     assert.equal((await portal2.post('/api/portal/invitations/accept', { token: token2, password: 'another-client-password' })).status, 201);
     assert.equal((await portal2.get('/api/portal/overview')).json.projects.length, 0);
+    assert.equal((await portal2.get('/api/portal/overview')).json.work_items.length, 0);
+
+    await admin.patch(`/api/work-items/${sharedWork.id}`, { status: 'done' });
+    const completeOverview = (await portal1.get('/api/portal/overview')).json;
+    assert.equal(completeOverview.projects[0].progress, 100);
+    await admin.patch(`/api/work-items/${sharedWork.id}`, { client_visible: false });
+    const privateOverview = (await portal1.get('/api/portal/overview')).json;
+    assert.equal(privateOverview.work_items.length, 0);
+    assert.equal(privateOverview.projects[0].progress, 45);
 
     const account = (await admin.get(`/api/clients/${client1.id}`)).json.accounts[0];
     assert.equal(account.email, 'alex@northstar.example');
