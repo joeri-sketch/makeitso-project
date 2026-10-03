@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1700" class="mascot" data-mood="smug" viewBox="0 0 700 850" role="img" aria-label="The Make It So robot assistant: a sleek robot whose screen face shows expressions, wearing an indigo jacket and holding a cup of tea">
+                <defs><style>.mood{opacity:0}.m-smug{opacity:1}</style>
+                                <pattern id="scan" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="2" fill="#4de4ff" opacity=".1"/></pattern>
+                                <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                              <g stroke-linejoin="round" stroke-linecap="round" transform="translate(700 0) scale(-1 1)">
+                                <!-- torso -->
+                                <path d="M100 830C100 630 210 520 350 500 490 520 600 630 600 830Z" fill="#3a30d6" stroke="#150c2e" stroke-width="7"/>
+                                <path d="M350 500C490 520 600 630 600 830L482 830C494 700 452 580 350 500Z" fill="#1c1780" opacity=".75"/>
+                                <path d="M140 800C140 660 206 570 300 522 232 586 192 674 192 800Z" fill="#8a7dff" opacity=".5"/>
+                                <!-- neck -->
+                                <rect x="316" y="392" width="78" height="120" rx="24" fill="#2a3160" stroke="#150c2e" stroke-width="6"/>
+                                <path d="M320 424H390M320 450H390M320 476H390" stroke="#0f1436" stroke-width="5"/>
+                                <!-- gold collar ring -->
+                                <ellipse cx="355" cy="516" rx="90" ry="24" fill="#ffb800" stroke="#150c2e" stroke-width="6"/>
+                                <path d="M288 512Q320 532 352 534" fill="none" stroke="#fff" stroke-width="5" opacity=".55"/>
+                                <!-- chest bars + sparkle badge -->
+                                <rect x="160" y="650" width="130" height="18" rx="9" fill="#ff6a1f" stroke="#150c2e" stroke-width="4"/>
+                                <rect x="160" y="680" width="92" height="18" rx="9" fill="#b9a4ff" stroke="#150c2e" stroke-width="4"/>
+                                <rect x="160" y="710" width="112" height="18" rx="9" fill="#4de4ff" stroke="#150c2e" stroke-width="4"/>
+                                <path d="M486 626l9 22 22 9-22 9-9 22-9-22-22-9 22-9z" fill="#ffb800" stroke="#150c2e" stroke-width="4"/>
+
+                                <!-- teacup arm -->
+                                <path d="M520 706C596 706 632 646 632 570" fill="none" stroke="#150c2e" stroke-width="90"/>
+                                <path d="M520 706C596 706 632 646 632 570" fill="none" stroke="#3a30d6" stroke-width="78"/>
+                                <path d="M596 584L668 584" stroke="#150c2e" stroke-width="24"/><path d="M596 584L668 584" stroke="#ffb800" stroke-width="14"/>
+                                <ellipse cx="632" cy="520" rx="54" ry="10" fill="#e9eaff" stroke="#150c2e" stroke-width="4"/>
+                                <path d="M596 444h72v30a36 36 0 0 1-72 0z" fill="#fff" stroke="#150c2e" stroke-width="5"/>
+                                <path d="M604 450h18v44a34 34 0 0 1-18-14z" fill="#c9cdf5" opacity=".7"/>
+                                <path d="M596 460h72" stroke="#ff6a1f" stroke-width="8"/>
+                                <path d="M668 454h8a15 15 0 0 1 0 30h-10" fill="none" stroke="#150c2e" stroke-width="12"/><path d="M668 454h8a15 15 0 0 1 0 30h-10" fill="none" stroke="#fff" stroke-width="5"/>
+                                <path class="steam s1" d="M618 428q-12-16 0-32t0-32" fill="none" stroke="#fff" stroke-width="5"/>
+                                <path class="steam s2" d="M646 428q-12-16 0-32t0-32" fill="none" stroke="#fff" stroke-width="5"/>
+                                <!-- robot hand -->
+                                <path d="M600 548C596 516 668 516 664 548 664 580 604 582 600 548Z" fill="#e6ebfa" stroke="#150c2e" stroke-width="5"/>
+                                <rect x="590" y="508" width="24" height="44" rx="12" fill="#f4f7ff" stroke="#150c2e" stroke-width="4"/>
+                                <rect x="612" y="502" width="24" height="46" rx="12" fill="#f4f7ff" stroke="#150c2e" stroke-width="4"/>
+                                <rect x="634" y="508" width="24" height="42" rx="12" fill="#dfe6f8" stroke="#150c2e" stroke-width="4"/>
+
+                                <!-- antenna with sparkle -->
+                                <path d="M355 154V110" stroke="#150c2e" stroke-width="16"/><path d="M355 154V110" stroke="#c9d2ee" stroke-width="7"/>
+                                <path class="spark" d="M355 52l8 22 22 8-22 8-8 22-8-22-22-8 22-8z" fill="#ffb800" stroke="#150c2e" stroke-width="5"/>
+                                <!-- ear pieces -->
+                                <circle cx="196" cy="278" r="30" fill="#ff6a1f" stroke="#150c2e" stroke-width="6"/><circle cx="196" cy="278" r="12" fill="#b8410b" stroke="#150c2e" stroke-width="3"/>
+                                <circle cx="514" cy="278" r="30" fill="#ff6a1f" stroke="#150c2e" stroke-width="6"/><circle cx="514" cy="278" r="12" fill="#b8410b" stroke="#150c2e" stroke-width="3"/>
+                                <!-- head shell -->
+                                <rect x="204" y="150" width="302" height="252" rx="98" fill="#e6ebfa" stroke="#150c2e" stroke-width="7"/>
+                                <path d="M424 152C482 162 506 202 506 252V304C506 362 470 400 410 402 452 372 464 322 464 252 464 202 450 172 424 152Z" fill="#9ea9d3" opacity=".75"/>
+                                <path d="M232 226C234 188 258 168 292 160 264 186 254 216 252 254Z" fill="#fff" opacity=".85"/>
+                                <path d="M226 184Q355 138 484 184" fill="none" stroke="#b6c1e6" stroke-width="4"/>
+
+                                <!-- screen -->
+                                <rect x="234" y="184" width="242" height="184" rx="62" fill="#0a0f2a" stroke="#150c2e" stroke-width="6"/>
+                                <rect x="234" y="184" width="242" height="184" rx="62" fill="url(#scan)"/>
+
+                                <!-- moods: only one is visible at a time -->
+                                <g class="mood m-smug" filter="url(#glow)" fill="none" stroke="#4de4ff" stroke-width="9">
+                                  <rect class="eye" x="278" y="236" width="40" height="54" rx="20" fill="#4de4ff" stroke="none"/>
+                                  <rect class="eye" x="392" y="236" width="40" height="54" rx="20" fill="#4de4ff" stroke="none"/>
+                                  <path d="M270 224Q296 214 322 222"/><path d="M384 212Q410 192 440 210"/><path d="M312 330Q356 352 402 320"/>
+                                </g>
+                                <g class="mood m-hmm" filter="url(#glow)" fill="none" stroke="#4de4ff" stroke-width="9">
+                                  <rect class="eye" x="278" y="246" width="40" height="54" rx="20" fill="#4de4ff" stroke="none"/>
+                                  <rect class="eye" x="392" y="246" width="40" height="54" rx="20" fill="#4de4ff" stroke="none"/>
+                                  <path d="M270 232Q296 222 322 230"/><path d="M384 216Q410 194 440 214"/><path d="M322 334H392"/>
+                                </g>
+                                <g class="mood m-think" filter="url(#glow)" fill="#4de4ff">
+                                  <circle class="dot d1" cx="300" cy="276" r="15"/><circle class="dot d2" cx="355" cy="276" r="15"/><circle class="dot d3" cx="410" cy="276" r="15"/>
+                                </g>
+                                <g class="mood m-engage" filter="url(#glow)" fill="none" stroke="#4de4ff" stroke-width="11">
+                                  <path d="M278 278Q297 236 316 278"/><path d="M394 278Q413 236 432 278"/>
+                                  <path d="M318 314Q356 360 394 314Z" fill="#4de4ff" stroke-width="8"/>
+                                </g>
+                                <circle cx="290" cy="248" r="6" fill="#fff" opacity=".85"/><circle cx="404" cy="248" r="6" fill="#fff" opacity=".85"/>
+                                <ellipse cx="262" cy="306" rx="16" ry="9" fill="#ff5fa8" opacity=".5"/><ellipse cx="448" cy="306" rx="16" ry="9" fill="#ff5fa8" opacity=".5"/>
+                                <path d="M262 206C300 192 340 190 372 194L330 300 252 300Z" fill="#fff" opacity=".1"/>
+                              </g>
+              </svg>

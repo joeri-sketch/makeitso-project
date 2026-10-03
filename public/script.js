@@ -13,6 +13,11 @@
       url.searchParams.set('lang', i18n.lang || 'en');
       link.href = `${url.pathname}${url.search}`;
     });
+    $$('[data-studio-path]').forEach((link) => {
+      const url = new URL(link.dataset.studioPath, location.origin);
+      url.searchParams.set('lang', i18n.lang || 'en');
+      link.href = `${url.pathname}${url.search}`;
+    });
   };
   updateServiceLinks();
   i18n.onChange(updateServiceLinks);

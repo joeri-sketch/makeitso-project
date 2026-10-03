@@ -41,6 +41,9 @@
     ['Missions', 'Missies', 'Missions'],
     ['Mission log', 'Missielogboek', 'Journal de mission'],
     ['Process', 'Aanpak', 'Méthode'],
+    ['About', 'Over ons', 'À propos'],
+    ['Approach', 'Aanpak', 'Approche'],
+    ['FAQ', 'Veelgestelde vragen', 'FAQ'],
     ['Hail us', 'Contact', 'Contact'],
     ['Engage', 'Vooruit', 'Engagez'],
 

@@ -66,6 +66,26 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('serves localized crew, approach and FAQ pages linked from the site navigation', async () => {
+    const c = new Client(ctx.base);
+    const home = await c.get('/');
+    for (const [slug, heading] of [['about', 'data-studio-page="about"'], ['approach', 'data-studio-page="approach"'], ['faq', 'data-studio-page="faq"']]) {
+      assert.match(home.text, new RegExp(`href="/${slug}/"`), `${slug} is linked from the homepage`);
+      const page = await c.get(`/${slug}/`);
+      assert.equal(page.status, 200, slug);
+      assert.match(page.text, new RegExp(heading), slug);
+      assert.match(page.text, /aria-label="Main navigation"/, `${slug} has the main navigation`);
+      assert.match(page.text, /aria-label="Footer navigation"/, `${slug} has the footer navigation`);
+      assert.match(page.text, new RegExp(`href="/${slug}/"`), `${slug} appears in the page navigation`);
+      assert.match(page.text, /class="lang lang-footer"/, `${slug} has language controls`);
+    }
+    const studio = await c.get('/studio-pages.js');
+    assert.equal(studio.status, 200);
+    for (const phrase of ['Small teams.', 'Klein team.', 'Petite équipe.', 'Discover', 'Verkennen', 'Explorer', 'How much does a project cost?', 'Wat kost een project?', 'Quel est le prix d’un projet ?']) {
+      assert.ok(studio.text.includes(phrase), `localized studio content includes “${phrase}”`);
+    }
+  });
+
   it('serves the client portal without exposing it to search engines', async () => {
     const c = new Client(ctx.base);
     const page = await c.get('/portal/');

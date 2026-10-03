@@ -4,26 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b3bff">
-  <title>Web &amp; landing pages — Make It So</title>
-  <meta name="description" content="Web design, development and conversion-focused landing pages by Make It So.">
+  <title>Frequently asked questions — Make It So</title>
+  <meta name="description" content="Answers about working with Make It So: project fit, budgets, timelines, collaboration, ownership, launch and ongoing support.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="service-route">
-  <a class="skip" href="#service-content">Skip to content</a>
-  <div class="cosmos" aria-hidden="true">
-    <i class="nebula n1"></i><i class="nebula n2"></i><i class="nebula n3"></i>
-  </div>
+<body class="service-route studio-route">
+  <a class="skip" href="#studio-content">Skip to content</a>
+  <div class="cosmos" aria-hidden="true"><i class="nebula n1"></i><i class="nebula n2"></i><i class="nebula n3"></i></div>
   <header class="service-header">
     <a class="brand" href="/#top" aria-label="Make It So home">
-      <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="#fff"/><path d="M16 5l2.6 7.4L26 15l-7.4 2.6L16 25l-2.6-7.4L6 15l7.4-2.6z" fill="#ff6a1f"/></svg>
-      <span>make it so<em>.</em></span>
+      <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="#fff"/><path d="M16 5l2.6 7.4L26 15l-7.4 2.6L16 25l-2.6-7.4L6 15l7.4-2.6z" fill="#ff6a1f"/></svg><span>make it so<em>.</em></span>
     </a>
     <nav class="service-nav" aria-label="Main navigation">
       <div class="service-links" id="service-nav-links">
-        <a href="/#departments">Departments</a><a href="/#missions">Mission log</a><a href="/about/">About</a><a href="/approach/">Approach</a><a href="/faq/">FAQ</a><a href="/#contact">Hail us</a>
+        <a href="/#departments">Departments</a><a href="/#missions">Mission log</a><a href="/about/">About</a><a href="/approach/">Approach</a><a href="/faq/" aria-current="page">FAQ</a><a href="/#contact">Hail us</a>
       </div>
       <a class="btn btn-white btn-sm nav-cta" href="/#contact">Engage</a>
       <div class="lang" role="group" aria-label="Language">
@@ -31,23 +28,18 @@
         <button type="button" data-lang="nl" lang="nl" aria-label="Nederlands" aria-pressed="false">NL</button>
         <button type="button" data-lang="fr" lang="fr" aria-label="Français" aria-pressed="false">FR</button>
       </div>
-      <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="service-nav-links">
-        <span></span><span></span>
-      </button>
+      <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="service-nav-links"><span></span><span></span></button>
     </nav>
   </header>
-  <main id="service-content" class="service-page" data-service="web-landing-pages" tabindex="-1"></main>
+  <main id="studio-content" class="studio-page" data-studio-page="faq" tabindex="-1"></main>
   <footer class="footer service-footer">
     <div class="wrap">
       <div class="foot-top">
         <a class="brand" href="/#top" aria-label="Make It So, back to top"><svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="#fff"/><path d="M16 5l2.6 7.4L26 15l-7.4 2.6L16 25l-2.6-7.4L6 15l7.4-2.6z" fill="#ff6a1f"/></svg><span>make it so<em>.</em></span></a>
         <nav aria-label="Footer navigation"><a href="/#departments">Departments</a><a href="/#missions">Mission log</a><a href="/about/">About</a><a href="/approach/">Approach</a><a href="/faq/">FAQ</a><a href="/#contact">Hail us</a></nav>
-        <a class="btn btn-white btn-sm" href="/portal/">Client login</a>
-        <a class="btn btn-orange btn-sm" href="/admin">Admin login</a>
+        <a class="btn btn-white btn-sm" href="/portal/">Client login</a><a class="btn btn-orange btn-sm" href="/admin">Admin login</a>
         <div class="lang lang-footer" role="group" aria-label="Language">
-          <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="true">EN</button>
-          <button type="button" data-lang="nl" lang="nl" aria-label="Nederlands" aria-pressed="false">NL</button>
-          <button type="button" data-lang="fr" lang="fr" aria-label="Français" aria-pressed="false">FR</button>
+          <button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="true">EN</button><button type="button" data-lang="nl" lang="nl" aria-label="Nederlands" aria-pressed="false">NL</button><button type="button" data-lang="fr" lang="fr" aria-label="Français" aria-pressed="false">FR</button>
         </div>
       </div>
       <p class="giant" aria-hidden="true">make it so.</p>
@@ -55,8 +47,7 @@
     </div>
   </footer>
   <script src="/i18n.js"></script>
-  <script src="/services/service-data.js"></script>
-  <script src="/services/service-page.js"></script>
   <script src="/services/service-navigation.js"></script>
+  <script src="/studio-pages.js"></script>
 </body>
 </html>
