@@ -111,6 +111,58 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('provides SEO discovery files and canonical public page URLs', async () => {
+    const c = new Client(ctx.base);
+    const robots = await c.get('/robots.txt');
+    assert.equal(robots.status, 200);
+    assert.match(robots.text, /Sitemap: https:\/\/makeitso\.studio\/sitemap\.xml/);
+    assert.match(robots.text, /Disallow: \/api\//);
+
+    const sitemap = await c.get('/sitemap.xml');
+    assert.equal(sitemap.status, 200);
+    assert.match(sitemap.text, /https:\/\/makeitso\.studio\/services\/web-landing-pages\//);
+    assert.doesNotMatch(sitemap.text, /missions\/|\/portal\/|\/admin/);
+
+    for (const path of ['/', '/about/', '/approach/', '/faq/', '/services/web-landing-pages/']) {
+      const page = await c.get(path);
+      assert.equal(page.status, 200, path);
+      assert.match(page.text, /<link rel="canonical" href="https:\/\/makeitso\.studio\//, path);
+    }
+    const webPage = await c.get('/services/web-landing-pages/');
+    assert.match(webPage.text, /Websites, Apps &amp; Business Software/);
+    assert.match(webPage.text, /front-end design to back-end development and integrations/);
+    const webPageScript = await c.get('/services/service-page.js');
+    for (const phrase of ['custom business software', 'bedrijfssoftware op maat', 'logiciels métier sur mesure']) {
+      assert.ok(webPageScript.text.includes(phrase), `web development page copy includes “${phrase}”`);
+    }
+    const home = await c.get('/');
+    assert.match(home.text, /application\/ld\+json/);
+    assert.match(home.text, /"@type": "Organization"/);
+    assert.match(home.text, /websites, apps and business software/i);
+
+    for (const slug of ['nova-coffee', 'orbit-fitness', 'luna-records']) {
+      const page = await c.get(`/missions/${slug}/`);
+      assert.match(page.text, /name="robots" content="noindex, follow"/, slug);
+    }
+  });
+
+  it('shows the registered business address and VAT number in every public page footer', async () => {
+    const c = new Client(ctx.base);
+    const pages = [
+      '/', '/about/', '/approach/', '/faq/',
+      '/services/brand-strategy/', '/services/social-content/', '/services/paid-media/',
+      '/services/web-landing-pages/', '/services/video-motion/', '/services/growth-analytics/',
+      '/missions/nova-coffee/', '/missions/orbit-fitness/', '/missions/luna-records/'
+    ];
+    for (const path of pages) {
+      const page = await c.get(path);
+      assert.equal(page.status, 200, path);
+      assert.match(page.text, /<address class="business-details">/, path);
+      assert.match(page.text, /Stichelendries 47\/A, 9340 Oordegem \(Lede\), Belgium/, path);
+      assert.match(page.text, /VAT: BE1030043889/, path);
+    }
+  });
+
   it('sends strict security headers that still allow the site to work', async () => {
     const res = await new Client(ctx.base).get('/');
     const csp = res.headers.get('content-security-policy');

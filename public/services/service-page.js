@@ -5,6 +5,44 @@
   const app = document.querySelector('[data-service]');
   const current = services.find((service) => service.id === app?.dataset.service);
   const i18n = window.i18n;
+  const webAppCopy = {
+    en: {
+      name: 'Websites, apps & software',
+      intro: 'We design and build websites, web apps and custom business software for small companies—from polished front ends to reliable back ends and integrations.',
+      tags: ['Websites & apps', 'Front end', 'Back end & integrations'],
+      heading: 'One connected build.<br>Front to back.',
+      summary: 'From discovery and architecture to interface and backend implementation, we build the right digital solution for the way your business works.',
+      features: [
+        ['Start with the real workflow', 'We map what your customers and team need the software to do, then agree the right scope and technical approach.'],
+        ['Build a clear, useful interface', 'Responsive front ends make websites and apps easy to understand and use across devices.'],
+        ['Connect the back end', 'Reliable application logic, data and integrations bring the experience together behind the scenes.']
+      ]
+    },
+    nl: {
+      name: 'Websites, apps & software',
+      intro: 'We ontwerpen en bouwen websites, webapps en bedrijfssoftware op maat voor kleine bedrijven — van sterke front-ends tot betrouwbare back-ends en koppelingen.',
+      tags: ['Websites & apps', 'Front-end', 'Back-end & koppelingen'],
+      heading: 'Eén samenhangend systeem.<br>Van voor tot achter.',
+      summary: 'Van analyse en architectuur tot interface en backend: we bouwen de digitale oplossing die past bij de manier waarop jouw bedrijf werkt.',
+      features: [
+        ['Vertrek vanuit het echte werkproces', 'We brengen in kaart wat klanten en medewerkers nodig hebben en bepalen samen de juiste scope en technische aanpak.'],
+        ['Bouw een heldere, bruikbare interface', 'Responsieve front-ends maken websites en apps eenvoudig te begrijpen en te gebruiken op elk apparaat.'],
+        ['Verbind de back-end', 'Betrouwbare softwarelogica, gegevens en koppelingen brengen de volledige ervaring samen.']
+      ]
+    },
+    fr: {
+      name: 'Sites web, apps & logiciels',
+      intro: 'Nous concevons des sites web, des applications et des logiciels métier sur mesure pour les petites entreprises, du front-end soigné au back-end et aux intégrations fiables.',
+      tags: ['Sites web & apps', 'Front-end', 'Back-end & intégrations'],
+      heading: 'Un système cohérent.<br>Du front au back.',
+      summary: 'De l’analyse et de l’architecture aux interfaces et au back-end, nous créons une solution numérique adaptée au fonctionnement de votre entreprise.',
+      features: [
+        ['Partir des vrais besoins', 'Nous clarifions les besoins de vos clients et de votre équipe, puis définissons ensemble le périmètre et l’approche technique.'],
+        ['Créer une interface claire et utile', 'Des interfaces front-end adaptatives rendent les sites et les applications faciles à comprendre et à utiliser sur chaque appareil.'],
+        ['Relier le back-end', 'La logique applicative, les données et les intégrations réunissent toute l’expérience en coulisses.']
+      ]
+    }
+  };
 
   const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -25,7 +63,10 @@
 
   function render() {
     const language = i18n?.lang || 'en';
-    const copy = current.locales[language] || current.locales.en;
+    const baseCopy = current.locales[language] || current.locales.en;
+    const copy = current.id === 'web-landing-pages'
+      ? { ...baseCopy, ...webAppCopy[language] }
+      : baseCopy;
     const labels = ui[language] || ui.en;
     const index = services.indexOf(current);
     document.documentElement.lang = language;

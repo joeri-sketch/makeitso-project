@@ -11,13 +11,13 @@
 
   const ROWS = [
     // ----- page meta -----
-    ['Make It So — Creative Marketing Agency', 'Make It So — Creatief marketingbureau', 'Make It So — Agence de marketing créatif'],
-    ['Make It So is a creative marketing agency. Brand strategy, content, paid media and web experiences that make brands impossible to ignore.',
-      'Make It So is een creatief marketingbureau. Merkstrategie, content, online adverteren en webervaringen waar merken niet omheen kunnen.',
-      'Make It So est une agence de marketing créatif. Stratégie de marque, contenu, publicité en ligne et expériences web qui rendent les marques impossibles à ignorer.'],
-    ['Make it so. Watch it launch. Brand, content, media and web for brands that refuse to blend in.',
-      'Make it so. Zie het opstijgen. Merk, content, media en web voor merken die niet in de massa willen opgaan.',
-      'Make it so. Regardez-le décoller. Marque, contenu, médias et web pour les marques qui refusent de se fondre dans la masse.'],
+    ['Websites, Apps & Marketing for Small Companies | Make It So', 'Websites, apps & marketing voor kleine bedrijven | Make It So', 'Sites web, apps & marketing pour petites entreprises | Make It So'],
+    ['Make It So builds websites, apps and business software, and creates brand and marketing campaigns for small companies in Belgium.',
+      'Make It So bouwt websites, apps en bedrijfssoftware en ontwikkelt merk- en marketingcampagnes voor kleine bedrijven in België.',
+      'Make It So crée des sites web, des applications et des logiciels métier, ainsi que des campagnes de marque et de marketing pour les petites entreprises en Belgique.'],
+    ['Websites, apps, business software, branding and marketing for small companies in Belgium.',
+      'Websites, apps, bedrijfssoftware, branding en marketing voor kleine bedrijven in België.',
+      'Sites web, applications, logiciels métier, identité de marque et marketing pour les petites entreprises en Belgique.'],
 
     // ----- accessibility labels -----
     ['Skip to content', 'Naar de inhoud', 'Aller au contenu'],
@@ -51,9 +51,9 @@
     ['Captain\'s log ·', 'Kapiteinslogboek ·', 'Journal du capitaine ·'],
     ['Stardate', 'Sterrendatum', 'Date stellaire'],
     ['Watch it launch', 'Zie het opstijgen', 'Regardez-le décoller'],
-    ['Make It So is a creative marketing agency for brands that refuse to blend in. Strategy, content and campaigns — plotted fast, launched boldly, measured honestly.',
-      'Make It So is een creatief marketingbureau voor merken die niet in de massa willen opgaan. Strategie, content en campagnes — snel uitgestippeld, gedurfd gelanceerd, eerlijk gemeten.',
-      'Make It So est une agence de marketing créatif pour les marques qui refusent de se fondre dans la masse. Stratégie, contenu et campagnes — tracés vite, lancés avec audace, mesurés en toute honnêteté.'],
+    ['Make It So builds websites, apps and business software, and creates brand and marketing campaigns for small companies in Belgium.',
+      'Make It So bouwt websites, apps en bedrijfssoftware en ontwikkelt merk- en marketingcampagnes voor kleine bedrijven in België.',
+      'Make It So crée des sites web, des applications et des logiciels métier, ainsi que des campagnes de marque et de marketing pour les petites entreprises en Belgique.'],
     ['See the mission log', 'Bekijk het missielogboek', 'Voir le journal de mission'],
     ['days from brief', 'dagen van briefing', 'jours du brief'],
     ['to live campaign', 'tot live campagne', 'à la campagne en ligne'],
