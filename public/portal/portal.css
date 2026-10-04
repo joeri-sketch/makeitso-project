@@ -79,8 +79,13 @@ button, input, textarea { font: inherit; color: inherit; }
 .portal-top .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 17px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .brand-mark { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; color: #122f49; background: #ffce42; font-size: 19px; }
 .portal-nav { display: flex; align-items: center; gap: 24px; margin-left: auto; }
-.portal-nav a { color: rgba(255,255,255,.82); font-size: 13px; text-decoration: none; }
-.portal-nav a:hover { color: #ffce42; }
+.portal-nav [role="tab"] { min-height: 42px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; color: rgba(255,255,255,.72); background: transparent; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.portal-nav [role="tab"]:hover, .portal-nav [role="tab"][aria-selected="true"] { border-bottom-color: #ffce42; color: #fff; }
+.portal-nav [role="tab"]:focus-visible { outline-color: #ffce42; outline-offset: 2px; }
+.portal-tab-panel[hidden] { display: none !important; }
+.portal-tab-panel > .status-section-heading { margin-bottom: 18px; }
+.portal-tab-panel > .card + .card { margin-top: 16px; }
+.row-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .portal-account { display: flex; align-items: center; gap: 11px; }
 .account-initials { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.45); border-radius: 50%; color: #ffce42; font-size: 12px; font-weight: 700; }
 .account-name { max-width: 140px; overflow: hidden; color: rgba(255,255,255,.85); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
@@ -191,6 +196,9 @@ button, input, textarea { font: inherit; color: inherit; }
   .test-site-panel { align-items: flex-start; flex-wrap: wrap; }
   .test-site-link { margin-left: 61px; }
   .project-conversation-card { padding: 20px; }
+  .portal-top { align-items: flex-start; flex-wrap: wrap; gap: 10px 16px; }
+  .portal-nav { order: 3; width: 100%; gap: 20px; margin: 0; overflow-x: auto; }
+  .portal-account { margin-left: auto; }
 }
 @media (max-width: 760px) {
   .portal-top { flex-wrap: wrap; gap: 12px; padding: 12px 18px; }

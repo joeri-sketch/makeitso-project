@@ -142,6 +142,7 @@ describe('client portal and quotes', () => {
     assert.equal(Number(quote.total_cents), 25700);
     assert.equal((await admin.patch(`/api/quotes/${quote.id}`, { title: 'Revised offer' })).status, 200);
     assert.equal((await portal.get(`/api/portal/quotes/${quote.id}`)).status, 404, 'draft quotes are not client-visible');
+    assert.equal((await portal.get(`/api/portal/quotes/${quote.id}/pdf`)).status, 404, 'draft quote PDFs are not client-visible');
     assert.equal((await admin.post(`/api/quotes/${quote.id}/send`)).status, 200);
     assert.equal((await admin.patch(`/api/quotes/${quote.id}`, { title: 'Cannot change after sharing' })).status, 409);
     const visible = (await portal.get('/api/portal/overview')).json.quotes;
@@ -151,6 +152,10 @@ describe('client portal and quotes', () => {
     const portalQuote = await portal.get(`/api/portal/quotes/${quote.id}`);
     assert.equal(portalQuote.status, 200);
     assert.equal(portalQuote.json.quote.display_status, 'sent');
+    const quotePdf = await portal.get(`/api/portal/quotes/${quote.id}/pdf`);
+    assert.equal(quotePdf.status, 200);
+    assert.equal(quotePdf.headers.get('content-type'), 'application/pdf');
+    assert.match(quotePdf.text, /^%PDF-/);
 
     const unrelatedClient = (await admin.post('/api/clients', {
       company_name: 'Unrelated', contact: { name: 'Taylor', email: 'taylor@unrelated.example' }
@@ -160,6 +165,7 @@ describe('client portal and quotes', () => {
     const unrelatedPortal = new Client(ctx.base);
     await unrelatedPortal.post('/api/portal/invitations/accept', { token: otherToken, password: 'third-safe-client-password' });
     assert.equal((await unrelatedPortal.get(`/api/portal/quotes/${quote.id}`)).status, 404);
+    assert.equal((await unrelatedPortal.get(`/api/portal/quotes/${quote.id}/pdf`)).status, 404);
     assert.equal((await unrelatedPortal.post(`/api/portal/quotes/${quote.id}/respond`, { decision: 'accepted' })).status, 404);
     assert.equal((await unrelatedPortal.get('/api/quotes')).status, 403);
 

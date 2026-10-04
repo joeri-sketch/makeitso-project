@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { audit } from '../lib/audit.js';
 import { hashIp, hashPassword, randomToken, sha256 } from '../lib/crypto.js';
+import { quotePdf } from '../lib/quote-pdf.js';
 import { HttpError, v } from '../lib/validate.js';
 import { asyncHandler as h } from '../middleware/security.js';
 import { createSession, requireSession } from '../middleware/session.js';
@@ -187,6 +188,29 @@ export function portalRoutes({ db, config, limits }) {
     delete quote.vat_cents;
     delete quote.total_cents;
     res.json({ quote });
+  }));
+
+  r.get('/quotes/:id/pdf', h(async (req, res) => {
+    const id = v.id(req.params.id);
+    const quote = (await db.query(
+      `SELECT q.*, c.company_name, c.vat_number AS client_vat_number,
+              c.address_line1 AS client_address_line1, c.address_line2 AS client_address_line2,
+              c.postal_code AS client_postal_code, c.city AS client_city, c.country AS client_country
+         FROM quotes q JOIN clients c ON c.id = q.client_id
+        WHERE q.id = $1 AND q.client_id = $2 AND q.status <> 'draft'`,
+      [id, req.auth.clientId]
+    )).rows[0];
+    if (!quote) throw new HttpError(404, 'Quote not found.');
+    quote.items = (await db.query(
+      'SELECT description, quantity, unit_price, vat_rate FROM quote_items WHERE quote_id = $1 ORDER BY sort_order, id',
+      [id]
+    )).rows;
+    quote.seller = (await db.query('SELECT * FROM business_profile WHERE id = 1')).rows[0];
+    const pdf = await quotePdf(quote);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${quote.quote_number}.pdf"`);
+    res.setHeader('Content-Length', pdf.length);
+    res.send(pdf);
   }));
 
   r.post('/quotes/:id/respond', h(async (req, res) => {

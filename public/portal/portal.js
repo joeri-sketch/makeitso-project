@@ -1,7 +1,7 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const app = $('#app');
-const state = { user: null, overview: null, invoices: [], tickets: [], language: 'en' };
+const state = { user: null, overview: null, invoices: [], tickets: [], language: 'en', activeTab: 'projects' };
 const COPY = {
   en: { portal: 'Client portal', signIn: 'Sign in', email: 'Email', password: 'Password', continue: 'Continue', dashboard: 'Your projects', signOut: 'Sign out', quotes: 'Quotes', milestones: 'Milestones', workItems: 'Current work', updates: 'Project updates', noProjects: 'No active projects yet.', noNotes: 'No shared updates yet.', noQuotes: 'No quotes yet.', progress: 'Progress', next: 'Next step', target: 'Target date', accept: 'Accept quote', decline: 'Decline quote', decision: 'Your decision', valid: 'Valid until', invitation: 'Set up your client account', setPassword: 'Create password', activate: 'Activate account', passwordHelp: 'Use at least 12 characters.', invitationBad: 'This invitation is invalid or expired. Ask your contact for a new one.', admin: 'This is an admin account. Go to the admin area.', quote: 'Quote', subtotal: 'Subtotal', vat: 'VAT', total: 'Total', response: 'Message (optional)', noMilestones: 'No milestones yet.', status: 'Status', description: 'Description', tax: 'VAT', terms: 'Terms', error: 'Something went wrong.', invoices: 'Invoices', noInvoices: 'No invoices yet.', downloadPdf: 'Download PDF', due: 'Due', balance: 'Balance due', tickets: 'Support', noTickets: 'No support tickets yet.', newTicket: 'Create a support ticket', subject: 'Subject', message: 'Message', send: 'Send', reply: 'Reply', closed: 'This ticket is closed.', priority: 'Priority', feedbackNeeded: 'Feedback needed', noMessages: 'No messages yet.', addMessage: 'Add a message', sendMessage: 'Send message', you: 'You', studio: 'Make It So', workDescription: 'Feature details', testSite: 'Test site', testSiteReady: 'A preview is ready for you to explore.', testSitePending: 'Your preview link will appear here when it is ready to share.', openTestSite: 'Open test site', projectConversation: 'Project conversation', projectConversationIntro: 'Questions or feedback? Keep the conversation with the studio here.', featureLabel: 'Feature', sendProjectMessage: 'Send message' },
   nl: { portal: 'Klantportaal', signIn: 'Inloggen', email: 'E-mail', password: 'Wachtwoord', continue: 'Doorgaan', dashboard: 'Jouw projecten', signOut: 'Uitloggen', quotes: 'Offertes', milestones: 'Mijlpalen', workItems: 'Huidig werk', updates: 'Projectupdates', noProjects: 'Nog geen actieve projecten.', noNotes: 'Nog geen gedeelde updates.', noQuotes: 'Nog geen offertes.', progress: 'Voortgang', next: 'Volgende stap', target: 'Streefdatum', accept: 'Offerte goedkeuren', decline: 'Offerte afwijzen', decision: 'Jouw beslissing', valid: 'Geldig tot', invitation: 'Stel je klantaccount in', setPassword: 'Wachtwoord aanmaken', activate: 'Account activeren', passwordHelp: 'Gebruik minstens 12 tekens.', invitationBad: 'Deze uitnodiging is ongeldig of verlopen. Vraag een nieuwe aan.', admin: 'Dit is een beheerdersaccount. Ga naar de beheeromgeving.', quote: 'Offerte', subtotal: 'Subtotaal', vat: 'BTW', total: 'Totaal', response: 'Bericht (optioneel)', noMilestones: 'Nog geen mijlpalen.', status: 'Status', description: 'Omschrijving', tax: 'btw', terms: 'Voorwaarden', error: 'Er is iets misgegaan.', invoices: 'Facturen', noInvoices: 'Nog geen facturen.', downloadPdf: 'Download PDF', due: 'Vervaldatum', balance: 'Openstaand', tickets: 'Ondersteuning', noTickets: 'Nog geen supporttickets.', newTicket: 'Nieuw supportticket', subject: 'Onderwerp', message: 'Bericht', send: 'Versturen', reply: 'Antwoorden', closed: 'Dit ticket is gesloten.', priority: 'Prioriteit', feedbackNeeded: 'Feedback gevraagd', noMessages: 'Nog geen berichten.', addMessage: 'Bericht toevoegen', sendMessage: 'Bericht versturen', you: 'Jij', studio: 'Make It So', workDescription: 'Functieomschrijving', testSite: 'Testomgeving', testSiteReady: 'Er staat een preview voor je klaar.', testSitePending: 'De link naar je preview verschijnt hier zodra die klaar is om te delen.', openTestSite: 'Open testomgeving', projectConversation: 'Projectgesprek', projectConversationIntro: 'Vragen of feedback? Bespreek ze hier met de studio.', featureLabel: 'Functie', sendProjectMessage: 'Bericht versturen' },
@@ -17,7 +17,8 @@ Object.assign(COPY.en, {
   noPath: 'Milestones will appear here when they are added.',
   latestUpdates: 'Latest updates', noMessages: 'No messages yet.',
   discussion: 'Discussion', discuss: 'Discuss this feature', featureStatus: 'Feature status',
-  projectStatus: 'Project status', invoicesTitle: 'Your invoices and project details'
+  projectStatus: 'Project status', invoicesTitle: 'Your invoices and project details',
+  projectsTab: 'Projects', quotesTab: 'Quotes', invoicesTab: 'Invoices', supportTab: 'Support'
 });
 Object.assign(COPY.nl, {
   statusIntro: 'Een helder overzicht van wat klaar is, waar we aan werken en wat er hierna komt.',
@@ -28,7 +29,8 @@ Object.assign(COPY.nl, {
   activeWork: 'Waar we aan werken', upcoming: 'Hierna', noWork: 'Nog geen gedeelde werkitems.',
   noPath: 'Mijlpalen verschijnen hier zodra ze zijn toegevoegd.',
   latestUpdates: 'Laatste updates', discussion: 'Gesprek', discuss: 'Bespreek deze functie',
-  featureStatus: 'Functiestatus', projectStatus: 'Projectstatus', invoicesTitle: 'Facturen en projectgegevens'
+  featureStatus: 'Functiestatus',   projectStatus: 'Projectstatus', invoicesTitle: 'Facturen en projectgegevens',
+  projectsTab: 'Projecten', quotesTab: 'Offertes', invoicesTab: 'Facturen', supportTab: 'Ondersteuning'
 });
 Object.assign(COPY.fr, {
   statusIntro: 'Un aperçu clair de ce qui est terminé, en cours et de la prochaine étape.',
@@ -39,7 +41,8 @@ Object.assign(COPY.fr, {
   activeWork: 'Travail en cours', upcoming: 'À suivre', noWork: 'Aucun élément partagé pour le moment.',
   noPath: 'Les étapes apparaîtront ici lorsqu’elles seront ajoutées.',
   latestUpdates: 'Dernières actualités', discussion: 'Discussion', discuss: 'Discuter de cette fonctionnalité',
-  featureStatus: 'Statut de la fonctionnalité', projectStatus: 'Statut du projet', invoicesTitle: 'Factures et détails du projet'
+  featureStatus: 'Statut de la fonctionnalité',   projectStatus: 'Statut du projet', invoicesTitle: 'Factures et détails du projet',
+  projectsTab: 'Projets', quotesTab: 'Devis', invoicesTab: 'Factures', supportTab: 'Assistance'
 });
 const t = (key) => COPY[state.language]?.[key] || COPY.en[key] || key;
 const STATUS = {
@@ -218,7 +221,7 @@ function renderDashboard() {
     }).join('')
     : `<p class="empty">${t('noProjects')}</p>`;
   const quotes = data.quotes.length
-    ? `<ul class="list">${data.quotes.map((quote) => `<li><span class="grow"><strong>${esc(quote.quote_number)}</strong> · ${esc(quote.title)}<span class="sub">${t('valid')}: ${date(quote.valid_until)} · ${esc(quote.total)}</span></span>${status(quote.display_status)}<a class="btn small" href="#quote-${esc(quote.id)}">${t('quote')}</a></li>`).join('')}</ul>`
+    ? `<ul class="list">${data.quotes.map((quote) => `<li><span class="grow"><strong>${esc(quote.quote_number)}</strong> · ${esc(quote.title)}<span class="sub">${t('valid')}: ${date(quote.valid_until)} · ${esc(quote.total)}</span></span>${status(quote.display_status)}<span class="row-actions"><a class="btn small" href="#quote-${esc(quote.id)}">${t('quote')}</a><a class="btn small" href="/api/portal/quotes/${esc(quote.id)}/pdf" download>${t('downloadPdf')}</a></span></li>`).join('')}</ul>`
     : `<p class="empty">${t('noQuotes')}</p>`;
   const notes = data.notes.length
     ? data.notes.map((note) => `<article class="note"><p>${esc(note.body)}</p><small>${esc(note.project_name || data.client.company_name)} · ${esc(note.author_name || 'Make It So')} · ${date(note.created_at)}</small></article>`).join('')
@@ -230,24 +233,51 @@ function renderDashboard() {
     ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noTickets')}</p>`;
   app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark">✦</span><span>make it so<em>.</em></span></a>
-      <nav class="portal-nav" aria-label="${t('portal')}"><a href="#project-status">${t('dashboard')}</a><a href="#portal-billing">${t('quotes')}</a><a href="#portal-support">${t('tickets')}</a></nav>
+      <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
+        <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
+        <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>
+        <button type="button" role="tab" id="tab-invoices" data-tab="invoices" aria-controls="portal-tab-invoices" aria-selected="${state.activeTab === 'invoices'}" tabindex="${state.activeTab === 'invoices' ? '0' : '-1'}">${t('invoicesTab')}</button>
+        <button type="button" role="tab" id="tab-support" data-tab="support" aria-controls="portal-tab-support" aria-selected="${state.activeTab === 'support'}" tabindex="${state.activeTab === 'support' ? '0' : '-1'}">${t('supportTab')}</button>
+      </nav>
       <div class="portal-account"><span class="account-initials" aria-hidden="true">${esc(state.user.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase())}</span><span class="account-name">${esc(state.user.name)}</span><button id="logout" class="btn">${t('signOut')}</button></div>
     </header>
     <main class="wrap portal-wrap"><header class="portal-welcome"><div><span class="eyebrow">${t('portal')}</span><h1>${esc(data.client.company_name)}</h1></div></header>
-      <section class="status-project-list" id="project-status">${projects}</section>
-      <section class="portal-extras" id="portal-billing"><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('invoicesTitle')}</h2></div></header>
-        <div class="grid two"><section class="card"><header><h2>${t('quotes')}</h2></header>${quotes}</section>
-          <section class="card"><header><h2>${t('invoices')}</h2></header>${invoices}</section>
-          <section class="card"><header><h2>${t('updates')}</h2></header>${notes || ''}</section>
+      <section class="portal-tab-panel status-project-list" id="portal-tab-projects" role="tabpanel" aria-labelledby="tab-projects"${state.activeTab === 'projects' ? '' : ' hidden'}>${projects}</section>
+      <section class="portal-tab-panel portal-extras" id="portal-tab-quotes" role="tabpanel" aria-labelledby="tab-quotes"${state.activeTab === 'quotes' ? '' : ' hidden'}><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('quotes')}</h2></div></header>
+        <section class="card"><header><h2>${t('quotes')}</h2></header>${quotes}</section>
+        <section id="quote-detail" class="card" hidden style="margin-top:16px"></section>
+      </section>
+      <section class="portal-tab-panel portal-extras" id="portal-tab-invoices" role="tabpanel" aria-labelledby="tab-invoices"${state.activeTab === 'invoices' ? '' : ' hidden'}><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('invoices')}</h2></div></header>
+        <section class="card"><header><h2>${t('invoices')}</h2></header>${invoices}</section>
+      </section>
+      <section class="portal-tab-panel portal-extras" id="portal-tab-support" role="tabpanel" aria-labelledby="tab-support"${state.activeTab === 'support' ? '' : ' hidden'}>
+        <div class="grid two"><section class="card"><header><h2>${t('updates')}</h2></header>${notes}</section>
           <section class="card" id="portal-support"><header><h2>${t('tickets')}</h2></header>
           <form id="ticket-create" class="stack"><label class="field">${t('subject')}<input name="subject" maxlength="160" required></label>
             <label class="field">${t('message')}<textarea name="message" maxlength="5000" required></textarea></label>
             <p class="error" role="alert"></p><button class="btn primary">${t('newTicket')}</button></form>
-          ${tickets}</section></div></section>
-      <section id="quote-detail" class="card" hidden style="margin-top:16px"></section>
-      <section id="ticket-detail" class="card" hidden style="margin-top:16px"></section>
+          ${tickets}</section></div>
+        <section id="ticket-detail" class="card" hidden style="margin-top:16px"></section>
+      </section>
     </main>`;
   $('#logout').onclick = async () => { await api('POST', '/auth/logout'); location.reload(); };
+  $('#portal-tabs').onclick = (event) => {
+    const tab = event.target.closest('[data-tab]');
+    if (!tab) return;
+    setPortalTab(tab.dataset.tab);
+  };
+  $('#portal-tabs').onkeydown = (event) => {
+    const tabs = [...document.querySelectorAll('#portal-tabs [data-tab]')];
+    const current = tabs.indexOf(event.target.closest('[data-tab]'));
+    if (current < 0) return;
+    const next = event.key === 'ArrowRight' ? (current + 1) % tabs.length
+      : event.key === 'ArrowLeft' ? (current - 1 + tabs.length) % tabs.length
+        : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    setPortalTab(tabs[next].dataset.tab);
+    tabs[next].focus();
+  };
   $('#ticket-create').onsubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -285,6 +315,18 @@ function renderDashboard() {
   if (ticketLink) openTicket(ticketLink[1]).catch((error) => window.alert(error.message));
 }
 
+function setPortalTab(tabName) {
+  if (!['projects', 'quotes', 'invoices', 'support'].includes(tabName)) return;
+  state.activeTab = tabName;
+  document.querySelectorAll('#portal-tabs [data-tab]').forEach((tab) => {
+    tab.setAttribute('aria-selected', String(tab.dataset.tab === tabName));
+    tab.tabIndex = tab.dataset.tab === tabName ? 0 : -1;
+  });
+  document.querySelectorAll('.portal-tab-panel').forEach((panel) => {
+    panel.hidden = panel.id !== `portal-tab-${tabName}`;
+  });
+}
+
 async function handlePortalClick(event) {
   const link = event.target.closest('a[href^="#quote-"]');
   if (link) {
@@ -301,6 +343,7 @@ async function handlePortalClick(event) {
 }
 
 async function openTicket(ticketId) {
+  setPortalTab('support');
   const { ticket } = await api('GET', `/portal/tickets/${encodeURIComponent(ticketId)}`);
   const panel = $('#ticket-detail');
   panel.hidden = false;
@@ -326,6 +369,7 @@ async function openTicket(ticketId) {
 }
 
 async function openQuote(quoteId) {
+  setPortalTab('quotes');
   const { quote } = await api('GET', `/portal/quotes/${encodeURIComponent(quoteId)}`);
   renderQuote(quote);
   $('#quote-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -343,6 +387,7 @@ function renderQuote(quote) {
     : `<p class="notice">${t('decision')}: ${esc(quote.display_status)}</p>`;
   panel.hidden = false;
   panel.innerHTML = `<header><div><h2>${t('quote')} ${esc(quote.quote_number)} · ${esc(quote.title)}</h2><p class="muted">${t('valid')}: ${date(quote.valid_until)}</p></div>${status(quote.display_status)}</header>
+    <p><a class="btn small" href="/api/portal/quotes/${esc(quote.id)}/pdf" download>${t('downloadPdf')}</a></p>
     ${quote.introduction ? `<p style="white-space:pre-wrap;margin-bottom:14px">${esc(quote.introduction)}</p>` : ''}
     <div class="table-wrap"><table class="quote-items"><thead><tr><th>${t('description')}</th><th>${t('total')}</th></tr></thead><tbody>${items}</tbody></table></div>
     ${quote.terms ? `<section style="margin:16px 0"><h3>${t('terms')}</h3><p style="white-space:pre-wrap">${esc(quote.terms)}</p></section>` : ''}
