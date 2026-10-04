@@ -418,6 +418,7 @@ const projectFields = (clients) => [
   { name: 'progress', label: 'Progress (%)', type: 'number', min: 0, max: 100, default: 0 },
   { name: 'target_date', label: 'Target date', type: 'date' },
   { name: 'next_step', label: 'Next step', full: true },
+  { name: 'preview_url', label: 'Client test-site URL', type: 'url', full: true, hint: 'Only shared with this project’s client. Use the complete https:// URL.' },
   { name: 'description', label: 'Description', type: 'textarea', full: true, max: 2000 }
 ];
 const milestoneFields = [
@@ -837,7 +838,6 @@ async function projectView(view, id) {
   const p = d.project;
   const done = d.milestones.filter((m) => m.status === 'done').length;
   const workDone = d.work_items.filter((item) => item.status === 'done').length;
-  const sharedWorkItems = d.work_items.filter((item) => item.client_visible);
   show(view, html`
     <a class="back" href="#/clients/${p.client_id}">← ${p.company_name}</a>
     <header class="page-head"><div><h1>${p.name}</h1><p>${chip(p.status)} ${p.archived_at ? html`<span class="chip">Archived</span>` : ''} <span class="muted">${p.category || 'Project'}${p.target_date ? ` · target ${date(p.target_date)}` : ''}</span></p></div>
@@ -858,15 +858,6 @@ async function projectView(view, id) {
         </section>
         <section class="card"><header><h2>Work items <span class="muted">${workDone}/${d.work_items.length}</span></h2><button class="btn small" data-action="add-work-item">+ Add</button></header>
           ${d.work_items.length ? html`<ul class="list">${d.work_items.map((item) => html`<li class="work-row"><span class="grow"><strong>${item.title}</strong><span class="sub">${chip(item.status)} ${chip(item.priority)}${item.due_date ? ` · Due ${date(item.due_date)}` : ''}${item.estimate_minutes ? ` · Estimate ${duration(item.estimate_minutes)}` : ''}${item.client_visible ? ' · Visible to client' : ''}</span></span><span class="row-actions"><button class="btn small" data-action="edit-work-item" data-id="${item.id}">Edit</button>${item.status !== 'done' ? html`<button class="btn small" data-action="advance-work-item" data-id="${item.id}" data-status="${item.status}">Next status</button>` : ''}<button class="btn small danger" data-action="delete-work-item" data-id="${item.id}">✕</button></span></li>`)}</ul>` : html`<p class="muted">Add work items to track tasks, priorities and progress. Work-item progress updates automatically.</p>`}
-          ${sharedWorkItems.length ? html`<section class="work-conversations"><h3>Client conversations</h3>
-            ${sharedWorkItems.map((item) => {
-              const messages = d.work_item_messages.filter((message) => Number(message.work_item_id) === Number(item.id));
-              return html`<article class="work-conversation"><header><h4>${item.title}</h4>${chip(item.status)}</header>
-                ${messages.length ? html`<div class="work-thread">${messages.map((message) => html`<article class="work-message ${message.author_role === 'client' ? 'from-client' : 'from-studio'}"><p>${message.body}</p><small>${message.author_name || 'Account removed'} · ${ago(message.created_at)}</small></article>`)}</div>` : html`<p class="muted">No client messages yet.</p>`}
-                <form class="work-reply-form" data-work-item-message="${item.id}"><label class="field"><span>Reply to client</span><textarea name="body" maxlength="5000" required></textarea></label><p class="form-error" role="alert"></p><button class="btn small primary">Send reply</button></form>
-              </article>`;
-            })}
-          </section>` : ''}
         </section>
         <section class="card"><header><h2>Time entries <span class="muted">${duration(Number(p.logged_minutes) || 0)} logged</span></h2><button class="btn small" data-action="add-time-entry">+ Log time</button></header>
           ${d.time_entries.length ? html`<ul class="list">${d.time_entries.map((entry) => html`<li><span class="grow"><strong>${entry.description}</strong><span class="sub">${date(entry.entry_date)} · ${duration(entry.duration_minutes)} · ${entry.billable ? 'Billable' : 'Non-billable'}${entry.work_item_title ? ` · ${entry.work_item_title}` : ''}</span></span><span class="row-actions"><button class="btn small" data-action="edit-time-entry" data-id="${entry.id}">Edit</button><button class="btn small danger" data-action="delete-time-entry" data-id="${entry.id}">✕</button></span></li>`)}</ul>` : html`<p class="muted">No time logged for this project yet.</p>`}
@@ -876,6 +867,10 @@ async function projectView(view, id) {
         </section>
       </div>
       <div class="stack">
+        <section class="card"><header><h2>Client conversation</h2></header>
+          ${d.project_messages.length ? html`<div class="work-thread">${d.project_messages.map((message) => html`<article class="work-message ${message.author_role === 'client' ? 'from-client' : 'from-studio'}"><p>${message.body}</p><small>${message.author_name || 'Account removed'}${message.work_item_title ? ` · Feature: ${message.work_item_title}` : ''} · ${ago(message.created_at)}</small></article>`)}</div>` : html`<p class="muted">No project messages yet.</p>`}
+          <form class="project-reply-form" id="project-message-form"><label class="field" for="project-message-body"><span>Reply to the client</span><textarea id="project-message-body" name="body" maxlength="5000" required></textarea></label><p class="form-error" role="alert"></p><button class="btn small primary">Send reply</button></form>
+        </section>
         <section class="card"><header><h2>Notes</h2></header>
           <form class="note-form" id="note-form"><label class="sr-only" for="note-body">New note</label><textarea id="note-body" placeholder="Add a private note about this project…" maxlength="4000"></textarea><label class="check"><input type="checkbox" id="note-visible"> Share this update with the client</label><button class="btn small">Add note</button></form>
           ${d.notes.map((n) => html`<div class="note ${n.pinned ? 'pinned' : ''}"><p>${n.body}</p><div class="meta"><span>${n.author_name || 'Someone'} · ${ago(n.created_at)} · ${n.client_visible ? 'Visible to client' : 'Private'}</span><span class="row-actions"><button class="btn small ghost" data-action="toggle-note-visibility" data-id="${n.id}" data-visible="${n.client_visible}">${n.client_visible ? 'Make private' : 'Share with client'}</button><button class="btn small ghost" data-action="pin-note" data-id="${n.id}" data-pinned="${n.pinned}">${n.pinned ? 'Unpin' : 'Pin'}</button><button class="btn small ghost" data-action="delete-note" data-id="${n.id}">Delete</button></span></div></div>`)}
@@ -891,15 +886,14 @@ async function projectView(view, id) {
     if (!body) return;
     try { await post('/notes', { project_id: id, body, client_visible: $('#note-visible').checked }); reload(); } catch (err) { toast(err.message, 'error'); }
   };
-  view.onsubmit = async (e) => {
-    const form = e.target.closest('form[data-work-item-message]');
-    if (!form) return;
+  $('#project-message-form').onsubmit = async (e) => {
     e.preventDefault();
+    const form = e.currentTarget;
     const button = $('button', form);
     button.disabled = true;
     try {
-      await post(`/work-items/${encodeURIComponent(form.dataset.workItemMessage)}/messages`, { body: form.body.value });
-      toast('Reply sent to client');
+      await post(`/projects/${id}/messages`, { body: form.body.value });
+      toast('Message sent to client');
       reload();
     } catch (err) {
       $('.form-error', form).textContent = err.message;

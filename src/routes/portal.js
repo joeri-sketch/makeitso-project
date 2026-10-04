@@ -69,10 +69,10 @@ export function portalRoutes({ db, config, limits }) {
 
   r.get('/overview', h(async (req, res) => {
     const clientId = req.auth.clientId;
-    const [client, projects, workItems, workItemMessages, milestones, notes, quotes] = await Promise.all([
+    const [client, projects, workItems, projectMessages, milestones, notes, quotes] = await Promise.all([
       db.query('SELECT company_name, language FROM clients WHERE id = $1 AND archived_at IS NULL', [clientId]),
       db.query(
-        `SELECT p.id, p.name, p.category, p.description, p.status,
+        `SELECT p.id, p.name, p.category, p.status, p.created_at, p.preview_url,
                 CASE WHEN EXISTS (SELECT 1 FROM work_items wi WHERE wi.project_id = p.id AND wi.client_visible)
                      THEN (SELECT round(100.0 * count(*) FILTER (WHERE wi.status = 'done') / count(*))::int
                              FROM work_items wi WHERE wi.project_id = p.id AND wi.client_visible)
@@ -89,12 +89,14 @@ export function portalRoutes({ db, config, limits }) {
         [clientId]
       ),
       db.query(
-        `SELECT m.id, m.work_item_id, m.body, m.created_at, u.name AS author_name, u.role AS author_role
-           FROM work_item_messages m
-           JOIN work_items wi ON wi.id = m.work_item_id
-           JOIN projects p ON p.id = wi.project_id
+        `SELECT m.id, m.project_id, m.work_item_id, wi.title AS work_item_title, m.body, m.created_at,
+                u.name AS author_name, u.role AS author_role
+           FROM project_messages m
+           JOIN projects p ON p.id = m.project_id
+           LEFT JOIN work_items wi ON wi.id = m.work_item_id
            LEFT JOIN users u ON u.id = m.author_id
-          WHERE p.client_id = $1 AND p.archived_at IS NULL AND wi.client_visible
+          WHERE p.client_id = $1 AND p.archived_at IS NULL AND m.client_visible
+            AND (NOT m.legacy_work_item OR wi.client_visible)
           ORDER BY m.created_at, m.id`,
         [clientId]
       ),
@@ -130,35 +132,34 @@ export function portalRoutes({ db, config, limits }) {
       client: client.rows[0],
       projects: projects.rows,
       work_items: workItems.rows,
-      work_item_messages: workItemMessages.rows,
+      project_messages: projectMessages.rows,
       milestones: milestones.rows,
       notes: notes.rows,
       quotes: quotes.rows.map((quote) => ({ ...quote, total: CURRENCY.format(Number(quote.total_cents) / 100) }))
     });
   }));
 
-  r.post('/work-items/:id/messages', h(async (req, res) => {
-    const id = v.id(req.params.id);
+  r.post('/projects/:id/messages', h(async (req, res) => {
+    const projectId = v.id(req.params.id);
     const body = v.str(req.body?.body, 'message', { required: true, min: 2, max: 5000 });
     const message = await db.tx(async (t) => {
-      const item = (await t.query(
-        `SELECT wi.project_id, wi.title, p.client_id
-           FROM work_items wi JOIN projects p ON p.id = wi.project_id
-          WHERE wi.id = $1 AND p.client_id = $2 AND p.archived_at IS NULL AND wi.client_visible`,
-        [id, req.auth.clientId]
+      const project = (await t.query(
+        `SELECT id, client_id FROM projects
+          WHERE id = $1 AND client_id = $2 AND archived_at IS NULL`,
+        [projectId, req.auth.clientId]
       )).rows[0];
-      if (!item) throw new HttpError(404, 'Work item not found.');
+      if (!project) throw new HttpError(404, 'Project not found.');
       const { rows } = await t.query(
-        'INSERT INTO work_item_messages (work_item_id, author_id, body) VALUES ($1, $2, $3) RETURNING id, work_item_id, body, created_at',
-        [id, req.auth.user.id, body]
+        'INSERT INTO project_messages (project_id, author_id, body) VALUES ($1, $2, $3) RETURNING id, project_id, body, created_at',
+        [projectId, req.auth.user.id, body]
       );
-      await audit(t, req, 'work_item.message_added', {
-        entity: 'work_item_message', entityId: rows[0].id, clientId: item.client_id, projectId: item.project_id,
-        meta: { work_item_id: id, title: item.title, author_role: 'client' }
+      await audit(t, req, 'project.message_added', {
+        entity: 'project_message', entityId: rows[0].id, clientId: project.client_id, projectId,
+        meta: { author_role: 'client' }
       });
+      await t.query('UPDATE projects SET updated_at = now() WHERE id = $1', [projectId]);
       return rows[0];
     });
-    await db.query('UPDATE projects SET updated_at = now() WHERE id = (SELECT project_id FROM work_items WHERE id = $1)', [id]);
     res.status(201).json({ message });
   }));
 

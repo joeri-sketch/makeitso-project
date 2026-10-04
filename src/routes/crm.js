@@ -58,6 +58,7 @@ const projectSchema = {
   status: (x) => v.oneOf(x, 'status', PROJECT_STATUS) ?? 'discovery',
   progress: (x) => v.int(x, 'progress', { min: 0, max: 100 }) ?? 0,
   next_step: (x) => v.str(x, 'next_step', { max: 240 }) ?? '',
+  preview_url: (x) => url(x, 'preview_url'),
   target_date: (x) => v.date(x, 'target_date')
 };
 
@@ -87,7 +88,7 @@ const timeEntrySchema = {
   work_item_id: (x) => x === null || x === '' ? null : v.id(x, 'work_item_id')
 };
 
-const workItemMessageSchema = {
+const projectMessageSchema = {
   body: (x) => v.str(x, 'message', { required: true, min: 2, max: 5000 })
 };
 
@@ -364,22 +365,43 @@ export function crmRoutes({ db, config }) {
               (SELECT COALESCE(sum(te.duration_minutes) FILTER (WHERE te.billable), 0)::int FROM time_entries te WHERE te.project_id = p.id) AS billable_minutes
          FROM projects p JOIN clients c ON c.id = p.client_id WHERE p.id = $1`, [id]);
     if (!rows[0]) throw new HttpError(404, 'Project not found.');
-    const [milestones, workItems, timeEntries, workItemMessages, notes, activity] = await Promise.all([
+    const [milestones, workItems, timeEntries, projectMessages, notes, activity] = await Promise.all([
       db.query('SELECT * FROM milestones WHERE project_id = $1 ORDER BY sort_order, id', [id]),
       db.query('SELECT * FROM work_items WHERE project_id = $1 ORDER BY CASE status WHEN \'in_progress\' THEN 0 WHEN \'in_review\' THEN 1 WHEN \'blocked\' THEN 2 WHEN \'todo\' THEN 3 ELSE 4 END, due_date NULLS LAST, sort_order, id', [id]),
       db.query('SELECT te.*, wi.title AS work_item_title FROM time_entries te LEFT JOIN work_items wi ON wi.id = te.work_item_id WHERE te.project_id = $1 ORDER BY te.entry_date DESC, te.id DESC LIMIT 100', [id]),
-      db.query(`SELECT m.id, m.work_item_id, m.author_id, m.body, m.created_at, u.name AS author_name, u.role AS author_role
-                  FROM work_item_messages m JOIN work_items wi ON wi.id = m.work_item_id
+      db.query(`SELECT m.id, m.project_id, m.work_item_id, wi.title AS work_item_title, m.author_id, m.body, m.created_at,
+                       u.name AS author_name, u.role AS author_role
+                  FROM project_messages m LEFT JOIN work_items wi ON wi.id = m.work_item_id
                   LEFT JOIN users u ON u.id = m.author_id
-                 WHERE wi.project_id = $1
-                 ORDER BY m.created_at DESC, m.id DESC LIMIT 500`, [id]),
+                 WHERE m.project_id = $1
+                 ORDER BY m.created_at, m.id LIMIT 500`, [id]),
       db.query(`SELECT n.*, u.name AS author_name FROM notes n LEFT JOIN users u ON u.id = n.author_id
                  WHERE n.project_id = $1 ORDER BY n.pinned DESC, n.created_at DESC LIMIT 100`, [id]),
       db.query(`SELECT a.id, a.action, a.entity, a.meta, a.created_at, u.name AS actor_name
                   FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
                  WHERE a.project_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id])
     ]);
-    res.json({ project: rows[0], milestones: milestones.rows, work_items: workItems.rows, work_item_messages: workItemMessages.rows.reverse(), time_entries: timeEntries.rows, notes: notes.rows, activity: activity.rows });
+    res.json({ project: rows[0], milestones: milestones.rows, work_items: workItems.rows, project_messages: projectMessages.rows, time_entries: timeEntries.rows, notes: notes.rows, activity: activity.rows });
+  }));
+
+  r.post('/projects/:id/messages', h(async (req, res) => {
+    const projectId = v.id(req.params.id);
+    const { body } = parse(req.body, projectMessageSchema);
+    const message = await db.tx(async (t) => {
+      const project = (await t.query(
+        'SELECT client_id FROM projects WHERE id = $1 AND archived_at IS NULL',
+        [projectId]
+      )).rows[0];
+      if (!project) throw new HttpError(404, 'Project not found.');
+      const created = await insertRow(t, 'project_messages', { project_id: projectId, author_id: req.auth.user.id, body });
+      await audit(t, req, 'project.message_added', {
+        entity: 'project_message', entityId: created.id, clientId: project.client_id, projectId,
+        meta: { author_role: 'admin' }
+      });
+      await t.query('UPDATE projects SET updated_at = now() WHERE id = $1', [projectId]);
+      return created;
+    });
+    res.status(201).json({ message });
   }));
 
   r.patch('/projects/:id', h(async (req, res) => {
@@ -505,29 +527,6 @@ export function crmRoutes({ db, config }) {
     await audit(db, req, 'work_item.deleted', { entity: 'work_item', entityId: id, clientId: rows[0].client_id, projectId: rows[0].project_id, meta: { title: rows[0].title } });
     await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [rows[0].project_id]);
     res.json({ ok: true });
-  }));
-
-  r.post('/work-items/:id/messages', h(async (req, res) => {
-    const id = v.id(req.params.id);
-    const { body } = parse(req.body, workItemMessageSchema);
-    const message = await db.tx(async (t) => {
-      const item = (await t.query(
-        `SELECT wi.project_id, wi.title, wi.client_visible, p.client_id
-           FROM work_items wi JOIN projects p ON p.id = wi.project_id
-          WHERE wi.id = $1 AND p.archived_at IS NULL`,
-        [id]
-      )).rows[0];
-      if (!item) throw new HttpError(404, 'Work item not found.');
-      if (!item.client_visible) throw new HttpError(409, 'Share this work item with the client before replying here.');
-      const created = await insertRow(t, 'work_item_messages', { work_item_id: id, author_id: req.auth.user.id, body });
-      await audit(t, req, 'work_item.message_added', {
-        entity: 'work_item_message', entityId: created.id, clientId: item.client_id, projectId: item.project_id,
-        meta: { work_item_id: id, title: item.title, author_role: 'admin' }
-      });
-      return created;
-    });
-    await db.query('UPDATE projects SET updated_at = now() WHERE id = (SELECT project_id FROM work_items WHERE id = $1)', [id]);
-    res.status(201).json({ message });
   }));
 
   r.get('/time-entries', h(async (req, res) => {

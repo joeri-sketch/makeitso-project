@@ -21,7 +21,10 @@ describe('client portal and quotes', () => {
       company_name: 'Luna Records', language: 'fr',
       contact: { name: 'Lou Vega', email: 'lou@luna.example', is_primary: true }
     })).json.client;
-    const project = (await admin.post('/api/projects', { client_id: client1.id, name: 'New website', progress: 45, next_step: 'Review prototype' })).json.project;
+    const project = (await admin.post('/api/projects', {
+      client_id: client1.id, name: 'New website', progress: 45,
+      next_step: 'Review prototype', preview_url: 'https://preview.northstar.example'
+    })).json.project;
     await admin.post(`/api/projects/${project.id}/milestones`, { title: 'Prototype', status: 'doing' });
     const sharedWork = (await admin.post(`/api/projects/${project.id}/work-items`, { title: 'Build the prototype', description: 'Homepage and mobile layout', status: 'in_review', client_visible: true })).json.work_item;
     const privateWork = (await admin.post(`/api/projects/${project.id}/work-items`, { title: 'Private budget review', status: 'done', client_visible: false })).json.work_item;
@@ -51,24 +54,23 @@ describe('client portal and quotes', () => {
     assert.equal(overview1.client.company_name, 'Northstar Studio');
     assert.equal(overview1.projects.length, 1);
     assert.equal(overview1.projects[0].progress, 0);
+    assert.equal(overview1.projects[0].preview_url, 'https://preview.northstar.example');
     assert.equal(overview1.work_items.length, 1);
     assert.equal(overview1.work_items[0].title, 'Build the prototype');
     assert.equal(overview1.work_items[0].description, 'Homepage and mobile layout');
     assert.equal(overview1.work_items[0].project_id, project.id);
-    assert.deepEqual(overview1.work_item_messages, []);
-    assert.equal((await portal1.post(`/api/portal/work-items/${privateWork.id}/messages`, { body: 'Please share this first.' })).status, 404);
-    assert.equal((await portal1.post(`/api/portal/work-items/${sharedWork.id}/messages`, { body: ' ' })).status, 400);
-    const clientReply = await portal1.post(`/api/portal/work-items/${sharedWork.id}/messages`, { body: 'The mobile layout looks good.' });
+    assert.deepEqual(overview1.project_messages, []);
+    assert.equal((await portal1.post(`/api/portal/projects/${project.id}/messages`, { body: ' ' })).status, 400);
+    const clientReply = await portal1.post(`/api/portal/projects/${project.id}/messages`, { body: 'The mobile layout looks good.' });
     assert.equal(clientReply.status, 201);
     assert.equal(clientReply.json.message.body, 'The mobile layout looks good.');
-    assert.equal((await admin.post(`/api/work-items/${privateWork.id}/messages`, { body: 'This must not be shared.' })).status, 409);
-    const adminReply = await admin.post(`/api/work-items/${sharedWork.id}/messages`, { body: 'Great, we will move this feature forward.' });
+    const adminReply = await admin.post(`/api/projects/${project.id}/messages`, { body: 'Great, we will move this feature forward.' });
     assert.equal(adminReply.status, 201);
-    const conversation = (await portal1.get('/api/portal/overview')).json.work_item_messages;
+    const conversation = (await portal1.get('/api/portal/overview')).json.project_messages;
     assert.deepEqual(conversation.map((message) => message.body), ['The mobile layout looks good.', 'Great, we will move this feature forward.']);
     assert.deepEqual(conversation.map((message) => message.author_role), ['client', 'admin']);
     const adminProject = (await admin.get(`/api/projects/${project.id}`)).json;
-    assert.equal(adminProject.work_item_messages.length, 2);
+    assert.equal(adminProject.project_messages.length, 2);
     assert.equal(overview1.milestones.length, 1);
     assert.equal(overview1.notes.length, 1);
     assert.equal(overview1.notes[0].body, 'The prototype is ready to review.');
@@ -84,7 +86,8 @@ describe('client portal and quotes', () => {
     assert.equal((await portal2.post('/api/portal/invitations/accept', { token: token2, password: 'another-client-password' })).status, 201);
     assert.equal((await portal2.get('/api/portal/overview')).json.projects.length, 0);
     assert.equal((await portal2.get('/api/portal/overview')).json.work_items.length, 0);
-    assert.equal((await portal2.post(`/api/portal/work-items/${sharedWork.id}/messages`, { body: 'Cross-client message.' })).status, 404);
+    assert.equal((await portal2.post(`/api/portal/projects/${project.id}/messages`, { body: 'Cross-client message.' })).status, 404);
+    assert.equal((await admin.post(`/api/projects/${project.id}/messages`, { body: ' ' })).status, 400);
 
     await admin.patch(`/api/work-items/${sharedWork.id}`, { status: 'done' });
     const completeOverview = (await portal1.get('/api/portal/overview')).json;

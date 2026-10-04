@@ -75,13 +75,24 @@ describe('CRM: clients, contacts, projects, milestones, notes', () => {
     assert.equal((await api.post('/api/projects', { client_id: client.id, name: 'Site', progress: 150 })).status, 400);
     assert.equal((await api.post('/api/projects', { client_id: client.id, name: 'Site', target_date: '2026-02-30' })).status, 400);
 
-    const project = (await api.post('/api/projects', { client_id: client.id, name: 'Launch site', category: 'Web', target_date: '2026-11-14' })).json.project;
+    const project = (await api.post('/api/projects', {
+      client_id: client.id, name: 'Launch site', category: 'Web',
+      target_date: '2026-11-14', preview_url: 'https://preview.example.com'
+    })).json.project;
     assert.equal(project.status, 'discovery');
     assert.equal(project.target_date, '2026-11-14');
+    assert.equal(project.preview_url, 'https://preview.example.com');
+    assert.equal((await api.post('/api/projects', {
+      client_id: client.id, name: 'Invalid URL', preview_url: 'javascript:alert(1)'
+    })).status, 400);
 
-    const upd = await api.patch(`/api/projects/${project.id}`, { status: 'development', progress: 40, next_step: 'Prototype review' });
+    const upd = await api.patch(`/api/projects/${project.id}`, {
+      status: 'development', progress: 40, next_step: 'Prototype review', preview_url: 'https://test.example.com'
+    });
     assert.equal(upd.status, 200);
     assert.equal(upd.json.project.progress, 40);
+    assert.equal(upd.json.project.preview_url, 'https://test.example.com');
+    assert.equal((await api.patch(`/api/projects/${project.id}`, { preview_url: 'file:///tmp/preview' })).status, 400);
     const detail = (await api.get(`/api/projects/${project.id}`)).json;
     assert.ok(detail.activity.some((a) => a.action === 'project.status_changed' && a.meta.from === 'discovery' && a.meta.to === 'development'));
     assert.equal((await api.patch(`/api/projects/${project.id}`, { client_id: 1 })).status, 400, 'cannot reassign to another client');
