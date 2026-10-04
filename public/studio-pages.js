@@ -82,6 +82,15 @@
           ['Launch and hand over', 'We prepare the release, check the essentials and provide agreed documentation, access and handover support.'],
           ['Support the next move', 'After launch, fixes, maintenance or further improvements can be agreed as a separate support arrangement.']
         ],
+        engagement: {
+          section: 'Ways to work together',
+          lead: 'Choose a useful starting point. We will agree the scope, timing and budget together before work begins.',
+          cards: [
+            ['Defined project', 'For a website, app or system with a clear goal. We agree the scope, deliverables and milestones up front, then design and build toward them.'],
+            ['Discovery first', 'For an idea that needs shaping before a build commitment. We clarify the problem, priorities and possible solution, then outline a practical next step.'],
+            ['Ongoing support', 'For improvements after launch. We agree the support tasks, cadence and response expectations separately, based on what your team needs.']
+          ]
+        },
         aside: 'You stay involved in the decisions that matter. We bring the plan, explain the trade-offs and keep the next step visible.',
         asideTitle: 'Built together, not in a black box.',
         ctaTitle: 'Ready to plot a course?',
@@ -105,6 +114,15 @@
           ['Lanceren en overdragen', 'We bereiden de release voor, controleren de essentie en leveren de afgesproken documentatie, toegang en ondersteuning bij overdracht.'],
           ['Ondersteuning voor de volgende stap', 'Na de lancering spreken we eventuele fixes, onderhoud of verdere verbeteringen af in een aparte ondersteuningsregeling.']
         ],
+        engagement: {
+          section: 'Manieren om samen te werken',
+          lead: 'Kies een nuttig vertrekpunt. Voor de start spreken we scope, timing en budget samen af.',
+          cards: [
+            ['Afgebakend project', 'Voor een website, app of systeem met een duidelijk doel. We spreken scope, opleveringen en mijlpalen vooraf af en werken daar samen naartoe.'],
+            ['Eerst verkennen', 'Voor een idee dat nog vorm nodig heeft voordat je je aan een bouwtraject verbindt. We verduidelijken het probleem, de prioriteiten en een haalbare volgende stap.'],
+            ['Doorlopende ondersteuning', 'Voor verbeteringen na de lancering. We spreken taken, ritme en verwachtingen rond reacties apart af, op basis van wat je team nodig heeft.']
+          ]
+        },
         aside: 'Je blijft betrokken bij belangrijke keuzes. Wij brengen het plan, leggen afwegingen uit en maken de volgende stap zichtbaar.',
         asideTitle: 'Samen gebouwd, geen black box.',
         ctaTitle: 'Klaar om koers te zetten?',
@@ -128,6 +146,15 @@
           ['Lancer et transmettre', 'Nous préparons la mise en ligne, vérifions l’essentiel et fournissons la documentation, les accès et l’accompagnement convenus.'],
           ['Accompagner la suite', 'Après le lancement, les corrections, la maintenance ou les améliorations peuvent faire l’objet d’un accord de support distinct.']
         ],
+        engagement: {
+          section: 'Façons de collaborer',
+          lead: 'Choisissez un point de départ utile. Nous convenons ensemble du périmètre, du calendrier et du budget avant de commencer.',
+          cards: [
+            ['Projet défini', 'Pour un site, une application ou un système avec un objectif clair. Nous convenons du périmètre, des livrables et des étapes avant de concevoir et développer.'],
+            ['Commencer par l’exploration', 'Pour une idée à préciser avant de s’engager dans le développement. Nous clarifions le problème, les priorités et une prochaine étape réaliste.'],
+            ['Support continu', 'Pour les améliorations après le lancement. Nous définissons séparément les tâches, le rythme et les attentes de réponse selon les besoins de votre équipe.']
+          ]
+        },
         aside: 'Vous participez aux décisions importantes. Nous apportons le plan, expliquons les compromis et rendons la prochaine étape visible.',
         asideTitle: 'Construit ensemble, sans boîte noire.',
         ctaTitle: 'Prêt à tracer la route ?',
@@ -148,6 +175,7 @@
         cards: [
           ['What kinds of projects do you take on?', 'Brand and creative work, websites, apps, and custom front- and back-end systems for small companies. We can also help connect the strategy, content and digital experience.'],
           ['Are you a fit for a small company?', 'Yes. The work is designed around the goals and practical needs of smaller teams. We will be candid if a brief is not a good fit or needs a different specialist.'],
+          ['How can we work together?', 'We can start with a defined project, a discovery phase to shape an idea, or an ongoing support arrangement after launch. See the Approach page for details; scope and terms are agreed for each engagement.'],
           ['How much does a project cost?', 'It depends on the scope, complexity and requirements. After an initial conversation, we can propose a defined scope and budget before you decide whether to proceed.'],
           ['How long will it take?', 'Timing depends on the work, decision points, content and integrations. We estimate a schedule with you during scoping and call out dependencies that could affect it.'],
           ['How do feedback and changes work?', 'We agree on review points and who will provide feedback. If a request changes the agreed scope, we explain the impact on timing and cost before doing that additional work.'],
@@ -173,6 +201,7 @@
         cards: [
           ['Welke projecten nemen jullie aan?', 'Merk- en creatief werk, websites, apps en systemen op maat voor front- en back-end van kleine bedrijven. We helpen strategie, content en digitale ervaring samenbrengen.'],
           ['Past Make It So bij een klein bedrijf?', 'Ja. We stemmen het werk af op de doelen en praktische noden van kleinere teams. We zeggen het eerlijk als een briefing niet past of een andere specialist nodig heeft.'],
+          ['Hoe kunnen we samenwerken?', 'We kunnen starten met een afgebakend project, een verkenningsfase om een idee vorm te geven of ondersteuning na de lancering. Bekijk de pagina Aanpak voor meer details. Scope en afspraken bepalen we per opdracht.'],
           ['Wat kost een project?', 'Dat hangt af van scope, complexiteit en vereisten. Na een eerste gesprek kunnen we een duidelijke scope en budget voorstellen, zodat je beslist of je verder wilt.'],
           ['Hoe lang duurt een project?', 'De timing hangt af van het werk, beslismomenten, content en koppelingen. Tijdens de afbakening maken we samen een planning en benoemen we afhankelijkheden.'],
           ['Hoe werken feedback en wijzigingen?', 'We spreken reviewmomenten af en wie feedback geeft. Verandert een verzoek de afgesproken scope, dan leggen we eerst de gevolgen voor planning en kosten uit.'],
@@ -198,6 +227,7 @@
         cards: [
           ['Quels types de projets réalisez-vous ?', 'Identité et création, sites web, applications et systèmes front- et back-end sur mesure pour les petites entreprises. Nous pouvons relier stratégie, contenu et expérience numérique.'],
           ['Travaillez-vous avec les petites entreprises ?', 'Oui. Le travail est adapté aux objectifs et aux besoins pratiques des petites équipes. Nous vous dirons franchement si votre projet nécessite un autre spécialiste.'],
+          ['Comment pouvons-nous collaborer ?', 'Nous pouvons commencer par un projet défini, une phase d’exploration pour préciser une idée ou un support après le lancement. Consultez la page Approche pour en savoir plus. Le périmètre et les conditions sont convenus pour chaque mission.'],
           ['Quel est le prix d’un projet ?', 'Le prix dépend du périmètre, de la complexité et des besoins. Après un premier échange, nous pouvons proposer un périmètre et un budget précis avant votre décision.'],
           ['Combien de temps faut-il ?', 'Le calendrier dépend du travail, des décisions, du contenu et des intégrations. Nous estimons le délai ensemble et signalons les dépendances pendant le cadrage.'],
           ['Comment fonctionnent les retours et changements ?', 'Nous convenons des étapes de révision et des personnes qui donnent leur avis. Si une demande modifie le périmètre, nous expliquons son impact sur le délai et le prix avant d’agir.'],
@@ -243,6 +273,17 @@
       ? `<div class="studio-faq">${copy.cards.map(([question, answer]) => `
           <details class="studio-faq-item"><summary>${escape(question)}<span aria-hidden="true">+</span></summary><p>${escape(answer)}</p></details>`).join('')}</div>`
       : `<div class="studio-grid ${app.dataset.studioPage === 'approach' ? 'studio-steps' : ''}">${cards}</div>`;
+    const engagementSection = copy.engagement
+      ? `<section class="studio-section studio-engagement">
+          <header class="studio-section-head"><div><p class="detail-overline">${escape(copy.kicker)}</p><h2>${escape(copy.engagement.section)}</h2></div><p>${escape(copy.engagement.lead)}</p></header>
+          <div class="studio-grid">${copy.engagement.cards.map(([title, body], index) => `
+            <article class="studio-card">
+              <span class="studio-card-num">${String(index + 1).padStart(2, '0')}</span>
+              <h3>${escape(title)}</h3><p>${escape(body)}</p>
+            </article>`).join('')}
+          </div>
+        </section>`
+      : '';
     const homeLink = localizedUrl('/#contact', language);
     app.innerHTML = `
       <section class="studio-hero">
@@ -260,6 +301,7 @@
         <header class="studio-section-head"><div><p class="detail-overline">${escape(copy.kicker)}</p><h2>${escape(copy.section)}</h2></div><p>${escape(copy.lead)}</p></header>
         ${detailCards}
       </section>
+      ${engagementSection}
       <section class="studio-aside">
         <span class="studio-aside-mark" aria-hidden="true">✦</span>
         <div><p class="studio-kicker">${escape(copy.kicker)}</p><h2>${escape(copy.asideTitle)}</h2></div>
