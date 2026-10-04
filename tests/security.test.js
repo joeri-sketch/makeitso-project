@@ -24,6 +24,20 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('uses localized service wording instead of Departments in site navigation', async () => {
+    const c = new Client(ctx.base);
+    for (const path of ['/', '/services/brand-strategy/', '/missions/nova-coffee/', '/about/']) {
+      const page = await c.get(path);
+      assert.equal(page.status, 200, path);
+      assert.match(page.text, />What we do<\/a>/, `${path} uses the updated navigation label`);
+      assert.doesNotMatch(page.text, />Departments<\/a>/, `${path} no longer says Departments in navigation`);
+    }
+    const translations = await c.get('/i18n.js');
+    for (const phrase of ['What we do', 'Wat we doen', 'Nos services']) {
+      assert.ok(translations.text.includes(phrase), `navigation translation includes “${phrase}”`);
+    }
+  });
+
   it('serves linked, separate pages for all six departments', async () => {
     const c = new Client(ctx.base);
     const home = await c.get('/');
@@ -113,6 +127,13 @@ describe('website, headers and abuse protection', () => {
     const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
     const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
     assert.deepEqual(inline, [INLINE_SCRIPT], 'index.html must only contain the allow-listed inline script');
+  });
+
+  it('shows the preloader only once per browser tab session', async () => {
+    assert.match(INLINE_SCRIPT, /sessionStorage\.getItem\('makeitso-preloader-seen'\)/);
+    assert.match(INLINE_SCRIPT, /sessionStorage\.setItem\('makeitso-preloader-seen','1'\)/);
+    const styles = readFileSync(new URL('../public/styles.css', import.meta.url), 'utf8');
+    assert.match(styles, /\.js\.preloader-seen \.preloader\s*\{\s*display:\s*none;/);
   });
 
   it('does not serve source files, dotfiles or the database folder', async () => {

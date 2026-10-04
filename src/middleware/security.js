@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import { HttpError } from '../lib/validate.js';
 
 // The static site has one small inline script in <head>; allow exactly that script by hash.
-export const INLINE_SCRIPT = "document.documentElement.classList.add('js')";
+export const INLINE_SCRIPT = "document.documentElement.classList.add('js');try{if(sessionStorage.getItem('makeitso-preloader-seen'))document.documentElement.classList.add('preloader-seen');else sessionStorage.setItem('makeitso-preloader-seen','1')}catch(error){console.warn('Could not save preloader session state; skipping the preloader.',error);document.documentElement.classList.add('preloader-seen')}";
 const inlineHash = `'sha256-${createHash('sha256').update(INLINE_SCRIPT).digest('base64')}'`;
 
 export function securityHeaders(config) {

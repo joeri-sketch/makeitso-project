@@ -579,6 +579,7 @@ button, input, textarea { font: inherit; }
 /* ---------- preloader ---------- */
 .preloader { position: fixed; inset: 0; z-index: 200; display: none; place-items: center; overflow: hidden; background: radial-gradient(ellipse 60% 55% at 78% 8%, rgba(181, 139, 255, .7), transparent 70%), radial-gradient(ellipse 50% 50% at 8% 95%, rgba(0, 212, 255, .45), transparent 70%), linear-gradient(160deg, #1a4dff 0%, var(--blue) 45%, var(--blue-2) 100%); transition: opacity .8s ease, transform .8s ease, visibility 0s .8s; }
 .js .preloader { display: grid; animation: pre-failsafe .01s 8s forwards; }
+.js.preloader-seen .preloader { display: none; }
 .preloader.done { opacity: 0; transform: scale(1.06); visibility: hidden; pointer-events: none; }
 @keyframes pre-failsafe { to { opacity: 0; visibility: hidden; pointer-events: none; } }
 .pre-orbit { position: absolute; left: 50%; top: 46%; border-radius: 50%; border: 1.5px dashed rgba(255, 255, 255, .3); transform: translate(-50%, -50%); animation: spin 40s linear infinite; pointer-events: none; }

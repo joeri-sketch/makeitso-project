@@ -37,7 +37,7 @@
       'L\'assistant robot Make It So : un robot élégant dont l\'écran affiche des expressions, en veste indigo et tenant une tasse de thé'],
 
     // ----- navigation -----
-    ['Departments', 'Afdelingen', 'Départements'],
+    ['What we do', 'Wat we doen', 'Nos services'],
     ['Missions', 'Missies', 'Missions'],
     ['Mission log', 'Missielogboek', 'Journal de mission'],
     ['Process', 'Aanpak', 'Méthode'],

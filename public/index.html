@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('makeitso-preloader-seen'))document.documentElement.classList.add('preloader-seen');else sessionStorage.setItem('makeitso-preloader-seen','1')}catch(error){console.warn('Could not save preloader session state; skipping the preloader.',error);document.documentElement.classList.add('preloader-seen')}</script>
 </head>
 <body>
   <!-- preloader: robot boots up, then the whole overlay fades out -->
@@ -67,7 +67,7 @@
   <div class="dock" id="dock">
     <a class="dock-logo" href="#top" aria-label="Make It So, back to top"><svg width="30" height="30"><use href="#logo"/></svg></a>
     <nav aria-label="Quick navigation">
-      <a href="#departments">Departments</a>
+      <a href="#departments">What we do</a>
       <a href="#missions">Missions</a>
       <a href="/about/" data-studio-path="/about/">About</a>
       <a href="/approach/" data-studio-path="/approach/">Approach</a>
@@ -91,7 +91,7 @@
             <span>make it so<em>.</em></span>
           </a>
           <div class="nav-links" id="nav-links">
-            <a href="#departments">Departments</a>
+            <a href="#departments">What we do</a>
             <a href="#missions">Mission log</a>
             <a href="/about/" data-studio-path="/about/">About</a>
             <a href="/approach/" data-studio-path="/approach/">Approach</a>
@@ -368,7 +368,7 @@
     <div class="wrap">
       <div class="foot-top">
         <a class="brand" href="#top" aria-label="Make It So, back to top"><svg width="34" height="34"><use href="#logo"/></svg><span>make it so<em>.</em></span></a>
-        <nav aria-label="Footer navigation"><a href="#departments">Departments</a><a href="#missions">Mission log</a><a href="/about/" data-studio-path="/about/">About</a><a href="/approach/" data-studio-path="/approach/">Approach</a><a href="/faq/" data-studio-path="/faq/">FAQ</a><a href="#contact">Hail us</a></nav>
+        <nav aria-label="Footer navigation"><a href="#departments">What we do</a><a href="#missions">Mission log</a><a href="/about/" data-studio-path="/about/">About</a><a href="/approach/" data-studio-path="/approach/">Approach</a><a href="/faq/" data-studio-path="/faq/">FAQ</a><a href="#contact">Hail us</a></nav>
         <a class="btn btn-white btn-sm" href="/portal/">Client login</a>
         <a class="btn btn-orange btn-sm" href="/admin">Admin login</a>
         <div class="lang lang-footer" role="group" aria-label="Language">
