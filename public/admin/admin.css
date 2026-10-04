@@ -158,6 +158,18 @@ progress::-moz-progress-bar { background: var(--orange); border-radius: 99px; }
 .work-visible { width: fit-content; padding: 2px 7px; border-radius: 99px; background: #cffbe9; color: #0b7a55; font-size: 11px; }
 .work-empty { padding: 10px 0; color: var(--muted); font-size: 13px; }
 .work-row { align-items: flex-start !important; }
+.work-conversations { display: grid; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.work-conversation { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #f9faff; }
+.work-conversation > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.work-conversation h4 { margin: 0; }
+.work-thread { display: grid; gap: 8px; }
+.work-message { padding: 10px 12px; border-radius: 10px; background: #edf0fa; overflow-wrap: anywhere; }
+.work-message.from-client { background: #fff0e4; }
+.work-message p { white-space: pre-wrap; }
+.work-message small { display: block; margin-top: 5px; color: var(--muted); }
+.work-reply-form { display: grid; gap: 8px; }
+.work-reply-form textarea { width: 100%; min-height: 72px; }
+.work-reply-form .form-error:empty { display: none; }
 .work-progress-note { margin: -4px 0 12px; font-size: 13px; }
 #timesheet-table td { min-width: 100px; }
 #timesheet-table td:nth-child(3) { min-width: 210px; }

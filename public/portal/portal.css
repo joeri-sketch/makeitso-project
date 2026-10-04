@@ -59,9 +59,30 @@ button, input, textarea { font: inherit; color: inherit; }
 .note small { color: var(--muted); }
 .empty { padding: 18px 0; color: var(--muted); }
 .notice { padding: 12px 14px; border-radius: 12px; background: #fff6d6; color: #6b4e00; }
+.project-work > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.project-work > header h3 { margin: 0; }
+.portal-work-grid { display: grid; gap: 12px; }
+.portal-work-item { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-left: 4px solid #8c95b5; border-radius: 14px; background: #fbfcff; }
+.portal-work-item.status-in_progress { border-left-color: var(--blue); }
+.portal-work-item.status-in_review { border-left-color: #df9e00; }
+.portal-work-item.status-blocked { border-left-color: var(--danger); }
+.portal-work-item.status-done { border-left-color: #0e9b70; }
+.portal-work-item > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.portal-work-item h4 { margin: 0; font: 700 17px/1.3 var(--font-display); }
+.portal-work-item > header p { margin-top: 5px; color: var(--muted); white-space: pre-wrap; }
+.work-thread { display: grid; gap: 8px; }
+.work-message { padding: 10px 12px; border-radius: 12px; background: #eef1fc; overflow-wrap: anywhere; }
+.work-message.from-client { background: #fff4e9; }
+.work-message p { white-space: pre-wrap; }
+.work-message small { display: block; margin-top: 5px; color: var(--muted); }
+.work-reply-form { display: grid; justify-items: start; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.work-reply-form .field { width: 100%; }
+.work-reply-form textarea { min-height: 72px; }
+.work-reply-form .error:empty { display: none; }
 @media (max-width: 600px) {
   .top { align-items: flex-start; flex-direction: column; }
   .details { grid-template-columns: 1fr; gap: 2px; }
   .details dd { margin-bottom: 8px; }
   .quote-items th:nth-child(2), .quote-items td:nth-child(2) { display: none; }
+  .portal-work-item > header { flex-direction: column; }
 }
