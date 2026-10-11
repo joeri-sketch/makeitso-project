@@ -138,6 +138,31 @@
     ['Concept campaigns that show how we think. Your real case studies will live here.',
       'Conceptcampagnes die laten zien hoe wij denken. Jouw echte cases komen hier te staan.',
       'Des campagnes concept qui montrent notre façon de penser. Vos vraies études de cas viendront ici.'],
+    ['Fictional sample projects showing how brand, website and marketing can work together.',
+      'Fictieve voorbeeldprojecten die laten zien hoe merk, website en marketing elkaar versterken.',
+      'Des projets fictifs qui montrent comment la marque, le site web et le marketing fonctionnent ensemble.'],
+    ['Fresh artisan breads arranged in a neighborhood bakery',
+      'Vers ambachtelijk brood in een buurtbakkerij',
+      'Pains artisanaux frais dans une boulangerie de quartier'],
+    ['Bright independent fitness studio with strength training equipment',
+      'Lichte onafhankelijke fitnessstudio met krachttrainingsmateriaal',
+      'Studio de fitness indépendant et lumineux avec équipements de musculation'],
+    ['Modern car on a scenic road, ready for a weekend trip',
+      'Moderne auto op een mooie weg, klaar voor een weekenduitstap',
+      'Voiture moderne sur une route panoramique, prête pour le week-end'],
+    ['Sample mission · Brand, website & launch', 'Voorbeeldmissie · Merk, website & lancering', 'Exemple de mission · Marque, site web & lancement'],
+    ['Nova Bakery', 'Nova Bakkerij', 'Boulangerie Nova'],
+    ['A neighborhood bakery with a warm identity, a useful website and a local launch campaign.',
+      'Een buurtbakkerij met een warme identiteit, een handige website en een lokale lanceringscampagne.',
+      'Une boulangerie de quartier avec une identité chaleureuse, un site pratique et une campagne de lancement locale.'],
+    ['Move Studio', 'Move Studio', 'Studio Move'],
+    ['A welcoming movement studio with a confident identity, class-booking website and community launch.',
+      'Een toegankelijke bewegingsstudio met een zelfverzekerde identiteit, lesboekingswebsite en communitylancering.',
+      'Un studio de mouvement accueillant avec une identité affirmée, un site de réservation de cours et un lancement communautaire.'],
+    ['Roam Car Rental', 'Roam Autoverhuur', 'Location auto Roam'],
+    ['A local rental company with a road-ready identity, clear booking experience and regional campaign.',
+      'Een lokaal autoverhuurbedrijf met een reisgerichte identiteit, duidelijke boekingservaring en regionale campagne.',
+      'Une agence de location locale avec une identité tournée vers la route, une réservation claire et une campagne régionale.'],
     ['Move.', 'Beweeg.', 'Bougez.'],
     ['Play.', 'Speel.', 'Jouez.'],
     ['Sample mission · Launch campaign', 'Voorbeeldmissie · Lanceringscampagne', 'Exemple de mission · Campagne de lancement'],
@@ -212,7 +237,7 @@
   // unit suffix for the animated "24h" counter
   const SUFFIX = { h: { en: 'h', nl: 'u', fr: ' h' } };
 
-  const ATTRS = ['aria-label', 'placeholder', 'data-placeholder'];
+  const ATTRS = ['aria-label', 'placeholder', 'data-placeholder', 'alt'];
   const META = ['meta[name="description"]', 'meta[property="og:title"]', 'meta[property="og:description"]'];
 
   const textOriginals = new WeakMap();
