@@ -246,21 +246,32 @@ button, input, textarea { font: inherit; }
 .s3 { grid-column: span 3; } .s4 { grid-column: span 4; } .s5 { grid-column: span 5; }
 
 /* ---------- mission log ---------- */
-.missions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.mission { display: grid; gap: 20px; }
-.visual { position: relative; overflow: hidden; aspect-ratio: 4 / 4.4; border-radius: 34px; display: grid; place-items: center; transition: transform .5s var(--ease); }
-.mission:hover .visual { transform: scale(.98) rotate(-1deg); }
-.m1 .visual { background: linear-gradient(140deg, #ff8a3d, #ff3d7f); }
-.m2 .visual { background: linear-gradient(140deg, #6a4dff, #0b3bff); }
-.m3 .visual { background: linear-gradient(140deg, #36f1b6, #00b8ff); }
-.visual .big { position: relative; z-index: 2; font: 800 clamp(3.4rem, 7vw, 6rem)/1 var(--font-display); letter-spacing: -.06em; color: #fff; }
-.m3 .visual .big { color: var(--navy); }
-.orb { position: absolute; width: 62%; aspect-ratio: 1; border-radius: 50%; right: -14%; bottom: -14%; background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, .8), rgba(255, 255, 255, .12) 60%); transition: transform .8s var(--ease); }
-.mission:hover .orb { transform: scale(1.18) translate(-6%, -6%); }
-.ring { position: absolute; width: 120%; aspect-ratio: 1; border-radius: 50%; left: -50%; top: -60%; border: 2px solid rgba(255, 255, 255, .35); animation: spin 60s linear infinite; }
+.missions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+.mission { display: grid; align-content: start; gap: 22px; min-width: 0; }
+.mission-link { color: inherit; border-radius: 28px; }
+.mission-link:focus-visible { outline-color: var(--blue); outline-offset: 6px; }
+.mission-link .meta { transition: transform .35s var(--ease); }
+.mission-link:hover .meta { transform: translateY(-3px); }
+.mission-link .meta h3::after { content: "↗"; display: inline-block; margin-left: 9px; color: var(--blue); font-size: 1rem; vertical-align: .2em; transition: transform .25s var(--ease); }
+.mission-link:hover .meta h3::after { transform: translate(3px, -3px); }
+.visual { position: relative; isolation: isolate; overflow: hidden; aspect-ratio: 4 / 3; min-height: 250px; border-radius: 28px; transition: transform .5s var(--ease), box-shadow .5s var(--ease); box-shadow: 0 18px 34px -22px rgba(7, 16, 58, .45); }
+.mission:hover .visual { transform: translateY(-5px); box-shadow: 0 25px 44px -22px rgba(7, 16, 58, .5); }
+.photo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+.mission:hover .photo { transform: scale(1.035); }
+.photo-shade { position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgba(5, 8, 23, .35), transparent 34%, transparent 50%, rgba(5, 8, 23, .66)); }
+.move-photo .photo-shade { background: linear-gradient(180deg, rgba(5, 8, 23, .48), transparent 42%, rgba(5, 8, 23, .64)); }
+.play-photo .photo-shade { background: linear-gradient(180deg, rgba(5, 8, 23, .38), transparent 40%, rgba(5, 8, 23, .62)); }
+.art-index, .art-caption { position: absolute; z-index: 1; left: 20px; color: #fff; font-size: .62rem; font-weight: 800; letter-spacing: .15em; text-shadow: 0 2px 10px rgba(5, 8, 23, .35); }
+.art-index { top: 18px; }
+.art-caption { bottom: 17px; }
+.photo-copy { position: absolute; z-index: 1; left: 22px; bottom: 52px; display: grid; gap: 8px; color: #fff; text-shadow: 0 2px 12px rgba(5, 8, 23, .4); }
+.photo-copy strong { font: 800 clamp(1.8rem, 3.2vw, 2.65rem)/.98 var(--font-display); letter-spacing: -.045em; }
+.photo-copy small { font-size: .61rem; font-weight: 800; letter-spacing: .16em; }
 .meta .tag { font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--blue); }
 .meta h3 { font: 800 2rem/1.1 var(--font-display); letter-spacing: -.045em; margin: 8px 0 8px; }
 .meta p { font-size: .97rem; color: rgba(7, 16, 58, .72); max-width: 380px; }
+.mission-deliverables { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+.mission-deliverables li { padding: 6px 10px; border: 1px solid rgba(7, 16, 58, .14); border-radius: 999px; background: rgba(255, 255, 255, .54); color: rgba(7, 16, 58, .78); font-size: .72rem; font-weight: 700; line-height: 1.2; }
 
 /* ---------- process ---------- */
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; position: relative; }
