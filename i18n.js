@@ -16,7 +16,7 @@
       'Make It So is een creatief marketingbureau. Merkstrategie, content, online adverteren en webervaringen waar merken niet omheen kunnen.',
       'Make It So est une agence de marketing créatif. Stratégie de marque, contenu, publicité en ligne et expériences web qui rendent les marques impossibles à ignorer.'],
     ['Make it so. Watch it launch. Brand, content, media and web for brands that refuse to blend in.',
-      'Make it so. Zie het opstijgen. Merk, content, media en web voor merken die niet in de massa willen opgaan.',
+      'Make it so. Lanceer jouw succes. Merk, content, media en web voor merken die niet in de massa willen opgaan.',
       'Make it so. Regardez-le décoller. Marque, contenu, médias et web pour les marques qui refusent de se fondre dans la masse.'],
 
     // ----- accessibility labels -----
@@ -47,7 +47,7 @@
     // ----- hero -----
     ['Captain\'s log ·', 'Kapiteinslogboek ·', 'Journal du capitaine ·'],
     ['Stardate', 'Sterrendatum', 'Date stellaire'],
-    ['Watch it launch', 'Zie het opstijgen', 'Regardez-le décoller'],
+    ['Watch it launch', 'Lanceer jouw succes', 'Regardez-le décoller'],
     ['Make It So is a creative marketing agency for brands that refuse to blend in. Strategy, content and campaigns — plotted fast, launched boldly, measured honestly.',
       'Make It So is een creatief marketingbureau voor merken die niet in de massa willen opgaan. Strategie, content en campagnes — snel uitgestippeld, gedurfd gelanceerd, eerlijk gemeten.',
       'Make It So est une agence de marketing créatif pour les marques qui refusent de se fondre dans la masse. Stratégie, contenu et campagnes — tracés vite, lancés avec audace, mesurés en toute honnêteté.'],
