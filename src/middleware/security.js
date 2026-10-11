@@ -13,7 +13,7 @@ export function securityHeaders(config) {
     'style-src': ["'self'", 'https://fonts.googleapis.com'],
     'style-src-attr': ["'unsafe-inline'"],
     'font-src': ["'self'", 'https://fonts.gstatic.com'],
-    'img-src': ["'self'", 'data:'],
+    'img-src': ["'self'", 'data:', 'https://images.unsplash.com'],
     'connect-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],

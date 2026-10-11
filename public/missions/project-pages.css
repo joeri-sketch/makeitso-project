@@ -104,6 +104,8 @@
 .project-close .btn { justify-self: center; }
 .project-footer { padding-top: 48px; }
 .project-footer .giant { margin-top: 34px; }
+.project-account-link { font-size: .88rem; font-weight: 700; opacity: .8; }
+.project-account-link:hover { color: var(--gold); opacity: 1; }
 
 @media (max-width: 900px) {
   .project-route .project-dock { flex-wrap: wrap; gap: 12px; padding: 9px 11px 9px 16px; }

@@ -64,18 +64,23 @@ describe('website, headers and abuse protection', () => {
   it('serves linked, separate concept pages for all three sample missions', async () => {
     const c = new Client(ctx.base);
     const home = await c.get('/');
-    const missions = ['nova-coffee', 'orbit-fitness', 'luna-records'];
+    const missions = ['nova-bakery', 'move-studio', 'roam-rental'];
     for (const slug of missions) {
       assert.match(home.text, new RegExp(`href="/missions/${slug}/"`), `${slug} has a mission-card link`);
       const page = await c.get(`/missions/${slug}/`);
       assert.equal(page.status, 200, slug);
-      assert.match(page.text, new RegExp(`data-mission="${slug}"`), slug);
+      assert.match(page.text, new RegExp(`data-project="${slug}"`), slug);
       assert.match(page.text, /class="cosmos"/, `${slug} has the homepage starfield`);
       assert.match(page.text, /aria-label="Main navigation"/, `${slug} has main-site navigation`);
-      assert.match(page.text, /class="footer service-footer"/, `${slug} has the site footer`);
+      assert.match(page.text, /class="footer project-footer"/, `${slug} has the site footer`);
       assert.match(page.text, /name="description"/, `${slug} has a page description`);
+      assert.match(page.text, /name="robots" content="noindex, nofollow"/, `${slug} stays out of search results`);
+      assert.match(page.text, /Stichelendries 47\/A, 9340 Oordegem \(Lede\), Belgium/, `${slug} footer has the registered address`);
+      assert.match(page.text, /VAT: BE1030043889/, `${slug} footer has the VAT number`);
+      assert.match(page.text, /href="\/portal\/">Client login/, `${slug} footer links to the client portal`);
+      assert.match(page.text, /href="\/admin">Admin login/, `${slug} footer links to the admin`);
     }
-    for (const file of ['mission-data.js', 'mission-page.js']) {
+    for (const file of ['project-page.js', 'project-pages.css']) {
       assert.equal((await c.get(`/missions/${file}`)).status, 200, file);
     }
   });
@@ -140,9 +145,9 @@ describe('website, headers and abuse protection', () => {
     assert.match(home.text, /"@type": "Organization"/);
     assert.match(home.text, /websites, apps and business software/i);
 
-    for (const slug of ['nova-coffee', 'orbit-fitness', 'luna-records']) {
+    for (const slug of ['nova-coffee', 'orbit-fitness', 'luna-records', 'nova-bakery', 'move-studio', 'roam-rental']) {
       const page = await c.get(`/missions/${slug}/`);
-      assert.match(page.text, /name="robots" content="noindex, follow"/, slug);
+      assert.match(page.text, /name="robots" content="noindex, (?:no)?follow"/, slug);
     }
   });
 
@@ -152,7 +157,8 @@ describe('website, headers and abuse protection', () => {
       '/', '/about/', '/approach/', '/faq/',
       '/services/brand-strategy/', '/services/social-content/', '/services/paid-media/',
       '/services/web-landing-pages/', '/services/video-motion/', '/services/growth-analytics/',
-      '/missions/nova-coffee/', '/missions/orbit-fitness/', '/missions/luna-records/'
+      '/missions/nova-coffee/', '/missions/orbit-fitness/', '/missions/luna-records/',
+      '/missions/nova-bakery/', '/missions/move-studio/', '/missions/roam-rental/'
     ];
     for (const path of pages) {
       const page = await c.get(path);
@@ -169,6 +175,7 @@ describe('website, headers and abuse protection', () => {
     assert.match(csp, /default-src 'self'/);
     assert.match(csp, /frame-ancestors 'none'/);
     assert.match(csp, /fonts\.googleapis\.com/);
+    assert.match(csp, /img-src[^;]*https:\/\/images\.unsplash\.com/);
     assert.ok(!/unsafe-inline/.test(csp.match(/script-src[^;]*/)[0]), 'no unsafe-inline for scripts');
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
     assert.equal(res.headers.get('x-powered-by'), null);
