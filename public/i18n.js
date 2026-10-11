@@ -220,6 +220,12 @@
       'Ouverture de votre application de messagerie… si rien ne se passe, écrivez directement à hello@makeitso.studio.'],
     ['New mission from {name}', 'Nieuwe missie van {name}', 'Nouvelle mission de {name}'],
     ['Message received. We reply within a day.', 'Bericht ontvangen. We reageren binnen een dag.', 'Message reçu. Nous répondons sous un jour.'],
+    ['We could not submit your message. Please try again or email hello@makeitso.studio directly.',
+      'Je bericht kon niet worden verzonden. Probeer het opnieuw of mail rechtstreeks naar hello@makeitso.studio.',
+      'Votre message n’a pas pu être envoyé. Réessayez ou écrivez directement à hello@makeitso.studio.'],
+    ['Your message was saved, but the email could not be delivered. Please email hello@makeitso.studio as a backup.',
+      'Je bericht is opgeslagen, maar de e-mail kon niet worden bezorgd. Mail voor de zekerheid ook naar hello@makeitso.studio.',
+      'Votre message a été enregistré, mais l’e-mail n’a pas pu être remis. Écrivez également à hello@makeitso.studio par précaution.'],
 
     // ----- footer -----
     ['Client login', 'Klantlogin', 'Connexion client'],

@@ -377,6 +377,8 @@
     const note = $('#form-note');
     const MAIL_NOTE = 'Opening your mail app… if nothing happens, email hello@makeitso.studio directly.';
     const SENT_NOTE = 'Message received. We reply within a day.';
+    const SUBMIT_FAILURE_NOTE = 'We could not submit your message. Please try again or email hello@makeitso.studio directly.';
+    const MAIL_FAILURE_NOTE = 'Your message was saved, but the email could not be delivered. Please email hello@makeitso.studio as a backup.';
     let noteKey = null;
     const setNote = (key) => { noteKey = key; note.textContent = key ? i18n.t(key) : ''; };
 
@@ -388,9 +390,11 @@
           body: JSON.stringify(payload),
           signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
         });
-        return res.ok;
+        if (res.ok) return 'sent';
+        if (res.status === 404 || res.status === 405) return 'fallback';
+        return res.status === 503 ? 'mail-failed' : 'rejected';
       } catch {
-        return false;
+        return 'fallback';
       }
     };
 
@@ -400,7 +404,7 @@
       const data = new FormData(form);
       const button = form.querySelector('button[type="submit"]');
       if (button) button.disabled = true;
-      const sent = await sendLead({
+      const result = await sendLead({
         name: data.get('name'),
         email: data.get('email'),
         message: data.get('message'),
@@ -408,7 +412,9 @@
         t: Math.round(performance.now())
       });
       if (button) button.disabled = false;
-      if (sent) { form.reset(); setNote(SENT_NOTE); return; }
+      if (result === 'sent') { form.reset(); setNote(SENT_NOTE); return; }
+      if (result === 'mail-failed') { setNote(MAIL_FAILURE_NOTE); return; }
+      if (result === 'rejected') { setNote(SUBMIT_FAILURE_NOTE); return; }
 
       const subject = i18n.t('New mission from {name}', { name: data.get('name') });
       const body = `${data.get('message')}\n\n— ${data.get('name')} (${data.get('email')})`;

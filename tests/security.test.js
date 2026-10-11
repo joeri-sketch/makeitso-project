@@ -24,6 +24,19 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('shows server and email delivery errors instead of opening a local mail app', async () => {
+    const c = new Client(ctx.base);
+    const script = await c.get('/script.js');
+    assert.match(script.text, /res\.status === 503 \? 'mail-failed' : 'rejected'/);
+    assert.match(script.text, /if \(result === 'mail-failed'\) \{ setNote\(MAIL_FAILURE_NOTE\); return; \}/);
+    assert.match(script.text, /if \(result === 'rejected'\) \{ setNote\(SUBMIT_FAILURE_NOTE\); return; \}/);
+    assert.match(script.text, /if \(res\.status === 404 \|\| res\.status === 405\) return 'fallback'/, 'static-only hosting retains the mail app fallback');
+    const translations = await c.get('/i18n.js');
+    for (const phrase of ['Your message was saved, but the email could not be delivered.', 'Je bericht is opgeslagen, maar de e-mail kon niet worden bezorgd.', 'Votre message a été enregistré, mais l’e-mail n’a pas pu être remis.']) {
+      assert.ok(translations.text.includes(phrase), `contact error feedback is localized: ${phrase}`);
+    }
+  });
+
   it('uses localized service wording instead of Departments in site navigation', async () => {
     const c = new Client(ctx.base);
     for (const path of ['/', '/services/brand-strategy/', '/missions/nova-coffee/', '/about/']) {
