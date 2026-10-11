@@ -222,10 +222,8 @@
     ['Message received. We reply within a day.', 'Bericht ontvangen. We reageren binnen een dag.', 'Message reçu. Nous répondons sous un jour.'],
 
     // ----- footer -----
-    ['Make It So. Creative marketing agency.', 'Make It So. Creatief marketingbureau.', 'Make It So. Agence de marketing créatif.'],
     ['Client login', 'Klantlogin', 'Connexion client'],
     ['Admin login', 'Admin login', 'Connexion admin'],
-    ['Powered by Earl Grey. Hot. Live long and prosper.', 'Aangedreven door Earl Grey. Heet. Leef lang en voorspoedig.', 'Propulsé par du thé Earl Grey. Chaud. Longue vie et prospérité.']
   ];
 
   const LANGS = ['en', 'nl', 'fr'];

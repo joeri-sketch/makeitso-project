@@ -49,8 +49,8 @@
       finalCopy: 'Dit is een fictief voorbeeldconcept. Heb je een echt bedrijf, merk of website in gedachten? Samen bouwen we aan het volgende hoofdstuk.',
       finalButton: 'Vertel over je project', nav: ['Wat we doen', 'Missielogboek', 'Over ons', 'Aanpak', 'FAQ', 'Contact'],
       menuOpen: 'Menu openen', menuClose: 'Menu sluiten', footerButton: 'Start een project',
-      footerNote: 'Aangedreven door Earl Grey. Hot. Live long and prosper.', footerNav: 'Footernavigatie',
-      mainNav: 'Hoofdnavigatie', mobileNav: 'Mobiele navigatie', footerCopyright: 'Fictief voorbeeldproject.'
+      footerNote: 'Powered by Earl Grey. Hot. Live long and prosper.', footerNav: 'Footernavigatie',
+      mainNav: 'Hoofdnavigatie', mobileNav: 'Mobiele navigatie', footerCopyright: 'Fictional sample project.'
     },
     fr: {
       back: '← Tous les projets exemples', fictional: 'Projet fictif · Concept créatif, réalisé sans commande d’un client.',
@@ -72,8 +72,8 @@
       finalCopy: 'Ce concept est fictif. Vous avez une vraie entreprise, une marque ou un site en tête ? Créons ensemble son prochain chapitre.',
       finalButton: 'Parlons de votre projet', nav: ['Nos services', 'Journal de mission', 'À propos', 'Approche', 'FAQ', 'Contact'],
       menuOpen: 'Ouvrir le menu', menuClose: 'Fermer le menu', footerButton: 'Démarrer un projet',
-      footerNote: 'Propulsé par Earl Grey. Hot. Longue vie et prospérité.', footerNav: 'Navigation de pied de page',
-      mainNav: 'Navigation principale', mobileNav: 'Navigation mobile', footerCopyright: 'Projet exemple fictif.'
+      footerNote: 'Powered by Earl Grey. Hot. Live long and prosper.', footerNav: 'Navigation de pied de page',
+      mainNav: 'Navigation principale', mobileNav: 'Navigation mobile', footerCopyright: 'Fictional sample project.'
     }
   };
 

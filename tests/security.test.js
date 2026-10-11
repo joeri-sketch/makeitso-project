@@ -132,6 +132,13 @@ describe('website, headers and abuse protection', () => {
     }
     const styles = await c.get('/styles.css');
     assert.match(styles.text, /@media \(max-width: 1080px\) \{[\s\S]*?\.studio-hero-orbit \{\s*display: none;\s*\}/, 'decorative orbit stays clear of the studio-page headline on tablet and mobile');
+    const translations = await c.get('/i18n.js');
+    assert.doesNotMatch(translations.text, /Make It So\. Creatief marketingbureau\.|Make It So\. Agence de marketing créatif\./, 'footer copyright stays in English');
+    assert.doesNotMatch(translations.text, /Aangedreven door Earl Grey|Propulsé par du thé Earl Grey/, 'footer sign-off stays in English');
+    const projectPage = await c.get('/missions/project-page.js');
+    assert.equal(projectPage.status, 200);
+    assert.equal([...projectPage.text.matchAll(/footerNote: 'Powered by Earl Grey\. Hot\. Live long and prosper\.'/g)].length, 3, 'sample mission footer sign-off stays in English in every locale');
+    assert.equal([...projectPage.text.matchAll(/footerCopyright: 'Fictional sample project\.'/g)].length, 3, 'sample mission footer copyright stays in English in every locale');
   });
 
   it('serves the client portal without exposing it to search engines', async () => {
