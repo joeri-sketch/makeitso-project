@@ -205,8 +205,12 @@ describe('CRM: clients, contacts, projects, milestones, notes', () => {
 });
 
 describe('leads from the website form', () => {
-  let ctx, api;
-  before(async () => { ctx = await startTestServer(); ({ client: api } = await signedInAdmin(ctx)); });
+  let ctx, api, contactEmails;
+  before(async () => {
+    contactEmails = [];
+    ctx = await startTestServer({ sendContactEmail: async (lead) => contactEmails.push(lead) });
+    ({ client: api } = await signedInAdmin(ctx));
+  });
   after(async () => { await ctx.close(); });
 
   const form = (over = {}) => ({ name: 'Marie Dubois', email: 'marie@example.be', message: 'We need a new website and a launch campaign.', language: 'fr', t: 4000, ...over });
@@ -218,6 +222,10 @@ describe('leads from the website form', () => {
     const leads = (await api.get('/api/leads')).json.leads;
     assert.equal(leads.length, 1);
     assert.equal(leads[0].status, 'new');
+    assert.equal(contactEmails.length, 1);
+    assert.equal(contactEmails[0].name, 'Marie Dubois');
+    assert.equal(contactEmails[0].email, 'marie@example.be');
+    assert.equal(contactEmails[0].language, 'fr');
     assert.equal(leads[0].language, 'fr');
     assert.equal((await api.get('/api/dashboard')).json.counts.new_leads, 1);
   });

@@ -10,9 +10,14 @@ if (isProd) {
   if (!env.DATABASE_URL && env.ALLOW_EMBEDDED_DB !== 'true') {
     problems.push('DATABASE_URL is missing. Add a PostgreSQL database and link its DATABASE_URL, otherwise all data would be lost on every deploy.');
   }
+  const mailSettings = [env.SMTP_HOST, env.SMTP_USER, env.SMTP_PASSWORD].map((value) => Boolean(value));
+  if (mailSettings.some(Boolean) && !mailSettings.every(Boolean)) {
+    problems.push('SMTP_HOST, SMTP_USER and SMTP_PASSWORD must all be set to enable contact-form email.');
+  }
   if (problems.length) throw new Error(`Cannot start. Fix these settings first:\n - ${problems.join('\n - ')}`);
 }
 const appSecret = env.APP_SECRET || 'dev-only-secret-do-not-use-in-production-0123456789';
+const smtpPort = Number(env.SMTP_PORT) || 465;
 
 export const config = {
   env: env.NODE_ENV || 'development',
@@ -28,6 +33,13 @@ export const config = {
   adminEmail: env.ADMIN_EMAIL || '',
   adminName: env.ADMIN_NAME || 'Admin',
   adminPassword: env.ADMIN_PASSWORD || '',
+  smtpHost: env.SMTP_HOST || '',
+  smtpPort,
+  smtpSecure: env.SMTP_SECURE === undefined ? smtpPort === 465 : env.SMTP_SECURE === 'true',
+  smtpUser: env.SMTP_USER || '',
+  smtpPassword: env.SMTP_PASSWORD || '',
+  smtpFrom: env.SMTP_FROM || env.SMTP_USER || '',
+  contactEmail: env.CONTACT_EMAIL || env.SMTP_USER || '',
   sessionHours: 12,
   idleMinutes: 120,
   leadMinFillMs: 1500

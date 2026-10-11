@@ -8,10 +8,10 @@ const { createApp } = await import('../src/app.js');
 const { createAdmin } = await import('../src/services/bootstrap.js');
 const { totpAt } = await import('../src/lib/totp.js');
 
-export async function startTestServer({ rateLimits = false } = {}) {
+export async function startTestServer({ rateLimits = false, sendContactEmail = async () => {} } = {}) {
   const db = await createDb(config);
   await migrate(db);
-  const app = createApp({ db, config, rateLimits, log: () => {} });
+  const app = createApp({ db, config, rateLimits, log: () => {}, mailer: { send: sendContactEmail } });
   const server = await new Promise((resolve) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
   return {

@@ -43,13 +43,15 @@ Everything is environment variables; see [.env.example](.env.example).
 | `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets |
 | `PUBLIC_ORIGIN` | Your site address, e.g. `https://makeitso.studio`. Used for the origin check |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | SMTP account used to send contact-form notifications. Hostinger Email uses `smtp.hostinger.com`, port `465`, secure `true` |
+| `SMTP_FROM`, `CONTACT_EMAIL` | Optional sender address (defaults to `SMTP_USER`) and inbox for contact messages (defaults to `SMTP_USER`) |
 | `PORT`, `TRUST_PROXY` | Set automatically on Railway |
 
 ## Deploy on Railway
 
 1. Keep this repository **private**.
 2. Railway: New project, Deploy from GitHub repo, pick this repo; add a PostgreSQL database.
-3. Set the variables above (`DATABASE_URL` = reference to the Postgres service, `NODE_ENV=production`).
+3. Set the variables above (`DATABASE_URL` = reference to the Postgres service, `NODE_ENV=production`). To enable contact-form emails, configure the SMTP variables using an email account and its mailbox password; do not use your hPanel password.
 4. Add your domain. Check `/healthz`, sign in at `/admin`, then delete `ADMIN_PASSWORD`.
 
 `railway.json` already sets the start command and health check. The app has no Railway-specific code: any host that runs Node 20 plus Postgres works, and `deploy/Dockerfile` is provided as an untested template for container hosts.
@@ -64,4 +66,4 @@ src/db/            database adapter (pg or PGlite), migrations
 tests/             node:test suites (auth, CRM, security, portal, invoices and support)
 ```
 
-The contact form on the website posts to `/api/public/leads`. If the backend is unreachable (static hosting, offline), it falls back to opening the visitor's mail app, so no message is lost.
+The contact form on the website posts to `/api/public/leads`. New leads are stored and sent to `CONTACT_EMAIL` using SMTP. If SMTP is unavailable or the backend cannot be reached, the form falls back to opening the visitor's mail app.

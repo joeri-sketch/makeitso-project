@@ -7,6 +7,7 @@ import { invoiceRoutes, portalInvoiceRoutes } from './routes/invoices.js';
 import { portalRoutes } from './routes/portal.js';
 import { quoteRoutes } from './routes/quotes.js';
 import { publicRoutes } from './routes/public.js';
+import { createContactMailer } from './services/contact-mail.js';
 import { supportRoutes } from './routes/support.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
@@ -15,7 +16,7 @@ const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 
 export const defaultLog = (entry) => console.log(JSON.stringify({ t: new Date().toISOString(), ...entry }));
 
-export function createApp({ db, config, rateLimits = !config.isTest, log = defaultLog }) {
+export function createApp({ db, config, rateLimits = !config.isTest, log = defaultLog, mailer = createContactMailer(config) }) {
   const app = express();
   app.disable('x-powered-by');
   const hops = Number(config.trustProxy);
@@ -48,7 +49,7 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
   app.use('/api', (req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
-  app.use('/api/public', publicRoutes({ db, config, limits }));
+  app.use('/api/public', publicRoutes({ db, config, limits, mailer, log }));
   app.use('/api/portal', portalRoutes({ db, config, limits }));
   app.use('/api/portal', portalInvoiceRoutes({ db }));
   app.use('/api', supportRoutes({ db, limits }));
