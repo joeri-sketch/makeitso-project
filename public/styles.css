@@ -521,6 +521,7 @@ button, input, textarea { font: inherit; }
   .dock nav { display: none; }
   .detail-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr); gap: 36px; }
   .studio-hero { grid-template-columns: 1fr; gap: 30px; }
+  .studio-hero-orbit { display: none; }
   .studio-signal { width: min(100%, 440px); }
   .studio-grid { grid-template-columns: repeat(2, 1fr); }
 }

@@ -130,6 +130,8 @@ describe('website, headers and abuse protection', () => {
     for (const phrase of ['Small teams.', 'Klein team.', 'Petite équipe.', 'Discover', 'Verkennen', 'Explorer', 'Ways to work together', 'Manieren om samen te werken', 'Façons de collaborer', 'Defined project', 'Afgebakend project', 'Projet défini', 'How can we work together?', 'Hoe kunnen we samenwerken?', 'Comment pouvons-nous collaborer ?', 'How much does a project cost?', 'Wat kost een project?', 'Quel est le prix d’un projet ?']) {
       assert.ok(studio.text.includes(phrase), `localized studio content includes “${phrase}”`);
     }
+    const styles = await c.get('/styles.css');
+    assert.match(styles.text, /@media \(max-width: 1080px\) \{[\s\S]*?\.studio-hero-orbit \{\s*display: none;\s*\}/, 'decorative orbit stays clear of the studio-page headline on tablet and mobile');
   });
 
   it('serves the client portal without exposing it to search engines', async () => {
