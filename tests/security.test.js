@@ -61,6 +61,33 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('maps department examples to the matching localized case studies', async () => {
+    const c = new Client(ctx.base);
+    const page = await c.get('/services/service-page.js');
+    assert.equal(page.status, 200);
+    const mappings = [
+      ['brand-strategy', 'nova-bakery'],
+      ['social-content', 'move-studio'],
+      ['paid-media', 'roam-rental'],
+      ['web-landing-pages', 'roam-rental'],
+      ['video-motion', 'nova-bakery'],
+      ['growth-analytics', 'roam-rental']
+    ];
+    for (const [service, project] of mappings) {
+      assert.match(page.text, new RegExp(`'${service}':\\s*\\{\\s*project:\\s*'${project}'`), `${service} points to ${project}`);
+    }
+    for (const phrase of ['Nova Bakery', 'Move Studio', 'Roam', 'Nova Bakery krijgt', 'Move Studio brengt', 'Roam ontdekt', 'Nova Bakery affirme', 'Move Studio met', 'Roam comprend']) {
+      assert.ok(page.text.includes(phrase), `department examples include localized concept copy: ${phrase}`);
+    }
+    assert.match(page.text, /localizedUrl\(`\/missions\/\$\{example\.project\}\/`, language\)/, 'project links preserve the selected language');
+    const data = await c.get('/services/service-data.js');
+    assert.match(data.text, /fullProject: 'See the full concept'/);
+    assert.match(data.text, /fullProject: 'Bekijk het volledige concept'/);
+    assert.match(data.text, /fullProject: 'Voir le concept complet'/);
+    const styles = await c.get('/styles.css');
+    assert.match(styles.text, /\.example-project-link[^}]*var\(--service-color\)/, 'project link keeps each department accent color');
+  });
+
   it('serves linked, separate concept pages for all three sample missions', async () => {
     const c = new Client(ctx.base);
     const home = await c.get('/');

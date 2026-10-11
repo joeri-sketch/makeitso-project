@@ -44,6 +44,93 @@
     }
   };
 
+  const projectExamples = {
+    'brand-strategy': {
+      project: 'nova-bakery',
+      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=85',
+      alt: {
+        en: 'Fresh artisan bread in a neighborhood bakery',
+        nl: 'Vers ambachtelijk brood in een buurtbakkerij',
+        fr: 'Pains artisanaux frais dans une boulangerie de quartier'
+      },
+      locales: {
+        en: { sampleTitle: 'Nova Bakery finds its own voice.', sampleBody: 'A neighborhood bakery gets a distinctive brand platform: clear positioning, a warm visual identity and a launch story rooted in its craft and community.', deliverables: 'Positioning · Logo & visual identity · Brand voice' },
+        nl: { sampleTitle: 'Nova Bakery krijgt een eigen verhaal.', sampleBody: 'Een buurtbakkerij krijgt een herkenbaar merkfundament: een heldere positionering, een warme visuele identiteit en een lanceringsverhaal dat past bij het vak en de buurt.', deliverables: 'Positionering · Logo & visuele identiteit · Merktaal' },
+        fr: { sampleTitle: 'Nova Bakery affirme sa personnalité.', sampleBody: 'Une boulangerie de quartier se dote d’une plateforme de marque distinctive : positionnement clair, identité visuelle chaleureuse et récit de lancement ancré dans son savoir-faire.', deliverables: 'Positionnement · Logo & identité visuelle · Ton de marque' }
+      }
+    },
+    'social-content': {
+      project: 'move-studio',
+      image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85',
+      alt: {
+        en: 'Bright independent fitness studio with strength training equipment',
+        nl: 'Lichte onafhankelijke fitnessstudio met krachttrainingsmateriaal',
+        fr: 'Studio de fitness indépendant et lumineux avec équipements de musculation'
+      },
+      locales: {
+        en: { sampleTitle: 'Move Studio gets the community moving.', sampleBody: 'A welcoming movement studio builds a social presence with coach-led clips, member stories and an easy invitation to try a first class.', deliverables: 'Social concept · Coach & member stories · Content calendar' },
+        nl: { sampleTitle: 'Move Studio brengt de buurt in beweging.', sampleBody: 'Een toegankelijke bewegingsstudio bouwt aan een herkenbare social presence met coachvideo’s, ledenverhalen en een uitnodiging om een eerste les te proberen.', deliverables: 'Socialconcept · Verhalen van coaches & leden · Contentkalender' },
+        fr: { sampleTitle: 'Move Studio met son quartier en mouvement.', sampleBody: 'Un studio accueillant développe sa présence sociale avec des vidéos de coachs, des témoignages de membres et une invitation simple à essayer un premier cours.', deliverables: 'Concept social · Témoignages · Calendrier éditorial' }
+      }
+    },
+    'paid-media': {
+      project: 'roam-rental',
+      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=85',
+      alt: {
+        en: 'Modern car ready for a scenic weekend trip',
+        nl: 'Moderne auto klaar voor een mooie weekendrit',
+        fr: 'Voiture moderne prête pour une escapade panoramique'
+      },
+      locales: {
+        en: { sampleTitle: 'Roam puts the next trip in reach.', sampleBody: 'A local car-rental company reaches people planning a getaway with focused search and social campaigns, clear vehicle choices and a direct route to booking.', deliverables: 'Campaign plan · Paid social · Search ads' },
+        nl: { sampleTitle: 'Roam brengt je volgende trip dichtbij.', sampleBody: 'Een lokaal autoverhuurbedrijf bereikt mensen die een uitstap plannen met gerichte zoek- en socialcampagnes, duidelijke autokeuzes en een directe route naar boeken.', deliverables: 'Campagneplan · Paid social · Zoekadvertenties' },
+        fr: { sampleTitle: 'Roam rapproche votre prochaine escapade.', sampleBody: 'Une agence de location locale touche les personnes qui préparent un voyage grâce à des campagnes ciblées sur les réseaux et la recherche, avec un accès direct à la réservation.', deliverables: 'Plan de campagne · Réseaux sociaux payants · Annonces de recherche' }
+      }
+    },
+    'web-landing-pages': {
+      project: 'roam-rental',
+      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=85',
+      alt: {
+        en: 'Modern car ready for a scenic weekend trip',
+        nl: 'Moderne auto klaar voor een mooie weekendrit',
+        fr: 'Voiture moderne prête pour une escapade panoramique'
+      },
+      locales: {
+        en: { sampleTitle: 'Roam makes booking feel effortless.', sampleBody: 'A clear, responsive rental website helps visitors compare vehicles, understand the essentials and reserve the right car in a few simple steps.', deliverables: 'User journey · Responsive website · Booking flow' },
+        nl: { sampleTitle: 'Roam maakt boeken eenvoudig.', sampleBody: 'Een heldere, responsive verhuurwebsite helpt bezoekers auto’s vergelijken, de voorwaarden begrijpen en in enkele stappen de juiste wagen reserveren.', deliverables: 'Klantreis · Responsive website · Boekingsproces' },
+        fr: { sampleTitle: 'Roam simplifie la réservation.', sampleBody: 'Un site de location clair et responsive aide à comparer les véhicules, à comprendre les conditions et à réserver la bonne voiture en quelques étapes.', deliverables: 'Parcours utilisateur · Site responsive · Réservation' }
+      }
+    },
+    'video-motion': {
+      project: 'nova-bakery',
+      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=85',
+      alt: {
+        en: 'Fresh artisan bread in a neighborhood bakery',
+        nl: 'Vers ambachtelijk brood in een buurtbakkerij',
+        fr: 'Pains artisanaux frais dans une boulangerie de quartier'
+      },
+      locales: {
+        en: { sampleTitle: 'Nova Bakery turns craft into a story.', sampleBody: 'A short launch film follows the baker from first light to fresh loaves, with social edits that introduce the people and rituals behind the brand.', deliverables: 'Creative concept · Launch film · Social edits' },
+        nl: { sampleTitle: 'Nova Bakery brengt het vak in beeld.', sampleBody: 'Een korte lanceringsfilm volgt de bakker van het eerste ochtendlicht tot de verse broden, met social edits over de mensen en rituelen achter het merk.', deliverables: 'Creatief concept · Lanceringsfilm · Social edits' },
+        fr: { sampleTitle: 'Nova Bakery raconte son savoir-faire.', sampleBody: 'Un court film de lancement suit la boulangère des premières lueurs aux pains tout juste sortis du four, décliné en formats sociaux sur les personnes et les gestes du métier.', deliverables: 'Concept créatif · Film de lancement · Formats sociaux' }
+      }
+    },
+    'growth-analytics': {
+      project: 'roam-rental',
+      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=85',
+      alt: {
+        en: 'Modern car ready for a scenic weekend trip',
+        nl: 'Moderne auto klaar voor een mooie weekendrit',
+        fr: 'Voiture moderne prête pour une escapade panoramique'
+      },
+      locales: {
+        en: { sampleTitle: 'Roam learns what drives bookings.', sampleBody: 'A practical measurement plan shows where rental customers discover, compare and book—then turns the biggest drop-offs into focused website experiments.', deliverables: 'Measurement plan · Booking dashboard · Test roadmap' },
+        nl: { sampleTitle: 'Roam ontdekt wat boekingen oplevert.', sampleBody: 'Een praktisch meetplan toont waar huurders ontdekken, vergelijken en boeken. De grootste uitval wordt vertaald naar gerichte experimenten op de website.', deliverables: 'Meetplan · Boekingsdashboard · Testroadmap' },
+        fr: { sampleTitle: 'Roam comprend ce qui déclenche les réservations.', sampleBody: 'Un plan de mesure concret révèle où les clients découvrent, comparent et réservent. Les principaux points de friction deviennent des tests ciblés sur le site.', deliverables: 'Plan de mesure · Tableau de bord des réservations · Feuille de tests' }
+      }
+    }
+  };
+
   const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[char]);
@@ -64,9 +151,12 @@
   function render() {
     const language = i18n?.lang || 'en';
     const baseCopy = current.locales[language] || current.locales.en;
-    const copy = current.id === 'web-landing-pages'
-      ? { ...baseCopy, ...webAppCopy[language] }
-      : baseCopy;
+    const example = projectExamples[current.id];
+    const copy = {
+      ...baseCopy,
+      ...(current.id === 'web-landing-pages' ? webAppCopy[language] : {}),
+      ...(example.locales[language] || example.locales.en)
+    };
     const labels = ui[language] || ui.en;
     const index = services.indexOf(current);
     document.documentElement.lang = language;
@@ -124,8 +214,10 @@
           <h2>${escape(copy.sampleTitle)}</h2>
           <p>${escape(copy.sampleBody)}</p>
           <div class="example-deliverables"><span aria-hidden="true">✦</span>${escape(copy.deliverables)}</div>
+          <a class="example-project-link" href="${localizedUrl(`/missions/${example.project}/`, language)}">${escape(labels.fullProject)} <span aria-hidden="true">↗</span></a>
         </div>
         <div class="example-art" aria-label="${escape(copy.sampleTitle)}">
+          <img class="example-art-photo" src="${escape(example.image)}" alt="${escape(example.alt[language] || example.alt.en)}" loading="lazy" decoding="async">
           <span class="example-star star-a" aria-hidden="true">✦</span>
           <span class="example-star star-b" aria-hidden="true">✧</span>
           <span class="example-planet" aria-hidden="true">${escape(current.icon)}</span>

@@ -6,19 +6,19 @@
       back: 'All departments', category: 'Department profile', scan: 'SERVICE SYSTEMS ONLINE',
       what: 'What we bring', example: 'Concept example · fictional project', sample: 'Sample mission',
       other: 'Explore another department', start: 'Start a conversation', explore: 'Explore the example',
-      status: 'MISSION CONCEPT', home: 'Home'
+      fullProject: 'See the full concept', status: 'MISSION CONCEPT', home: 'Home'
     },
     nl: {
       back: 'Alle afdelingen', category: 'Afdelingsprofiel', scan: 'SERVICESYSTEMEN ONLINE',
       what: 'Wat we doen', example: 'Conceptvoorbeeld · fictief project', sample: 'Voorbeeldmissie',
       other: 'Ontdek een andere afdeling', start: 'Start een gesprek', explore: 'Bekijk het voorbeeld',
-      status: 'MISSIECONCEPT', home: 'Startpagina'
+      fullProject: 'Bekijk het volledige concept', status: 'MISSIECONCEPT', home: 'Startpagina'
     },
     fr: {
       back: 'Tous les départements', category: 'Profil du département', scan: 'SYSTÈMES EN LIGNE',
       what: 'Notre contribution', example: 'Exemple conceptuel · projet fictif', sample: 'Mission exemple',
       other: 'Explorez un autre département', start: 'Parlons de votre projet', explore: 'Voir l’exemple',
-      status: 'CONCEPT DE MISSION', home: 'Accueil'
+      fullProject: 'Voir le concept complet', status: 'CONCEPT DE MISSION', home: 'Accueil'
     }
   };
 
