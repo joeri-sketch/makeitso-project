@@ -50,7 +50,7 @@
     // ----- hero -----
     ['Captain\'s log ·', 'Kapiteinslogboek ·', 'Journal du capitaine ·'],
     ['Stardate', 'Sterrendatum', 'Date stellaire'],
-    ['Watch it launch', 'Zie het opstijgen', 'Regardez-le décoller'],
+    ['Watch it launch', 'Lanceer jouw succes', 'Regardez-le décoller'],
     ['Make It So builds websites, apps and business software, and creates brand and marketing campaigns for small companies in Belgium.',
       'Make It So bouwt websites, apps en bedrijfssoftware en ontwikkelt merk- en marketingcampagnes voor kleine bedrijven in België.',
       'Make It So crée des sites web, des applications et des logiciels métier, ainsi que des campagnes de marque et de marketing pour les petites entreprises en Belgique.'],
