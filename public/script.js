@@ -8,6 +8,19 @@
   /* ---------- translations (i18n.js loads first; fall back to English if missing) ---------- */
   const i18n = window.i18n || { t: (key) => key, onChange() {} };
   const updateServiceLinks = () => {
+    const footerNav = document.querySelector('footer nav[aria-label="Footer navigation"]');
+    if (footerNav) {
+      let statusLink = footerNav.querySelector('a[data-status-link]');
+      if (!statusLink) {
+        statusLink = document.createElement('a');
+        statusLink.dataset.statusLink = '';
+        footerNav.append(statusLink);
+      }
+      statusLink.textContent = i18n.t('System status');
+      const statusUrl = new URL('/status/', location.origin);
+      statusUrl.searchParams.set('lang', i18n.lang || 'en');
+      statusLink.href = `${statusUrl.pathname}${statusUrl.search}`;
+    }
     $$('[data-service-path]').forEach((link) => {
       const url = new URL(link.dataset.servicePath, location.origin);
       url.searchParams.set('lang', i18n.lang || 'en');

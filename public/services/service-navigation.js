@@ -7,7 +7,21 @@
   const year = document.getElementById('year');
   if (year) year.textContent = String(new Date().getFullYear());
 
+  const ensureStatusLink = () => {
+    const footerNav = document.querySelector('.footer nav[aria-label="Footer navigation"]');
+    if (!footerNav) return;
+    let statusLink = footerNav.querySelector('a[data-status-link]');
+    if (!statusLink) {
+      statusLink = document.createElement('a');
+      statusLink.dataset.statusLink = '';
+      statusLink.href = '/status/';
+      footerNav.append(statusLink);
+    }
+    statusLink.textContent = i18n?.t('System status') || 'System status';
+  };
+
   const updateLinks = () => {
+    ensureStatusLink();
     const language = i18n?.lang || 'en';
     document.querySelectorAll('a[href^="/"]').forEach((link) => {
       const url = new URL(link.getAttribute('href'), location.origin);

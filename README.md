@@ -3,6 +3,9 @@
 Website, admin area, client portal and quotes for the creative marketing agency **Make It So**.
 
 - **Website** (`public/`): the animated NL / FR / EN site, with six color-matched department detail pages, concept examples, an About page, a project approach page with engagement options, and practical FAQs.
+- **System status** (`/status/`): an EN / NL / FR public dashboard for the website, apps, portal, email and client billing. Statuses and incident notices are manual; this page does not perform uptime or email-delivery checks. Status values and any published update time are maintained in `public/status-page.js`.
+
+Status entries initially show **Not confirmed** to avoid implying a live check. To publish an update, change the relevant service `status` value (`operational`, `degraded`, `outage` or `maintenance`), set `lastUpdatedAt` to an ISO timestamp, and add any notices to the localized `incidents` list in `public/status-page.js`.
 - **Admin area** (`/admin`): clients, contacts, projects, milestones, work-item status boards, project timesheets, notes, leads and an activity log, behind password + two-factor login. Project progress is calculated from work items when present; otherwise it can be updated manually.
 - **Client portal** (`/portal/`): invited clients can follow project progress, milestones and explicitly shared work items, reply in shared feature discussions, review quotes and invoices, download invoice PDFs, and manage support conversations. Time entries and internal notes remain admin-only.
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.

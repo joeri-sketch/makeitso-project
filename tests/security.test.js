@@ -24,6 +24,35 @@ describe('website, headers and abuse protection', () => {
     }
   });
 
+  it('serves the localized manual system status page without implying live monitoring', async () => {
+    const c = new Client(ctx.base);
+    const page = await c.get('/status/');
+    assert.equal(page.status, 200);
+    assert.match(page.text, /data-status-page/);
+    assert.match(page.text, /status-page\.js/);
+
+    const script = await c.get('/status-page.js');
+    assert.equal(script.status, 200);
+    for (const phrase of [
+      'Website & public pages', 'Client portal & project status', 'Email & contact form',
+      'Website & openbare pagina’s', 'Portail client et suivi de projet',
+      'Statuses on this page are updated manually.',
+      'The page does not run automatic uptime checks',
+      "status: 'unknown'", 'const lastUpdatedAt = null;', 'const incidents = [];'
+    ]) {
+      assert.ok(script.text.includes(phrase), `status page includes “${phrase}”`);
+    }
+
+    const navigation = await c.get('/services/service-navigation.js');
+    assert.match(navigation.text, /data-status-link/);
+    const homepage = await c.get('/script.js');
+    assert.match(homepage.text, /i18n\.t\('System status'\)/);
+    const translations = await c.get('/i18n.js');
+    for (const phrase of ['System status', 'Systeemstatus', 'État des services']) {
+      assert.ok(translations.text.includes(phrase), `status navigation includes “${phrase}”`);
+    }
+  });
+
   it('shows server and email delivery errors instead of opening a local mail app', async () => {
     const c = new Client(ctx.base);
     const script = await c.get('/script.js');
