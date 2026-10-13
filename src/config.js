@@ -28,7 +28,10 @@ export const config = {
   databaseSsl: env.DATABASE_SSL,
   dataDir: env.DATA_DIR || 'data',
   appSecret,
-  publicOrigin: (env.PUBLIC_ORIGIN || '').replace(/\/+$/, ''),
+  publicOrigins: (env.PUBLIC_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean),
   trustProxy: env.TRUST_PROXY ?? (isProd ? '1' : '0'),
   adminEmail: env.ADMIN_EMAIL || '',
   adminName: env.ADMIN_NAME || 'Admin',

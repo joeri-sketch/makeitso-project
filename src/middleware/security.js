@@ -40,8 +40,11 @@ export function csrfGuard(config) {
     if (req.get('x-requested-with') !== 'makeitso') return next(new HttpError(403, 'Invalid request.'));
     const origin = req.get('origin');
     if (origin) {
-      const expected = config.publicOrigin || `${req.protocol}://${req.get('host')}`;
-      if (origin !== expected) return next(new HttpError(403, 'Invalid request origin.'));
+      const requestOrigin = `${req.protocol}://${req.get('host')}`;
+      const configuredOrigins = config.publicOrigins || (config.publicOrigin ? [config.publicOrigin] : []);
+      if (origin !== requestOrigin && !configuredOrigins.includes(origin)) {
+        return next(new HttpError(403, 'Invalid request origin.'));
+      }
     }
     next();
   };

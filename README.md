@@ -41,7 +41,7 @@ Everything is environment variables; see [.env.example](.env.example).
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string. **Required in production.** Locally, empty means the embedded database |
 | `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets |
-| `PUBLIC_ORIGIN` | Your site address, e.g. `https://makeitso.studio`. Used for the origin check |
+| `PUBLIC_ORIGIN` | Optional comma-separated list of trusted site origins, e.g. `https://makeitso.studio,https://your-app.up.railway.app`. The actual origin serving the app is also checked automatically |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | SMTP account used to send contact-form notifications. Hostinger Email uses `smtp.hostinger.com`, port `465`, secure `true` |
 | `SMTP_FROM`, `CONTACT_EMAIL` | Optional sender address (defaults to `SMTP_USER`) and inbox for contact messages (defaults to `SMTP_USER`) |

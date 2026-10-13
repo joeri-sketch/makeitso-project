@@ -93,6 +93,27 @@ describe('authentication', () => {
     assert.equal((await c.req('POST', '/api/auth/login', credentials, { origin: 'https://evil.example' })).status, 403);
   });
 
+  it('accepts the current app origin when a configured canonical origin differs', async () => {
+    const hosted = await startTestServer({ publicOrigins: ['https://makeitso.studio'] });
+    try {
+      const visitor = new Client(hosted.base);
+      const currentOrigin = new URL(hosted.base).origin;
+      const res = await visitor.req('POST', '/api/auth/login', {
+        email: 'unknown@example.com',
+        password: 'not-a-valid-password'
+      }, { origin: currentOrigin });
+      assert.equal(res.status, 401, 'request passed origin validation and reached sign-in');
+
+      const blocked = await visitor.req('POST', '/api/auth/login', {
+        email: 'unknown@example.com',
+        password: 'not-a-valid-password'
+      }, { origin: 'https://evil.example' });
+      assert.equal(blocked.status, 403, 'unrelated origins remain blocked');
+    } finally {
+      await hosted.close();
+    }
+  });
+
   it('signs out other sessions when the password changes', async () => {
     await ctx.db.query('UPDATE users SET failed_logins = 0, locked_until = NULL');
     const a = await signIn(ctx, secret);
