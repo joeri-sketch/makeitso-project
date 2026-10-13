@@ -432,7 +432,7 @@ button, input, textarea { font: inherit; }
 .status-hero .detail-back { display: inline-block; margin-bottom: 46px; color: rgba(255,255,255,.72); font-size: .9rem; }
 .status-hero .detail-back:hover { color: #fff; }
 .status-hero .studio-kicker, .status-section .studio-kicker, .status-incidents .studio-kicker, .status-help .studio-kicker { color: #b58bff; }
-.status-hero h1 { margin: 14px 0 20px; font: 800 clamp(3.4rem, 8vw, 6.4rem)/.9 var(--font-display); letter-spacing: -.075em; }
+.status-hero h1 { margin: 14px 0 20px; font: 800 clamp(3rem, 5.1vw, 5.2rem)/.94 var(--font-display); letter-spacing: -.075em; }
 .status-hero h1 span { color: #b58bff; }
 .status-hero .studio-intro { max-width: 520px; color: rgba(255,255,255,.73); font-size: 1.08rem; }
 .status-manual-note { display: flex; gap: 12px; align-items: flex-start; max-width: 510px; margin-top: 28px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.13); border-radius: 16px; color: rgba(255,255,255,.76); background: rgba(255,255,255,.055); font-size: .82rem; line-height: 1.55; }
@@ -655,7 +655,7 @@ button, input, textarea { font: inherit; }
   .status-page { width: calc(100% - 20px); padding-bottom: 52px; }
   .status-hero { min-height: 0; gap: 28px; padding: 30px 22px; border-radius: 28px; }
   .status-hero .detail-back { margin-bottom: 34px; }
-  .status-hero h1 { font-size: clamp(3rem, 15vw, 5rem); }
+  .status-hero h1 { font-size: clamp(2.7rem, 11vw, 4rem); }
   .status-signal { min-height: 250px; padding: 22px; }
   .status-section-head { align-items: flex-start; flex-direction: column; gap: 14px; }
   .status-row { grid-template-columns: 44px minmax(0,1fr); gap: 12px; padding: 18px 16px; }
