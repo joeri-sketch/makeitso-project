@@ -5,13 +5,13 @@
   if (!app) return;
 
   const services = [
-    { id: 'website', icon: '◉', status: 'unknown' },
-    { id: 'apps', icon: '▣', status: 'unknown' },
-    { id: 'portal', icon: '◌', status: 'unknown' },
-    { id: 'email', icon: '✉', status: 'unknown' },
-    { id: 'billing', icon: '▤', status: 'unknown' }
+    { id: 'website', icon: '◉', status: 'operational' },
+    { id: 'apps', icon: '▣', status: 'operational' },
+    { id: 'portal', icon: '◌', status: 'operational' },
+    { id: 'email', icon: '✉', status: 'operational' },
+    { id: 'billing', icon: '▤', status: 'operational' }
   ];
-  const lastUpdatedAt = null;
+  const lastUpdatedAt = '2026-10-15T10:57:00.000Z';
   const incidents = [];
 
   const copy = {
