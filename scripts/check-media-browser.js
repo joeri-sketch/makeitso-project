@@ -153,6 +153,14 @@ try {
   assert.ok(automaticRequests > requestsBefore);
   assert.equal(await panel.locator('[data-health="jellyfin"] .health-operational').count(), 0);
   await panel.locator('[data-health="jellyfin"] .media-stale').waitFor();
+  automaticData.services[2] = {
+    ...automaticData.services[2], status_source: 'automatic', status: 'operational',
+    checked_at: new Date().toISOString(), response_ms: 42, stale: false
+  };
+  await panel.locator('[data-refresh]').click();
+  await page.waitForFunction(() => document.querySelector('[data-health="ubuntu"] .health-operational'));
+  assert.match(await panel.locator('[data-health="ubuntu"]').innerText(), /TCP/);
+  assert.equal(await panel.locator('[data-service="ubuntu"] a').count(), 0);
   await page.unroute('**/api/portal/media', automaticRoute);
   const adminAutomaticData = (await admin.get(`/api/clients/${client.id}/media`)).json;
   adminAutomaticData.services = adminAutomaticData.services.map((service) => ({

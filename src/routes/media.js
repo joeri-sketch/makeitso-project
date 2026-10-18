@@ -265,7 +265,7 @@ function enrichAdminService(row, service, config, monitoring) {
     response_ms: automatic.response_ms,
     stale: automatic.stale,
     failure_count: automatic.failure_count,
-    configured_url: config.mediaTargets?.[service] ?? null,
+    configured_url: service === 'ubuntu' ? null : config.mediaTargets?.[service] ?? null,
     manual_status: row.status
   };
 }

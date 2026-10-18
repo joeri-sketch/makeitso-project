@@ -648,7 +648,7 @@ async function clientView(view, id) {
             <p class="form-error" role="alert"></p><button class="btn primary">Save portal permission</button>
           </form>
           <hr><header><h3>Media services &amp; access</h3></header>
-          <p class="muted">Configured services are checked automatically every 60 seconds. Ubuntu stays manual. Share dedicated client accounts, never root or administrator credentials.</p>
+          <p class="muted">Configured services are checked automatically every 60 seconds. Ubuntu checks TCP port reachability only, not OS health or remote-desktop sign-in. Share dedicated client accounts, never root or administrator credentials.</p>
           <ul class="list">${media.services.map((s) => html`<li><span class="grow"><strong>${mediaServiceName(s.service)}</strong><span class="sub">${mediaStatusLabel(s.status)} · ${s.status_source === 'automatic' ? 'Automatic check' : 'Manual status'} · ${s.share_access ? 'Client access shared' : 'Access not shared'}${s.has_password ? ' · Password stored securely' : ''}</span>${s.status_source === 'automatic' ? html`<span class="sub">${s.checked_at ? `Last check: ${new Date(s.checked_at).toLocaleString('en-GB')}` : 'First check pending'}${s.stale && s.checked_at ? ' · No recent measurement' : ''}</span>` : ''}</span><button class="btn small" data-action="edit-media" data-service="${s.service}">Manage</button></li>`)}</ul>
         </section>` : ''}
         <section class="card"><header><h2>Activity</h2></header>${activityList(d.activity)}</section>

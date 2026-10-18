@@ -35,6 +35,21 @@ function mediaTarget(name, fallback) {
   return parsed.href;
 }
 
+function ubuntuTarget() {
+  const value = env.MEDIA_UBUNTU_TCP === undefined
+    ? isTest ? '' : '213.119.105.234:3389'
+    : env.MEDIA_UBUNTU_TCP.trim();
+  if (!value) return null;
+  let parsed;
+  try { parsed = new URL(`tcp://${value}`); }
+  catch { throw new Error('MEDIA_UBUNTU_TCP must be a host:port address.'); }
+  if (!parsed.hostname || !parsed.port || Number(parsed.port) < 1 || parsed.username || parsed.password ||
+      parsed.pathname || parsed.search || parsed.hash || /[/?#\s]/.test(value)) {
+    throw new Error('MEDIA_UBUNTU_TCP must be a host:port address.');
+  }
+  return parsed.href;
+}
+
 export const config = {
   env: env.NODE_ENV || 'development',
   isProd,
@@ -65,6 +80,6 @@ export const config = {
   mediaTargets: {
     jellyfin: mediaTarget('MEDIA_JELLYFIN_URL', isTest ? '' : 'http://jellyfin.makeitso.studio:8096/'),
     jellyseerr: mediaTarget('MEDIA_JELLYSEERR_URL', isTest ? '' : 'http://jellyfin.makeitso.studio:5055/'),
-    ubuntu: null
+    ubuntu: ubuntuTarget()
   }
 };

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
+import { createConnection } from 'node:net';
 
-const SERVICES = ['jellyfin', 'jellyseerr'];
+const SERVICES = ['jellyfin', 'jellyseerr', 'ubuntu'];
 const POLL_INTERVAL_MS = 60_000;
 const STALE_AFTER_MS = 150_000;
 const MAX_BODY_BYTES = 16 * 1024;
@@ -45,6 +46,18 @@ async function readBoundedBody(response, maxBytes) {
   return new TextDecoder('utf-8', { fatal: true }).decode(body);
 }
 
+function checkTcp(target, signal) {
+  const url = new URL(target);
+  if (url.protocol !== 'tcp:' || !url.hostname || !url.port) throw new Error('invalid_response');
+  return new Promise((resolve, reject) => {
+    const socket = createConnection({
+      host: url.hostname.replace(/^\[|\]$/g, ''), port: Number(url.port), signal
+    });
+    socket.once('error', (error) => { socket.destroy(); reject(error); });
+    socket.once('connect', () => { socket.destroy(); resolve(); });
+  });
+}
+
 async function checkTarget(service, target, options) {
   const startedAt = options.clock();
   const controller = new AbortController();
@@ -65,6 +78,10 @@ async function checkTarget(service, target, options) {
     else options.signal.addEventListener('abort', abortFromMonitor, { once: true });
   });
   const check = (async () => {
+    if (service === 'ubuntu') {
+      await checkTcp(target, controller.signal);
+      return;
+    }
     const response = await options.fetchImpl(endpointFor(service, target), {
       method: 'GET',
       redirect: 'manual',

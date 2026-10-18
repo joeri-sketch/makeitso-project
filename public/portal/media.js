@@ -19,7 +19,8 @@ const COPY = {
     safety: 'Only your client accounts are shared here. Never use a root or administrator account.',
     stale: 'Older manual update — current availability is not verified.',
     automatic: 'Automatic check', manualLabel: 'Manual status', checked: 'Last check', response: 'Response time',
-    monitoring: 'Automatic services checked every 60 seconds · Ubuntu manually updated',
+    monitoring: 'Automatic services checked every 60 seconds',
+    tcp: 'TCP port reachable only — does not verify Ubuntu health or remote-desktop sign-in.',
     outdated: 'No recent measurement — current availability is not confirmed.',
     pending: 'First check pending', httpWarning: 'This service uses HTTP. Login details are not encrypted in transit. Use HTTPS before signing in.'
   },
@@ -41,7 +42,8 @@ const COPY = {
     safety: 'Alleen je eigen klantaccounts worden hier gedeeld. Gebruik nooit een root- of beheeraccount.',
     stale: 'Oudere handmatige update — de huidige beschikbaarheid is niet geverifieerd.',
     automatic: 'Automatische controle', manualLabel: 'Handmatige status', checked: 'Laatste controle', response: 'Reactietijd',
-    monitoring: 'Automatische diensten elke 60 seconden gecontroleerd · Ubuntu handmatig bijgewerkt',
+    monitoring: 'Automatische diensten elke 60 seconden gecontroleerd',
+    tcp: 'Alleen bereikbaarheid van de TCP-poort — geen controle van Ubuntu-gezondheid of remote-desktoplogin.',
     outdated: 'Geen recente meting — de huidige beschikbaarheid is niet bevestigd.',
     pending: 'Eerste controle wordt afgewacht', httpWarning: 'Deze dienst gebruikt HTTP. Inloggegevens worden onderweg niet versleuteld. Gebruik HTTPS voordat je inlogt.'
   },
@@ -63,7 +65,8 @@ const COPY = {
     safety: 'Seuls vos comptes clients sont partagés ici. N’utilisez jamais de compte root ou administrateur.',
     stale: 'Ancienne mise à jour manuelle — disponibilité actuelle non vérifiée.',
     automatic: 'Contrôle automatique', manualLabel: 'Statut manuel', checked: 'Dernier contrôle', response: 'Temps de réponse',
-    monitoring: 'Services automatiques contrôlés toutes les 60 secondes · Ubuntu mis à jour manuellement',
+    monitoring: 'Services automatiques contrôlés toutes les 60 secondes',
+    tcp: 'Accessibilité du port TCP uniquement — ne vérifie ni la santé Ubuntu ni la connexion au bureau distant.',
     outdated: 'Aucune mesure récente — disponibilité actuelle non confirmée.',
     pending: 'En attente du premier contrôle', httpWarning: 'Ce service utilise HTTP. Les identifiants ne sont pas chiffrés en transit. Utilisez HTTPS avant de vous connecter.'
   }
@@ -80,7 +83,7 @@ export function createMediaPanel({ container, language, api, support }) {
   let destroyed = false;
   let hasAutomatic = false;
   const stamp = (value) => value ? new Date(value).toLocaleString(language) : t.never;
-  const badge = (service) => `<span class="media-badge health-${esc(service.status)}">${esc(t[service.status] || t.unknown)}</span>`;
+  const badge = (service) => `<span class="media-badge health-${esc(service.status)}">${esc(t[service.status] || t.unknown)}</span>${service.service === 'ubuntu' && service.status_source === 'automatic' ? `<p class="media-source muted">${esc(t.tcp)}</p>` : ''}`;
   function conceal() {
     generation++;
     for (const timer of timers) clearTimeout(timer);

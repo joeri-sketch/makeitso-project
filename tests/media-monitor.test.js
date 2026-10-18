@@ -1,5 +1,8 @@
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:net';
+import { once } from 'node:events';
+import { spawnSync } from 'node:child_process';
 import { Client, signedInAdmin, startTestServer } from './helpers.js';
 const { config } = await import('../src/config.js');
 import { createDb } from '../src/db/index.js';
@@ -270,4 +273,64 @@ describe('automatic media status API overlay', () => {
     assert.equal((await admin.put(`${path}/jellyfin`, { message: 'Maintenance notice.' })).status, 200);
     assert.equal((await admin.put(`${path}/ubuntu`, { status: 'degraded' })).status, 200);
   });
+
+  it('checks Ubuntu TCP reachability, detects refusal, recovers and keeps the target private', async () => {
+    const server = createServer((socket) => socket.end());
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    const port = server.address().port;
+    targets.ubuntu = `tcp://127.0.0.1:${port}`;
+    const cycle = () => runMediaMonitorCycle(ctx.db, {
+      config: { mediaTargets: targets },
+      fetchImpl: async (url) => url.endsWith('/health') ? response('Healthy') : response('{"version":"2.7.3"}')
+    });
+    try {
+      await cycle();
+      let data = (await portal.get('/api/portal/media')).json;
+      let ubuntu = data.services.find((s) => s.service === 'ubuntu');
+      assert.equal(ubuntu.status_source, 'automatic');
+      assert.equal(ubuntu.status, 'operational');
+      assert.ok(ubuntu.checked_at);
+      assert.equal(ubuntu.stale, false);
+      assert.equal(JSON.stringify(data).includes(targets.ubuntu), false);
+      assert.equal(ubuntu.url, null);
+      const adminUbuntu = (await admin.get(`/api/clients/${client.id}/media`)).json.services.find((s) => s.service === 'ubuntu');
+      assert.equal(adminUbuntu.configured_url, null, 'TCP target must not become a browser link');
+      assert.equal((await admin.put(`/api/clients/${client.id}/media/ubuntu`, { status: 'offline' })).status, 400);
+      assert.equal((await admin.put(`/api/clients/${client.id}/media/ubuntu`, { message: 'Connection check only.' })).status, 200);
+      await new Promise((resolve) => server.close(resolve));
+      await cycle();
+      ubuntu = (await portal.get('/api/portal/media')).json.services.find((s) => s.service === 'ubuntu');
+      assert.equal(ubuntu.status, 'degraded');
+      assert.equal(ubuntu.failure_count, 1);
+      await cycle();
+      ubuntu = (await portal.get('/api/portal/media')).json.services.find((s) => s.service === 'ubuntu');
+      assert.equal(ubuntu.status, 'offline');
+      assert.equal(ubuntu.failure_count, 2);
+      server.listen(port, '127.0.0.1');
+      await once(server, 'listening');
+      await cycle();
+      ubuntu = (await portal.get('/api/portal/media')).json.services.find((s) => s.service === 'ubuntu');
+      assert.equal(ubuntu.status, 'operational');
+      assert.equal(ubuntu.failure_count, 0);
+      await ctx.db.query("UPDATE media_service_health SET checked_at = now() - interval '151 seconds' WHERE service = 'ubuntu'");
+      ubuntu = (await portal.get('/api/portal/media')).json.services.find((s) => s.service === 'ubuntu');
+      assert.equal(ubuntu.status, 'unknown');
+      assert.equal(ubuntu.stale, true);
+    } finally {
+      targets.ubuntu = null;
+      if (server.listening) await new Promise((resolve) => server.close(resolve));
+    }
+  });
+});
+
+it('validates Ubuntu TCP environment configuration and supports disabling it', () => {
+  const load = (value) => spawnSync(process.execPath, ['--input-type=module', '-e',
+    "import { config } from './src/config.js'; console.log(JSON.stringify(config.mediaTargets.ubuntu));"
+  ], { cwd: new URL('..', import.meta.url), encoding: 'utf8', env: { ...process.env, NODE_ENV: 'test', MEDIA_UBUNTU_TCP: value } });
+  assert.equal(load('213.119.105.234:3389').stdout.trim(), '"tcp://213.119.105.234:3389"');
+  assert.equal(load('').stdout.trim(), 'null');
+  for (const value of ['213.119.105.234', 'host:0', 'host:65536', 'user:secret@host:3389', 'http://host:3389', 'host:3389/path']) {
+    assert.notEqual(load(value).status, 0, value);
+  }
 });
