@@ -19,6 +19,22 @@ if (isProd) {
 const appSecret = env.APP_SECRET || 'dev-only-secret-do-not-use-in-production-0123456789';
 const smtpPort = Number(env.SMTP_PORT) || 465;
 
+function mediaTarget(name, fallback) {
+  const value = env[name] === undefined ? fallback : env[name].trim();
+  if (!value) return null;
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`${name} must be a valid HTTP(S) URL without credentials, query, or fragment.`);
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname ||
+      parsed.username || parsed.password || parsed.search || parsed.hash || /[?#]/.test(value)) {
+    throw new Error(`${name} must be a valid HTTP(S) URL without credentials, query, or fragment.`);
+  }
+  return parsed.href;
+}
+
 export const config = {
   env: env.NODE_ENV || 'development',
   isProd,
@@ -45,5 +61,10 @@ export const config = {
   contactEmail: env.CONTACT_EMAIL || env.SMTP_USER || '',
   sessionHours: 12,
   idleMinutes: 120,
-  leadMinFillMs: 1500
+  leadMinFillMs: 1500,
+  mediaTargets: {
+    jellyfin: mediaTarget('MEDIA_JELLYFIN_URL', isTest ? '' : 'http://jellyfin.makeitso.studio:8096/'),
+    jellyseerr: mediaTarget('MEDIA_JELLYSEERR_URL', isTest ? '' : 'http://jellyfin.makeitso.studio:5055/'),
+    ubuntu: null
+  }
 };

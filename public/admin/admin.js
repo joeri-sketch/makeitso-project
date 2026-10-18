@@ -648,8 +648,8 @@ async function clientView(view, id) {
             <p class="form-error" role="alert"></p><button class="btn primary">Save portal permission</button>
           </form>
           <hr><header><h3>Media services &amp; access</h3></header>
-          <p class="muted">Manual status updates only until monitoring is configured. Share dedicated client accounts, never root or administrator credentials.</p>
-          <ul class="list">${media.services.map((s) => html`<li><span class="grow"><strong>${mediaServiceName(s.service)}</strong><span class="sub">${mediaStatusLabel(s.status)} · ${s.share_access ? 'Client access shared' : 'Access not shared'}${s.has_password ? ' · Password stored securely' : ''}</span></span><button class="btn small" data-action="edit-media" data-service="${s.service}">Manage</button></li>`)}</ul>
+          <p class="muted">Configured services are checked automatically every 60 seconds. Ubuntu stays manual. Share dedicated client accounts, never root or administrator credentials.</p>
+          <ul class="list">${media.services.map((s) => html`<li><span class="grow"><strong>${mediaServiceName(s.service)}</strong><span class="sub">${mediaStatusLabel(s.status)} · ${s.status_source === 'automatic' ? 'Automatic check' : 'Manual status'} · ${s.share_access ? 'Client access shared' : 'Access not shared'}${s.has_password ? ' · Password stored securely' : ''}</span>${s.status_source === 'automatic' ? html`<span class="sub">${s.checked_at ? `Last check: ${new Date(s.checked_at).toLocaleString('en-GB')}` : 'First check pending'}${s.stale && s.checked_at ? ' · No recent measurement' : ''}</span>` : ''}</span><button class="btn small" data-action="edit-media" data-service="${s.service}">Manage</button></li>`)}</ul>
         </section>` : ''}
         <section class="card"><header><h2>Activity</h2></header>${activityList(d.activity)}</section>
       </div>
@@ -730,19 +730,20 @@ const mediaServiceName = (service) => ({ jellyfin: 'Jellyfin', jellyseerr: 'Jell
 const mediaStatusLabel = (status) => MEDIA_STATUS.find(([value]) => value === status)?.[1] || 'Not confirmed';
 
 function editMediaService(clientId, service, reload) {
+  const automatic = service.status_source === 'automatic';
   openForm({
     title: `${mediaServiceName(service.service)} · status & client access`,
     fields: [
-      { name: 'status', label: 'Manual status (not live monitoring)', type: 'select', options: MEDIA_STATUS, full: true },
+      ...(automatic ? [] : [{ name: 'status', label: 'Manual status (not live monitoring)', type: 'select', options: MEDIA_STATUS, full: true }]),
       { name: 'message', label: 'Shared status / maintenance notice', type: 'textarea', max: 2000, full: true },
       { name: 'share_access', label: 'Share this service link and account with this client', type: 'checkbox' },
-      { name: 'url', label: 'Client-facing service URL', type: 'url', full: true, hint: 'HTTP(S) only. No embedded username, password, query string or fragment. Leave blank until ready.' },
+      { name: 'url', label: 'Client-facing service URL', type: 'url', full: true, hint: automatic ? 'Status is checked automatically using the server configuration, not this editable link. Prefer HTTPS before client sign-in; HTTP does not encrypt credentials.' : 'HTTP(S) only. No embedded username, password, query string or fragment. Ubuntu has no configured web interface; leave blank unless one exists.' },
       { name: 'username', label: 'Client username', full: true },
       { name: 'login_note', label: 'Sign-in instructions', type: 'textarea', max: 1000, full: true, hint: 'For example: sign in with your Jellyfin account. Do not include passwords here.' },
       { name: 'password', label: service.has_password ? 'Replace stored password' : 'Client service password', type: 'password', full: true, hint: 'Leave blank to keep the current password. Encrypted at rest; not returned in admin reads.' },
       { name: 'clear_password', label: 'Remove the stored password', type: 'checkbox' }
     ],
-    values: service,
+    values: { ...service, url: service.url || service.configured_url || '' },
     onSubmit: async (values) => {
       await put(`/clients/${clientId}/media/${service.service}`, values);
       toast('Media service saved');

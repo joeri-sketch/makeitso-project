@@ -109,6 +109,74 @@ try {
     await panel.locator('.media-heading h1').waitFor();
     assert.equal(await panel.locator('.media-heading h1').innerText(), title);
   }
+  // Exercise automatic display and polling without depending on external servers.
+  const automaticData = (await portal.get('/api/portal/media')).json;
+  automaticData.services = automaticData.services.map((service) => service.service === 'ubuntu'
+    ? { ...service, status_source: 'manual' }
+    : {
+      ...service, status: 'operational', status_source: 'automatic', stale: false,
+      checked_at: new Date().toISOString(), status_updated_at: new Date().toISOString(), response_ms: 125,
+      ...(service.service === 'jellyfin' ? { url: 'http://jellyfin.example.com:8096/' } : {})
+    });
+  let automaticRequests = 0;
+  const automaticRoute = async (route) => {
+    automaticRequests++;
+    await route.fulfill({ json: automaticData });
+  };
+  await page.route('**/api/portal/media', automaticRoute);
+  for (const [language, automaticLabel, manualLabel] of [
+    ['nl', 'Automatische controle', 'Handmatige status'],
+    ['en', 'Automatic check', 'Manual status'],
+    ['fr', 'Contrôle automatique', 'Statut manuel']
+  ]) {
+    await admin.patch(`/api/clients/${client.id}`, { language });
+    await page.goto(`${ctx.base}/portal/`);
+    await page.locator('#tab-media').click();
+    await panel.locator('[data-health="jellyfin"]').waitFor();
+    assert.match(await panel.locator('[data-health="jellyfin"]').innerText(), new RegExp(automaticLabel));
+    assert.match(await panel.locator('[data-health="jellyfin"]').innerText(), /125 ms/);
+    assert.match(await panel.locator('[data-health="ubuntu"]').innerText(), new RegExp(manualLabel));
+    await card.locator('.media-http-warning').waitFor();
+    assert.equal(await panel.locator('[data-service="jellyseerr"] a').count(), 0);
+    if (language === 'nl' && process.env.MEDIA_SCREENSHOT_DIR) {
+      await page.setViewportSize({ width: 1440, height: 1100 });
+      await page.screenshot({ path: `${process.env.MEDIA_SCREENSHOT_DIR}\\media-monitor-desktop.png`, fullPage: true });
+      await page.setViewportSize({ width: 390, height: 844 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      await page.screenshot({ path: `${process.env.MEDIA_SCREENSHOT_DIR}\\media-monitor-mobile.png`, fullPage: true });
+    }
+  }
+  const requestsBefore = automaticRequests;
+  automaticData.services[0] = { ...automaticData.services[0], status: 'unknown', stale: true, response_ms: null };
+  await page.clock.fastForward(31000);
+  await page.waitForFunction(() => document.querySelector('[data-health="jellyfin"] .health-unknown'));
+  assert.ok(automaticRequests > requestsBefore);
+  assert.equal(await panel.locator('[data-health="jellyfin"] .health-operational').count(), 0);
+  await panel.locator('[data-health="jellyfin"] .media-stale').waitFor();
+  await page.unroute('**/api/portal/media', automaticRoute);
+  const adminAutomaticData = (await admin.get(`/api/clients/${client.id}/media`)).json;
+  adminAutomaticData.services = adminAutomaticData.services.map((service) => ({
+    ...service,
+    status_source: service.service === 'ubuntu' ? 'manual' : 'automatic',
+    configured_url: service.service === 'jellyseerr' ? 'http://requests.example.com:5055/' : null
+  }));
+  const adminAutomaticRoute = (route) => route.fulfill({ json: adminAutomaticData });
+  await page.route(`**/api/clients/${client.id}/media`, adminAutomaticRoute);
+  await session(admin);
+  await page.goto(`${ctx.base}/admin/#/clients/${client.id}`);
+  await page.locator('[data-action="edit-media"][data-service="jellyseerr"]').click();
+  assert.equal(await page.locator('#f-status').count(), 0, 'Automatic status cannot be manually edited');
+  assert.equal(await page.locator('#f-url').inputValue(), 'http://requests.example.com:5055/');
+  assert.equal(await page.locator('#f-share_access').isChecked(), false, 'Suggested URL never opts client into sharing');
+  await page.locator('#modal [data-close]').first().click();
+  await page.locator('[data-action="edit-media"][data-service="ubuntu"]').click();
+  await page.locator('#f-status').waitFor();
+  await page.locator('#modal [data-close]').first().click();
+  await page.unroute(`**/api/clients/${client.id}/media`, adminAutomaticRoute);
+  await session(portal);
+  await page.goto(`${ctx.base}/portal/`);
+  await page.locator('#tab-media').click();
+  await panel.locator('[data-refresh]').waitFor();
   await admin.put(`/api/clients/${client.id}/media`, { enabled: false });
   await panel.locator('[data-refresh]').click();
   await panel.locator('.error').filter({ hasText: /.+/ }).waitFor();
@@ -117,7 +185,7 @@ try {
   await page.locator('#tab-projects').waitFor();
   assert.equal(await page.locator('#tab-media').count(), 0);
   assert.deepEqual(errors, []);
-  console.log('Verified media admin settings, opt-in access, EN/NL/FR, responsive layout, password reauthentication, auto-hide, tab cleanup and revocation.');
+  console.log('Verified media admin settings, opt-in access, EN/NL/FR, responsive layout, password reauthentication, auto-hide, automatic status display/polling, HTTP warnings, stale results and revocation.');
 } finally {
   if (browser) await browser.close();
   await ctx.close();

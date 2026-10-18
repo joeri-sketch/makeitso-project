@@ -36,6 +36,9 @@ button, input, textarea { font: inherit; color: inherit; }
 .media-card dt { color: var(--muted); }
 .media-card dd { margin: 5px 0 0; }
 .media-stale { color: #7b5500; font-size: 12px; }
+.media-source { margin-top: 10px; font-size: 12px; }
+.media-card dd + dt { margin-top: 12px; }
+.media-http-warning { margin-bottom: 18px; font-size: 12px; }
 .media-notice-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 24px; }
 .media-notice { padding: 0 0 0 16px; border-left: 4px solid var(--gold); margin-top: 20px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .media-notice p { margin: 8px 0; }

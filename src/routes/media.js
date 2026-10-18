@@ -4,6 +4,8 @@ import { decrypt, encrypt, verifyPassword } from '../lib/crypto.js';
 import { HttpError, v } from '../lib/validate.js';
 import { asyncHandler as h } from '../middleware/security.js';
 import { requireAdmin, requireSession } from '../middleware/session.js';
+import { config as defaultConfig } from '../config.js';
+import { mediaTargetFingerprint, mediaStatusView } from '../services/media-monitor.js';
 
 const SERVICES = ['jellyfin', 'jellyseerr', 'ubuntu'];
 const STATUSES = ['unknown', 'operational', 'degraded', 'offline', 'maintenance'];
@@ -80,7 +82,7 @@ async function lockAvailableClient(tx, clientId) {
   return client;
 }
 
-export function adminMediaRoutes({ db }) {
+export function adminMediaRoutes({ db, config = defaultConfig }) {
   const r = Router();
   r.use('/clients/:id/media', requireAdmin);
 
@@ -96,9 +98,10 @@ export function adminMediaRoutes({ db }) {
       [clientId]
     )).rows;
     const byService = new Map(rows.map((row) => [row.service, row]));
+    const monitoring = await readAutomaticStatuses(db, config);
     res.json({
       enabled: client.media_enabled,
-      services: SERVICES.map((service) => byService.get(service) ?? EMPTY_SERVICE(service))
+      services: SERVICES.map((service) => enrichAdminService(byService.get(service) ?? EMPTY_SERVICE(service), service, config, monitoring))
     });
   }));
 
@@ -122,6 +125,9 @@ export function adminMediaRoutes({ db }) {
   r.put('/clients/:id/media/:service', h(async (req, res) => {
     const clientId = v.id(req.params.id);
     const service = serviceId(req.params.service);
+    if (Object.hasOwn(req.body ?? {}, 'status') && config.mediaTargets?.[service]) {
+      throw new HttpError(400, 'Status is monitored automatically and cannot be edited.');
+    }
     const fields = parseServiceBody(req.body);
     const result = await db.tx(async (tx) => {
       await lockAvailableClient(tx, clientId);
@@ -165,7 +171,7 @@ export function adminMediaRoutes({ db }) {
   return r;
 }
 
-export function portalMediaRoutes({ db, limits }) {
+export function portalMediaRoutes({ db, limits, config = defaultConfig }) {
   const r = Router();
   r.use('/media', requireSession, (req, res, next) => {
     if (req.auth.role !== 'client' || !req.auth.clientId) return next(new HttpError(403, 'Client portal access only.'));
@@ -184,10 +190,12 @@ export function portalMediaRoutes({ db, limits }) {
       )).rows;
     });
     const byService = new Map(rows.map((row) => [row.service, row]));
+    const monitoring = await readAutomaticStatuses(db, config);
     res.json({
       services: SERVICES.map((service) => {
         const row = byService.get(service) ?? EMPTY_SERVICE(service);
         const shared = row.share_access;
+        const automatic = mediaStatusView(service, config.mediaTargets?.[service], monitoring.get(service));
         return {
           service,
           share_access: shared,
@@ -195,9 +203,10 @@ export function portalMediaRoutes({ db, limits }) {
           username: shared ? row.username : null,
           login_note: shared ? row.login_note : null,
           has_password: shared && row.has_password,
-          status: row.status,
+          status: automatic.status_source === 'automatic' ? automatic.status : row.status,
           message: row.message,
-          status_updated_at: row.status_updated_at
+          status_updated_at: automatic.status_source === 'automatic' ? automatic.checked_at : row.status_updated_at,
+          ...automatic
         };
       })
     });
@@ -234,4 +243,29 @@ export function portalMediaRoutes({ db, limits }) {
   }));
 
   return r;
+}
+
+async function readAutomaticStatuses(db, config) {
+  const targets = Object.entries(config.mediaTargets ?? {}).filter(([, target]) => target);
+  if (!targets.length) return new Map();
+  const { rows } = await db.query(
+    'SELECT service, target_fingerprint, status, checked_at, last_success_at, response_ms, failure_count FROM media_service_health'
+  );
+  return new Map(rows.map((row) => [row.service, row]));
+}
+
+function enrichAdminService(row, service, config, monitoring) {
+  const automatic = mediaStatusView(service, config.mediaTargets?.[service], monitoring.get(service));
+  return {
+    ...row,
+    status: automatic.status_source === 'automatic' ? automatic.status : row.status,
+    status_updated_at: automatic.status_source === 'automatic' ? automatic.checked_at : row.status_updated_at,
+    status_source: automatic.status_source,
+    checked_at: automatic.checked_at,
+    response_ms: automatic.response_ms,
+    stale: automatic.stale,
+    failure_count: automatic.failure_count,
+    configured_url: config.mediaTargets?.[service] ?? null,
+    manual_status: row.status
+  };
 }
