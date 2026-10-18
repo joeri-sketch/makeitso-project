@@ -11,7 +11,43 @@ Status entries initially show **Not confirmed** to avoid implying a live check. 
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
 - **Invoices**: create invoices from scratch or accepted quotes, issue them with sequential numbers, generate PDF copies, and manually record bank-transfer payments. Clients can download issued PDFs from the portal.
 - **Support**: clients can open tickets and reply in the portal; admins can triage, prioritize and respond from the admin area.
-- **Backend** (`src/`): Node 20, Express, PostgreSQL. No build step.
+- **Backend** (`src/`): Node 20, Express, PostgreSQL. Production serves committed prerendered public pages; no browser or build step is needed on Railway.
+
+## Google / SEO
+
+Public pages are served with their main content already in the HTML, including
+EN / NL / FR titles, descriptions, self-referencing canonical URLs, reciprocal
+`hreflang` links and a localized sitemap. English uses the unparameterized URL;
+Dutch and French use `?lang=nl` and `?lang=fr`. Tracking parameters are excluded
+from canonicals. The language switch updates the URL and metadata without
+changing the layout. Structured data describes the actual business address,
+services, website and breadcrumbs; no reviews or ratings are invented.
+Fictional sample projects remain `noindex`. Admin, portal and API responses
+also send `X-Robots-Tag: noindex, nofollow`.
+
+After editing public page content or translations, regenerate the committed
+HTML in `generated/seo/` (do not edit generated files manually):
+
+```sh
+pnpm exec playwright install chromium
+pnpm build:seo
+pnpm test:seo
+pnpm test
+```
+
+`pnpm test` detects stale generated content. The browser checks exercise all
+public pages and language switches, plus content visibility without JavaScript.
+Generation uses a local static server, not your production database, and blocks
+external requests. The production server does not load Playwright.
+SEO metadata is maintained in `public/seo-data.js`; the 1200 x 630 social image
+is regenerated from existing brand artwork.
+
+After deployment, verify ownership of `https://makeitso.studio/` in Google
+Search Console and submit `https://makeitso.studio/sitemap.xml`. Use URL
+Inspection to request indexing of key service pages. Set up or complete your
+Google Business Profile with the same company name, address and website.
+These account-level steps require the owner's access and are not automated
+by this repository. Indexing and rankings are determined by Google, not guaranteed.
 
 See [docs/PHASE-0-PLAN.md](docs/PHASE-0-PLAN.md) for the plan, decisions, accounts to create and the Belgian / privacy checklist. Quotes are not invoices, and an online quote decision is an audit record—not legal advice about electronic signatures.
 

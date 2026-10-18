@@ -8,6 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
+    "build:seo": "node scripts/build-seo.js",
+    "test:seo": "node scripts/check-seo-browser.js",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node --test tests/",
@@ -23,5 +25,8 @@
     "pdfkit": "^0.20.2",
     "pg": "^8.13.1",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
   }
 }
