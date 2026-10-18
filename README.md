@@ -8,6 +8,7 @@ Website, admin area, client portal and quotes for the creative marketing agency 
 Status entries initially show **Not confirmed** to avoid implying a live check. To publish an update, change the relevant service `status` value (`operational`, `degraded`, `outage` or `maintenance`), set `lastUpdatedAt` to an ISO timestamp, and add any notices to the localized `incidents` list in `public/status-page.js`.
 - **Admin area** (`/admin`): clients, contacts, projects, milestones, work-item status boards, project timesheets, notes, leads and an activity log, behind password + two-factor login. Project progress is calculated from work items when present; otherwise it can be updated manually.
 - **Client portal** (`/portal/`): invited clients can follow project progress, milestones and explicitly shared work items, reply in shared feature discussions, review quotes and invoices, download invoice PDFs, and manage support conversations. Time entries and internal notes remain admin-only.
+- **Private client media**: admins can enable per-client access and manage Jellyfin, Jellyseerr and Ubuntu connection details. Service status is updated manually; the backend does not poll these addresses or claim live availability. Passwords are encrypted at rest and only revealed to a shared client after they re-enter their portal password. This is separate from the public `/status/` page.
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
 - **Invoices**: create invoices from scratch or accepted quotes, issue them with sequential numbers, generate PDF copies, and manually record bank-transfer payments. Clients can download issued PDFs from the portal.
 - **Support**: clients can open tickets and reply in the portal; admins can triage, prioritize and respond from the admin area.
@@ -64,10 +65,13 @@ Open <http://127.0.0.1:3000> for the website and <http://127.0.0.1:3000/admin/> 
 
 From a client's record in the admin, invite a saved contact and copy the one-time setup link to send it yourself. No invitation email is sent. The same is true when sharing a quote: it appears in the client's portal, and the admin can copy the portal link to deliver it.
 
+To share private media credentials, open the client in the admin and enable **Media access**. Configure each available service (Jellyfin, Jellyseerr or Ubuntu), including its URL, optional username and login note, whether connection details may be shared, and an optional password. Service statuses (`unknown`, `operational`, `degraded`, `offline` or `maintenance`) and their update time are manual; no server checks or polling are performed until service addresses and monitoring are separately designed. The client portal only shows connection details when sharing is enabled. Clients must re-enter their current portal password each time they reveal a saved password. These private client statuses do not change the separate public status dashboard.
+
 Before issuing invoices, fill in **Invoices → Business details** in the admin and add complete billing addresses to client records. Invoices are PDFs with manual bank-transfer tracking; Peppol is not integrated. Do not assume PDF invoices satisfy Belgian structured e-invoicing requirements. Confirm compliance, retention and correction rules with your accountant.
 
 ```sh
 pnpm test                          # automated tests
+pnpm test:media                    # private media browser validation
 pnpm create-admin "Name" a@b.be "password-of-12+-characters"
 node src/cli/reset-2fa.js a@b.be   # admin lost phone and recovery codes
 ```
@@ -79,7 +83,7 @@ Everything is environment variables; see [.env.example](.env.example).
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string. **Required in production.** Locally, empty means the embedded database |
-| `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets |
+| `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets and private media passwords. Keep it stable across deploys and backups or encrypted values cannot be decrypted |
 | `PUBLIC_ORIGIN` | Optional comma-separated list of trusted site origins, e.g. `https://makeitso.studio,https://your-app.up.railway.app`. The actual origin serving the app is also checked automatically |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | SMTP account used to send contact-form notifications. Hostinger Email uses `smtp.hostinger.com`, port `465`, secure `true` |

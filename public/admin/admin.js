@@ -617,6 +617,7 @@ async function clientsView(view) {
 async function clientView(view, id) {
   const d = await get(`/clients/${id}`);
   const c = d.client;
+  const media = c.archived_at ? null : await get(`/clients/${id}/media`);
   const detail = (k, v) => (v ? html`<dt>${k}</dt><dd>${v}</dd>` : '');
   show(view, html`
     <a class="back" href="#/clients">← All clients</a>
@@ -639,6 +640,17 @@ async function clientView(view, id) {
           ${d.accounts.length ? html`<ul class="list">${d.accounts.map((account) => html`<li><span class="grow"><strong>${account.name}</strong><span class="sub">${account.email} · ${account.active ? 'Portal access active' : 'Access revoked'}</span></span>
             ${account.active ? html`<button class="btn small danger" data-action="revoke-access" data-id="${account.id}">Revoke</button>` : chip('inactive')}</li>`)}</ul>` : html`<p class="muted" style="margin-top:12px">No client logins yet.</p>`}
         </section>
+        ${media ? html`<section class="card"><header><h2>Extra portal sections</h2></header>
+          <p class="muted">Private media status is separate from the public website status. Disabled by default for new clients.</p>
+          <form id="media-permission" class="stack" style="margin-top:16px">
+            <label class="check"><input type="checkbox" name="enabled" ${media.enabled ? 'checked' : ''}> Show media server status to this client</label>
+            <p class="muted">Applies to all portal users of this client. Sharing service links and accounts is controlled separately below.</p>
+            <p class="form-error" role="alert"></p><button class="btn primary">Save portal permission</button>
+          </form>
+          <hr><header><h3>Media services &amp; access</h3></header>
+          <p class="muted">Manual status updates only until monitoring is configured. Share dedicated client accounts, never root or administrator credentials.</p>
+          <ul class="list">${media.services.map((s) => html`<li><span class="grow"><strong>${mediaServiceName(s.service)}</strong><span class="sub">${mediaStatusLabel(s.status)} · ${s.share_access ? 'Client access shared' : 'Access not shared'}${s.has_password ? ' · Password stored securely' : ''}</span></span><button class="btn small" data-action="edit-media" data-service="${s.service}">Manage</button></li>`)}</ul>
+        </section>` : ''}
         <section class="card"><header><h2>Activity</h2></header>${activityList(d.activity)}</section>
       </div>
       <div class="stack">
@@ -653,6 +665,18 @@ async function clientView(view, id) {
     </div>`);
   const reload = () => clientView(view, id);
   const contact = (id2) => d.contacts.find((k) => k.id === id2);
+  $('#media-permission')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = $('button', form);
+    button.disabled = true;
+    $('.form-error', form).textContent = '';
+    try {
+      await put(`/clients/${id}/media`, { enabled: form.elements.enabled.checked });
+      toast('Portal permission saved');
+      await reload();
+    } catch (error) { $('.form-error', form).textContent = error.message; button.disabled = false; }
+  });
   $('#note-form').onsubmit = async (e) => {
     e.preventDefault();
     const body = $('#note-body').value.trim();
@@ -660,6 +684,7 @@ async function clientView(view, id) {
     try { await post('/notes', { client_id: id, body, client_visible: $('#note-visible').checked }); reload(); } catch (err) { toast(err.message, 'error'); }
   };
   actions(view, {
+    'edit-media': (el) => editMediaService(id, media.services.find((s) => s.service === el.dataset.service), reload),
     edit: () => openForm({ title: 'Edit client', fields: clientFields, values: c, onSubmit: async (v) => { await patch(`/clients/${id}`, v); toast('Saved'); reload(); } }),
     archive: async () => { if (confirm('Archive this client? Their data is kept and can be restored.')) { await post(`/clients/${id}/archive`); toast('Client archived'); reload(); } },
     restore: async () => { await post(`/clients/${id}/restore`); toast('Client restored'); reload(); },
@@ -694,6 +719,35 @@ async function clientView(view, id) {
     'pin-note': async (el, nid) => { await patch(`/notes/${nid}`, { pinned: el.dataset.pinned !== 'true' }); reload(); },
     'toggle-note-visibility': async (el, nid) => { await patch(`/notes/${nid}`, { client_visible: el.dataset.visible !== 'true' }); reload(); },
     'delete-note': async (_, nid) => { if (confirm('Delete this note?')) { await del(`/notes/${nid}`); reload(); } }
+  });
+}
+
+const MEDIA_STATUS = [
+  ['unknown', 'Not confirmed'], ['operational', 'Operational'], ['degraded', 'Degraded'],
+  ['offline', 'Offline'], ['maintenance', 'Maintenance']
+];
+const mediaServiceName = (service) => ({ jellyfin: 'Jellyfin', jellyseerr: 'Jellyseerr', ubuntu: 'Ubuntu server' }[service]);
+const mediaStatusLabel = (status) => MEDIA_STATUS.find(([value]) => value === status)?.[1] || 'Not confirmed';
+
+function editMediaService(clientId, service, reload) {
+  openForm({
+    title: `${mediaServiceName(service.service)} · status & client access`,
+    fields: [
+      { name: 'status', label: 'Manual status (not live monitoring)', type: 'select', options: MEDIA_STATUS, full: true },
+      { name: 'message', label: 'Shared status / maintenance notice', type: 'textarea', max: 2000, full: true },
+      { name: 'share_access', label: 'Share this service link and account with this client', type: 'checkbox' },
+      { name: 'url', label: 'Client-facing service URL', type: 'url', full: true, hint: 'HTTP(S) only. No embedded username, password, query string or fragment. Leave blank until ready.' },
+      { name: 'username', label: 'Client username', full: true },
+      { name: 'login_note', label: 'Sign-in instructions', type: 'textarea', max: 1000, full: true, hint: 'For example: sign in with your Jellyfin account. Do not include passwords here.' },
+      { name: 'password', label: service.has_password ? 'Replace stored password' : 'Client service password', type: 'password', full: true, hint: 'Leave blank to keep the current password. Encrypted at rest; not returned in admin reads.' },
+      { name: 'clear_password', label: 'Remove the stored password', type: 'checkbox' }
+    ],
+    values: service,
+    onSubmit: async (values) => {
+      await put(`/clients/${clientId}/media/${service.service}`, values);
+      toast('Media service saved');
+      await reload();
+    }
   });
 }
 

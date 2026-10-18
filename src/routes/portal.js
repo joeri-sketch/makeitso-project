@@ -71,7 +71,7 @@ export function portalRoutes({ db, config, limits }) {
   r.get('/overview', h(async (req, res) => {
     const clientId = req.auth.clientId;
     const [client, projects, workItems, projectMessages, milestones, notes, quotes] = await Promise.all([
-      db.query('SELECT company_name, language FROM clients WHERE id = $1 AND archived_at IS NULL', [clientId]),
+      db.query('SELECT company_name, language, media_enabled FROM clients WHERE id = $1 AND archived_at IS NULL', [clientId]),
       db.query(
         `SELECT p.id, p.name, p.category, p.status, p.created_at, p.preview_url,
                 CASE WHEN EXISTS (SELECT 1 FROM work_items wi WHERE wi.project_id = p.id AND wi.client_visible)
