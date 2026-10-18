@@ -32,74 +32,83 @@
     </nav>
   </header>
   <main id="status-content" class="status-page" data-status-page="" tabindex="-1">
-      <section class="status-hero">
-        <div class="status-orbit" aria-hidden="true"><i></i><i></i><span>✦</span></div>
-        <div class="status-hero-copy">
-          <a class="detail-back" href="/?lang=en">← Back to Make It So</a>
-          <p class="studio-kicker">SYSTEMS · STATUS REPORT</p>
-          <h1>Clear signals.<br><span>No guesswork.</span></h1>
-          <p class="studio-intro">A single place to find the latest published status for the digital services that support our work.</p>
-          <div class="status-manual-note"><span aria-hidden="true">◷</span>Statuses on this page are updated manually. The page does not run automatic uptime checks or verify email delivery.</div>
+      <section class="panel hero status-bridge" aria-labelledby="bridge-title">
+        <i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i>
+        <div class="status-bridge-grid">
+          <div>
+            <div class="lcars" aria-hidden="true"><i></i><i></i><i></i></div>
+            <p class="logline"><span class="pulse"></span> 01 · Bridge status</p>
+            <h1 class="hero-title" id="bridge-title">All systems<br>nominal<b>.</b></h1>
+            <p class="lead">Website, apps, portal, email and billing are operational.</p>
+            <p class="status-meta"><span>Last published update Oct 15, 2026, 12:57 PM</span><span>Statuses on this page are updated manually. The page does not run automatic uptime checks or verify email delivery.</span></p>
+          </div>
+          <aside class="chat engaged" aria-label="Bridge board">
+            <header>
+              <span class="online" aria-hidden="true"></span>
+              <div><strong>Bridge board</strong><small>5 operational</small></div>
+            </header>
+            <ul class="status-sys">
+              <li><strong>Website</strong><span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span></li><li><strong>Apps</strong><span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span></li><li><strong>Portal</strong><span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span></li><li><strong>Email</strong><span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span></li><li><strong>Billing</strong><span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span></li>
+            </ul>
+          </aside>
         </div>
-        <aside class="status-signal">
-          <span class="studio-signal-label">STATUS CONTROL · MANUAL UPDATES</span>
-          <span class="status-overall status-unknown"><i aria-hidden="true"></i>Status updates are not available yet.</span>
-          <strong>A clear view of every system.</strong>
-          <span class="studio-signal-status">CURRENT PUBLISHED STATUS</span>
-          <div class="status-signal-line" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <span class="studio-signal-label">PUBLIC STATUS REPORT</span>
-        </aside>
       </section>
 
-      <section class="status-section" aria-labelledby="status-overview-title">
+      <section class="status-block" aria-labelledby="status-overview-title">
         <header class="status-section-head">
-          <div><p class="studio-kicker">SYSTEMS · STATUS REPORT</p><h2 id="status-overview-title">Service overview</h2></div>
-          <p>See the published status of each service at a glance.</p>
+          <div>
+            <div class="lcars" aria-hidden="true"><i></i><i></i><i></i></div>
+            <p class="kicker">02 · Service board</p>
+            <h2 id="status-overview-title">Five systems.<br><span>One glance.</span></h2>
+          </div>
+          <p>Every published service is operational.</p>
         </header>
-        <div class="status-list">
-          <article class="status-row status-row-unknown">
-              <span class="status-service-icon" aria-hidden="true">◉</span>
-              <div class="status-service-copy"><span class="status-index">01 · PUBLIC STATUS REPORT</span><h3>Website &amp; public pages</h3><p>The main Make It So website and public information pages.</p></div>
-              <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
-            </article><article class="status-row status-row-unknown">
-              <span class="status-service-icon" aria-hidden="true">▣</span>
-              <div class="status-service-copy"><span class="status-index">02 · PUBLIC STATUS REPORT</span><h3>Business applications</h3><p>The software and digital systems we build and operate.</p></div>
-              <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
-            </article><article class="status-row status-row-unknown">
-              <span class="status-service-icon" aria-hidden="true">◌</span>
-              <div class="status-service-copy"><span class="status-index">03 · PUBLIC STATUS REPORT</span><h3>Client portal &amp; project status</h3><p>Secure client access to project progress, quotes and invoices.</p></div>
-              <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
-            </article><article class="status-row status-row-unknown">
-              <span class="status-service-icon" aria-hidden="true">✉</span>
-              <div class="status-service-copy"><span class="status-index">04 · PUBLIC STATUS REPORT</span><h3>Email &amp; contact form</h3><p>Business email and delivery of website contact requests.</p></div>
-              <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
-            </article><article class="status-row status-row-unknown">
-              <span class="status-service-icon" aria-hidden="true">▤</span>
-              <div class="status-service-copy"><span class="status-index">05 · PUBLIC STATUS REPORT</span><h3>Quotes &amp; invoicing</h3><p>Quote, invoice and document services for clients.</p></div>
-              <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
+        <div class="status-rows">
+          <article class="status-row status-operational">
+              <span class="status-num">01</span>
+              <div><h3>Website &amp; public pages</h3><p>The main Make It So website and public information pages.</p></div>
+              <span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span>
+            </article><article class="status-row status-operational">
+              <span class="status-num">02</span>
+              <div><h3>Business applications</h3><p>The software and digital systems we build and operate.</p></div>
+              <span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span>
+            </article><article class="status-row status-operational">
+              <span class="status-num">03</span>
+              <div><h3>Client portal &amp; project status</h3><p>Secure client access to project progress, quotes and invoices.</p></div>
+              <span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span>
+            </article><article class="status-row status-operational">
+              <span class="status-num">04</span>
+              <div><h3>Email &amp; contact form</h3><p>Business email and delivery of website contact requests.</p></div>
+              <span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span>
+            </article><article class="status-row status-operational">
+              <span class="status-num">05</span>
+              <div><h3>Quotes &amp; invoicing</h3><p>Quote, invoice and document services for clients.</p></div>
+              <span class="status-pill status-pill-operational"><i aria-hidden="true"></i>Operational</span>
             </article>
         </div>
-        <aside class="status-manual-card">
-          <span class="status-manual-icon" aria-hidden="true">◷</span>
-          <div><h3>Manually maintained</h3><p>Statuses on this page are updated manually. The page does not run automatic uptime checks or verify email delivery.</p></div>
-          <span class="status-update">Last published update<strong>No update time published</strong></span>
-        </aside>
       </section>
 
-      <section class="status-incidents" aria-labelledby="status-incidents-title">
+      <section class="status-block" aria-labelledby="status-incidents-title">
         <header class="status-section-head">
-          <div><p class="studio-kicker">SYSTEMS · STATUS REPORT</p><h2 id="status-incidents-title">Incident history</h2></div>
+          <div>
+            <div class="lcars" aria-hidden="true"><i></i><i></i><i></i></div>
+            <p class="kicker">03 · Ship’s log</p>
+            <h2 id="status-incidents-title">What changed,<br><span>and when.</span></h2>
+          </div>
           <p>Published service notices and maintenance updates.</p>
         </header>
-        <div class="status-incident-list"><div class="status-empty">
-          <span class="status-empty-mark" aria-hidden="true">✦</span>
-          <div><h3>No updates published</h3><p>There are no incident or maintenance notices on this page yet.</p></div>
-        </div></div>
+        <div class="status-incident-list"><p class="status-empty">There are no incident or maintenance notices on this page yet.</p></div>
       </section>
 
-      <section class="status-help">
-        <div><p class="studio-kicker">SYSTEMS · STATUS REPORT</p><h2>Need a hand?</h2><p>If you are experiencing a problem with a Make It So service, contact us and include which service is affected.</p></div>
-        <a class="btn btn-orange btn-lg" href="/?lang=en#contact">Contact Make It So<span class="chip" aria-hidden="true">→</span></a>
+      <section class="panel cta status-hail">
+        <div class="status-hail-grid">
+          <div>
+            <p class="kicker dark">04 · Hailing frequencies open</p>
+            <h2 id="status-help-title">Need a hand<b>?</b></h2>
+            <p>If you are experiencing a problem with a Make It So service, contact us and include which service is affected.</p>
+          </div>
+          <a class="btn btn-dark btn-lg" href="/?lang=en#contact">Hail the bridge <span class="chip" aria-hidden="true">→</span></a>
+        </div>
       </section></main>
   <footer class="footer service-footer">
     <div class="wrap">
