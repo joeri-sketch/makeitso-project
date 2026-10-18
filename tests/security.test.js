@@ -41,7 +41,7 @@ describe('website, headers and abuse protection', () => {
       'Website & openbare pagina’s', 'Portail client et suivi de projet',
       'Statuses on this page are updated manually.',
       'The page does not run automatic uptime checks',
-      "status: 'unknown'", 'const lastUpdatedAt = null;', 'const incidents = [];'
+      "status: 'operational'", "const lastUpdatedAt = '2026-10-15T10:57:00.000Z';", 'const incidents = [];'
     ]) {
       assert.ok(script.text.includes(phrase), `status page includes “${phrase}”`);
     }
