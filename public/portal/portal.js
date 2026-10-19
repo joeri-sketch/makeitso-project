@@ -240,7 +240,7 @@ function renderDashboard() {
   const tickets = state.tickets.length
     ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noTickets')}</p>`;
-  app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark">✦</span><span>make it so<em>.</em></span></a>
+  app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 1.75 15.1 8.9 22.25 12l-7.15 3.1L12 22.25 8.9 15.1 1.75 12 8.9 8.9z"/></svg></span><span>make it so<em>.</em></span></a>
       <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
         <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
         <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>

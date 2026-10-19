@@ -31,6 +31,17 @@ try {
   await page.goto(`${ctx.base}/portal/`);
   await page.locator('#tab-projects').waitFor();
   assert.equal(await page.locator('#tab-media').count(), 0);
+  const header = page.locator('.portal-top');
+  const headerBox = await header.boundingBox();
+  assert.ok(headerBox.x > 0 && headerBox.width < 1300, 'Portal navigation should sit in a centered container');
+  assert.equal(await header.evaluate((el) => Number.parseFloat(getComputedStyle(el).borderTopLeftRadius) > 0), true);
+  assert.equal(await header.locator('.brand-mark svg path').count(), 1);
+  assert.equal(await header.locator('.brand-mark svg path').evaluate((path) => getComputedStyle(path).fill), 'rgb(255, 106, 31)');
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobileHeader = await header.boundingBox();
+  assert.ok(mobileHeader.x >= 0 && mobileHeader.width < 390, 'Mobile navigation should remain inset and contained');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'Contained header must not cause horizontal overflow');
+  await page.setViewportSize({ width: 1440, height: 1100 });
 
   await session(admin);
   await page.goto(`${ctx.base}/admin/#/clients/${client.id}`);
