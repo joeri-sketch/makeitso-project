@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
 import { once } from 'node:events';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { Client, signedInAdmin, startTestServer } from './helpers.js';
 const { config } = await import('../src/config.js');
 import { createDb } from '../src/db/index.js';
@@ -321,6 +322,25 @@ describe('automatic media status API overlay', () => {
       targets.ubuntu = null;
       if (server.listening) await new Promise((resolve) => server.close(resolve));
     }
+  });
+
+  it('migrates only the old default per-client URLs to the supplied HTTPS addresses', async () => {
+    const custom = await admin.post('/api/clients', { company_name: 'Custom link media client' });
+    const customId = custom.json.client.id;
+    await ctx.db.query(
+      `INSERT INTO client_media_services (client_id, service, url) VALUES
+       ($1, 'jellyfin', 'http://jellyfin.makeitso.studio:8096/'),
+       ($1, 'jellyseerr', 'http://jellyfin.makeitso.studio:5055/'),
+       ($1, 'ubuntu', 'https://custom-ubuntu.example.test/')`,
+      [customId]
+    );
+    await ctx.db.exec(readFileSync(new URL('../src/db/migrations/010_update_media_service_links.sql', import.meta.url), 'utf8'));
+    const { rows } = await ctx.db.query('SELECT service, url FROM client_media_services WHERE client_id = $1 ORDER BY service', [customId]);
+    assert.deepEqual(rows, [
+      { service: 'jellyfin', url: 'https://jellyfin.makeitso.studio/' },
+      { service: 'jellyseerr', url: 'https://seer.makeitso.studio/' },
+      { service: 'ubuntu', url: 'https://custom-ubuntu.example.test/' }
+    ]);
   });
 });
 

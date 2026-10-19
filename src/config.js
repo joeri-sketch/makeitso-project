@@ -78,8 +78,8 @@ export const config = {
   idleMinutes: 120,
   leadMinFillMs: 1500,
   mediaTargets: {
-    jellyfin: mediaTarget('MEDIA_JELLYFIN_URL', isTest ? '' : 'http://jellyfin.makeitso.studio:8096/'),
-    jellyseerr: mediaTarget('MEDIA_JELLYSEERR_URL', isTest ? '' : 'http://jellyfin.makeitso.studio:5055/'),
+    jellyfin: mediaTarget('MEDIA_JELLYFIN_URL', isTest ? '' : 'https://jellyfin.makeitso.studio/'),
+    jellyseerr: mediaTarget('MEDIA_JELLYSEERR_URL', isTest ? '' : 'https://seer.makeitso.studio/'),
     ubuntu: ubuntuTarget()
   }
 };

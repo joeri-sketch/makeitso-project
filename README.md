@@ -88,7 +88,7 @@ Everything is environment variables; see [.env.example](.env.example).
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | SMTP account used to send contact-form notifications. Hostinger Email uses `smtp.hostinger.com`, port `465`, secure `true` |
 | `SMTP_FROM`, `CONTACT_EMAIL` | Optional sender address (defaults to `SMTP_USER`) and inbox for contact messages (defaults to `SMTP_USER`) |
-| `MEDIA_JELLYFIN_URL`, `MEDIA_JELLYSEERR_URL` | Trusted server-only monitoring targets (default: `http://jellyfin.makeitso.studio:8096/` and `http://jellyfin.makeitso.studio:5055/`). Set either explicitly to an empty value to disable that check. Values must be HTTP(S) base URLs without credentials, query strings, or fragments |
+| `MEDIA_JELLYFIN_URL`, `MEDIA_JELLYSEERR_URL` | Trusted server-only monitoring targets (default: `https://jellyfin.makeitso.studio/` and `https://seer.makeitso.studio/`). Set either explicitly to an empty value to disable that check. Values must be HTTP(S) base URLs without credentials, query strings, or fragments |
 | `MEDIA_UBUNTU_TCP` | Trusted TCP target, default `213.119.105.234:3389`. Use `host:port`, or an explicitly empty value to disable. Port reachability only; no remote login |
 | `PORT`, `TRUST_PROXY` | Set automatically on Railway |
 
