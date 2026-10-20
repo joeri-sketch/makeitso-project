@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { authRoutes } from './routes/auth.js';
 import { crmRoutes } from './routes/crm.js';
 import { invoiceRoutes, portalInvoiceRoutes } from './routes/invoices.js';
+import { adminMediaRoutes, portalMediaRoutes } from './routes/media.js';
 import { portalRoutes } from './routes/portal.js';
 import { quoteRoutes } from './routes/quotes.js';
 import { publicRoutes } from './routes/public.js';
@@ -11,6 +12,7 @@ import { createContactMailer } from './services/contact-mail.js';
 import { supportRoutes } from './routes/support.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
+import { seoPagesMiddleware } from './middleware/seo.js';
 
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 
@@ -35,6 +37,7 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
 
   app.use(requestLogger(log));
   app.use(securityHeaders(config));
+  app.use(seoPagesMiddleware);
 
   app.get('/healthz', async (req, res) => {
     try {
@@ -50,6 +53,8 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
   app.use('/api/public', publicRoutes({ db, config, limits, mailer, log }));
+  app.use('/api', adminMediaRoutes({ db }));
+  app.use('/api/portal', portalMediaRoutes({ db, limits }));
   app.use('/api/portal', portalRoutes({ db, config, limits }));
   app.use('/api/portal', portalInvoiceRoutes({ db }));
   app.use('/api', supportRoutes({ db, limits }));

@@ -8,7 +8,7 @@
   /* ---------- translations (i18n.js loads first; fall back to English if missing) ---------- */
   const i18n = window.i18n || { t: (key) => key, onChange() {} };
   const updateServiceLinks = () => {
-    const footerNav = document.querySelector('footer nav[aria-label="Footer navigation"]');
+    const footerNav = document.querySelector('.footer .foot-top nav');
     if (footerNav) {
       let statusLink = footerNav.querySelector('a[data-status-link]');
       if (!statusLink) {

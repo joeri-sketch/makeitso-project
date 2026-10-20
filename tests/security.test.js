@@ -15,13 +15,16 @@ describe('website, headers and abuse protection', () => {
     assert.equal(res.json.ok, true);
   });
 
-  it('serves the existing static website unchanged', async () => {
+  it('serves the existing static assets unchanged and the rendered homepage', async () => {
     const c = new Client(ctx.base);
-    for (const file of ['index.html', 'styles.css', 'script.js', 'i18n.js']) {
-      const res = await c.get(file === 'index.html' ? '/' : `/${file}`);
+    for (const file of ['styles.css', 'script.js', 'i18n.js']) {
+      const res = await c.get(`/${file}`);
       assert.equal(res.status, 200, file);
       assert.equal(res.text, readFileSync(new URL(`../public/${file}`, import.meta.url), 'utf8'), `${file} is served byte-for-byte`);
     }
+    const home = await c.get('/');
+    assert.equal(home.status, 200);
+    assert.match(home.text, /<h1/);
   });
 
   it('serves the localized manual system status page without implying live monitoring', async () => {
@@ -94,8 +97,8 @@ describe('website, headers and abuse protection', () => {
       assert.match(page.text, /aria-label="Main navigation"/, `${slug} has main-site navigation`);
       assert.match(page.text, /class="menu-btn"/, `${slug} has a responsive menu button`);
       assert.match(page.text, /class="footer service-footer"/, `${slug} has the site footer`);
-      assert.match(page.text, /href="\/portal\/">Client login/, `${slug} footer has client login`);
-      assert.match(page.text, /href="\/admin">Admin login/, `${slug} footer has admin login`);
+      assert.match(page.text, /href="\/portal\/(?:\?lang=en)?">Client login/, `${slug} footer has client login`);
+      assert.match(page.text, /href="\/admin(?:\?lang=en)?">Admin login/, `${slug} footer has admin login`);
       assert.match(page.text, /class="lang lang-footer"/, `${slug} footer has language controls`);
     }
     for (const file of ['service-data.js', 'service-page.js', 'service-navigation.js']) {
@@ -164,7 +167,7 @@ describe('website, headers and abuse protection', () => {
       assert.match(page.text, new RegExp(heading), slug);
       assert.match(page.text, /aria-label="Main navigation"/, `${slug} has the main navigation`);
       assert.match(page.text, /aria-label="Footer navigation"/, `${slug} has the footer navigation`);
-      assert.match(page.text, new RegExp(`href="/${slug}/"`), `${slug} appears in the page navigation`);
+      assert.match(page.text, new RegExp(`href="/${slug}/(?:\\?lang=en)?"`), `${slug} appears in the page navigation`);
       assert.match(page.text, /class="lang lang-footer"/, `${slug} has language controls`);
     }
     assert.match(home.text, /href="\/downloads\/"/, 'downloads is linked from the homepage');
@@ -172,7 +175,7 @@ describe('website, headers and abuse protection', () => {
     assert.equal(downloads.status, 200);
     assert.match(downloads.text, /data-downloads/);
     assert.match(downloads.text, /downloads\.js/);
-    assert.match(downloads.text, /href="\/downloads\/"[^>]*aria-current="page"/);
+    assert.match(downloads.text, /href="\/downloads\/[^"]*" aria-current="page"/);
     const downloadScript = await c.get('/downloads/downloads.js');
     assert.equal(downloadScript.status, 200);
     for (const phrase of ['Apps and', 'Apps en', 'Applications', 'Nothing listed yet.', 'Nog niets vermeld.', 'Rien n’est listé pour le moment.', 'This page lists software we have published.']) {
@@ -233,7 +236,7 @@ describe('website, headers and abuse protection', () => {
     }
     const home = await c.get('/');
     assert.match(home.text, /application\/ld\+json/);
-    assert.match(home.text, /"@type": "Organization"/);
+    assert.match(home.text, /"@type":"ProfessionalService"/);
     assert.match(home.text, /websites, apps and business software/i);
 
     for (const slug of ['nova-coffee', 'orbit-fitness', 'luna-records', 'nova-bakery', 'move-studio', 'roam-rental']) {

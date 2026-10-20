@@ -8,7 +8,7 @@
   if (year) year.textContent = String(new Date().getFullYear());
 
   const ensureStatusLink = () => {
-    const footerNav = document.querySelector('.footer nav[aria-label="Footer navigation"]');
+    const footerNav = document.querySelector('.footer .foot-top nav');
     if (!footerNav) return;
     let statusLink = footerNav.querySelector('a[data-status-link]');
     if (!statusLink) {

@@ -274,9 +274,15 @@
     const nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);
     for (const node of nodes) {
-      const original = textOriginals.get(node) ?? node.nodeValue;
+      const parent = node.parentElement;
+      const index = Array.prototype.indexOf.call(parent.childNodes, node);
+      const sources = JSON.parse(parent.dataset.i18nText || '{}');
+      const original = textOriginals.get(node) ?? sources[index] ?? node.nodeValue;
       if (!dict.has(norm(original))) continue;
       textOriginals.set(node, original);
+      // Preserve English keys across prerendering; translated labels can be ambiguous.
+      sources[index] = original;
+      parent.dataset.i18nText = JSON.stringify(sources);
       const lead = original.match(/^\s*/)[0];
       const trail = original.match(/\s*$/)[0];
       node.nodeValue = lead + (lookup(original, lang) || norm(original)) + trail;
@@ -286,11 +292,12 @@
   function applyAttributes() {
     for (const attr of ATTRS) {
       for (const el of document.querySelectorAll(`[${attr}]`)) {
-        const saved = attrOriginals.get(el) || {};
+        const saved = attrOriginals.get(el) || JSON.parse(el.dataset.i18nAttributes || '{}');
         const original = saved[attr] ?? el.getAttribute(attr);
         if (!dict.has(norm(original))) continue;
         saved[attr] = original;
         attrOriginals.set(el, saved);
+        el.dataset.i18nAttributes = JSON.stringify(saved);
         el.setAttribute(attr, lookup(original, lang) || original);
       }
     }

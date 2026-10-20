@@ -8,7 +8,16 @@ const { createApp } = await import('../src/app.js');
 const { createAdmin } = await import('../src/services/bootstrap.js');
 const { totpAt } = await import('../src/lib/totp.js');
 
-export async function startTestServer({ rateLimits = false, sendContactEmail = async () => {}, publicOrigins = config.publicOrigins } = {}) {
+export async function startTestServer({
+  rateLimits = false,
+  sendContactEmail = async () => {},
+  publicOrigins = config.publicOrigins,
+  configOverrides = {}
+} = {}) {
+  const previousConfig = Object.fromEntries(
+    Object.keys(configOverrides).map((key) => [key, config[key]])
+  );
+  Object.assign(config, configOverrides);
   const db = await createDb(config);
   await migrate(db);
   const app = createApp({ db, config: { ...config, publicOrigins }, rateLimits, log: () => {}, mailer: { send: sendContactEmail } });
@@ -16,7 +25,11 @@ export async function startTestServer({ rateLimits = false, sendContactEmail = a
   const base = `http://127.0.0.1:${server.address().port}`;
   return {
     db, base,
-    close: async () => { await new Promise((r) => server.close(r)); await db.close(); }
+    close: async () => {
+      await new Promise((r) => server.close(r));
+      await db.close();
+      Object.assign(config, previousConfig);
+    }
   };
 }
 

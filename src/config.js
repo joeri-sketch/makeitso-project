@@ -19,6 +19,37 @@ if (isProd) {
 const appSecret = env.APP_SECRET || 'dev-only-secret-do-not-use-in-production-0123456789';
 const smtpPort = Number(env.SMTP_PORT) || 465;
 
+function mediaTarget(name, fallback) {
+  const value = env[name] === undefined ? fallback : env[name].trim();
+  if (!value) return null;
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`${name} must be a valid HTTP(S) URL without credentials, query, or fragment.`);
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname ||
+      parsed.username || parsed.password || parsed.search || parsed.hash || /[?#]/.test(value)) {
+    throw new Error(`${name} must be a valid HTTP(S) URL without credentials, query, or fragment.`);
+  }
+  return parsed.href;
+}
+
+function ubuntuTarget() {
+  const value = env.MEDIA_UBUNTU_TCP === undefined
+    ? isTest ? '' : '213.119.105.234:3389'
+    : env.MEDIA_UBUNTU_TCP.trim();
+  if (!value) return null;
+  let parsed;
+  try { parsed = new URL(`tcp://${value}`); }
+  catch { throw new Error('MEDIA_UBUNTU_TCP must be a host:port address.'); }
+  if (!parsed.hostname || !parsed.port || Number(parsed.port) < 1 || parsed.username || parsed.password ||
+      parsed.pathname || parsed.search || parsed.hash || /[/?#\s]/.test(value)) {
+    throw new Error('MEDIA_UBUNTU_TCP must be a host:port address.');
+  }
+  return parsed.href;
+}
+
 export const config = {
   env: env.NODE_ENV || 'development',
   isProd,
@@ -45,5 +76,10 @@ export const config = {
   contactEmail: env.CONTACT_EMAIL || env.SMTP_USER || '',
   sessionHours: 12,
   idleMinutes: 120,
-  leadMinFillMs: 1500
+  leadMinFillMs: 1500,
+  mediaTargets: {
+    jellyfin: mediaTarget('MEDIA_JELLYFIN_URL', isTest ? '' : 'https://jellyfin.makeitso.studio/'),
+    jellyseerr: mediaTarget('MEDIA_JELLYSEERR_URL', isTest ? '' : 'https://seer.makeitso.studio/'),
+    ubuntu: ubuntuTarget()
+  }
 };

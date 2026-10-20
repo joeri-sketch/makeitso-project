@@ -1,7 +1,10 @@
+import { createMediaPanel, mediaTabLabel } from './media.js';
+
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const app = $('#app');
 const state = { user: null, overview: null, invoices: [], tickets: [], language: 'en', activeTab: 'projects' };
+let mediaPanel;
 const COPY = {
   en: { portal: 'Client portal', signIn: 'Sign in', email: 'Email', password: 'Password', continue: 'Continue', dashboard: 'Your projects', signOut: 'Sign out', quotes: 'Quotes', milestones: 'Milestones', workItems: 'Current work', updates: 'Project updates', noProjects: 'No active projects yet.', noNotes: 'No shared updates yet.', noQuotes: 'No quotes yet.', progress: 'Progress', next: 'Next step', target: 'Target date', accept: 'Accept quote', decline: 'Decline quote', decision: 'Your decision', valid: 'Valid until', invitation: 'Set up your client account', setPassword: 'Create password', activate: 'Activate account', passwordHelp: 'Use at least 12 characters.', invitationBad: 'This invitation is invalid or expired. Ask your contact for a new one.', admin: 'This is an admin account. Go to the admin area.', quote: 'Quote', subtotal: 'Subtotal', vat: 'VAT', total: 'Total', response: 'Message (optional)', noMilestones: 'No milestones yet.', status: 'Status', description: 'Description', tax: 'VAT', terms: 'Terms', error: 'Something went wrong.', invoices: 'Invoices', noInvoices: 'No invoices yet.', downloadPdf: 'Download PDF', due: 'Due', balance: 'Balance due', tickets: 'Support', noTickets: 'No support tickets yet.', newTicket: 'Create a support ticket', subject: 'Subject', message: 'Message', send: 'Send', reply: 'Reply', closed: 'This ticket is closed.', priority: 'Priority', feedbackNeeded: 'Feedback needed', noMessages: 'No messages yet.', addMessage: 'Add a message', sendMessage: 'Send message', you: 'You', studio: 'Make It So', workDescription: 'Feature details', testSite: 'Test site', testSiteReady: 'A preview is ready for you to explore.', testSitePending: 'Your preview link will appear here when it is ready to share.', openTestSite: 'Open test site', projectConversation: 'Project conversation', projectConversationIntro: 'Questions or feedback? Keep the conversation with the studio here.', featureLabel: 'Feature', sendProjectMessage: 'Send message' },
   nl: { portal: 'Klantportaal', signIn: 'Inloggen', email: 'E-mail', password: 'Wachtwoord', continue: 'Doorgaan', dashboard: 'Jouw projecten', signOut: 'Uitloggen', quotes: 'Offertes', milestones: 'Mijlpalen', workItems: 'Huidig werk', updates: 'Projectupdates', noProjects: 'Nog geen actieve projecten.', noNotes: 'Nog geen gedeelde updates.', noQuotes: 'Nog geen offertes.', progress: 'Voortgang', next: 'Volgende stap', target: 'Streefdatum', accept: 'Offerte goedkeuren', decline: 'Offerte afwijzen', decision: 'Jouw beslissing', valid: 'Geldig tot', invitation: 'Stel je klantaccount in', setPassword: 'Wachtwoord aanmaken', activate: 'Account activeren', passwordHelp: 'Gebruik minstens 12 tekens.', invitationBad: 'Deze uitnodiging is ongeldig of verlopen. Vraag een nieuwe aan.', admin: 'Dit is een beheerdersaccount. Ga naar de beheeromgeving.', quote: 'Offerte', subtotal: 'Subtotaal', vat: 'BTW', total: 'Totaal', response: 'Bericht (optioneel)', noMilestones: 'Nog geen mijlpalen.', status: 'Status', description: 'Omschrijving', tax: 'btw', terms: 'Voorwaarden', error: 'Er is iets misgegaan.', invoices: 'Facturen', noInvoices: 'Nog geen facturen.', downloadPdf: 'Download PDF', due: 'Vervaldatum', balance: 'Openstaand', tickets: 'Ondersteuning', noTickets: 'Nog geen supporttickets.', newTicket: 'Nieuw supportticket', subject: 'Onderwerp', message: 'Bericht', send: 'Versturen', reply: 'Antwoorden', closed: 'Dit ticket is gesloten.', priority: 'Prioriteit', feedbackNeeded: 'Feedback gevraagd', noMessages: 'Nog geen berichten.', addMessage: 'Bericht toevoegen', sendMessage: 'Bericht versturen', you: 'Jij', studio: 'Make It So', workDescription: 'Functieomschrijving', testSite: 'Testomgeving', testSiteReady: 'Er staat een preview voor je klaar.', testSitePending: 'De link naar je preview verschijnt hier zodra die klaar is om te delen.', openTestSite: 'Open testomgeving', projectConversation: 'Projectgesprek', projectConversationIntro: 'Vragen of feedback? Bespreek ze hier met de studio.', featureLabel: 'Functie', sendProjectMessage: 'Bericht versturen' },
@@ -72,6 +75,8 @@ function brand() {
 }
 
 function showLogin(message = '') {
+  mediaPanel?.destroy();
+  mediaPanel = null;
   app.innerHTML = `<main class="auth"><section class="auth-card">${brand()}<h1>${t('signIn')}</h1><p class="muted">${t('portal')}</p>
     <form id="login"><label class="field">${t('email')}<input type="email" name="email" autocomplete="username" required></label>
       <label class="field">${t('password')}<input type="password" name="password" autocomplete="current-password" required></label>
@@ -133,7 +138,10 @@ async function loadOverview() {
 }
 
 function renderDashboard() {
+  mediaPanel?.destroy();
+  mediaPanel = null;
   const data = state.overview;
+  if (state.activeTab === 'media' && !data.client.media_enabled) state.activeTab = 'projects';
   const projects = data.projects.length
     ? data.projects.map((project) => {
       const projectId = Number(project.id);
@@ -232,12 +240,13 @@ function renderDashboard() {
   const tickets = state.tickets.length
     ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noTickets')}</p>`;
-  app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark">✦</span><span>make it so<em>.</em></span></a>
+  app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 1.75 15.1 8.9 22.25 12l-7.15 3.1L12 22.25 8.9 15.1 1.75 12 8.9 8.9z"/></svg></span><span>make it so<em>.</em></span></a>
       <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
         <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
         <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>
         <button type="button" role="tab" id="tab-invoices" data-tab="invoices" aria-controls="portal-tab-invoices" aria-selected="${state.activeTab === 'invoices'}" tabindex="${state.activeTab === 'invoices' ? '0' : '-1'}">${t('invoicesTab')}</button>
         <button type="button" role="tab" id="tab-support" data-tab="support" aria-controls="portal-tab-support" aria-selected="${state.activeTab === 'support'}" tabindex="${state.activeTab === 'support' ? '0' : '-1'}">${t('supportTab')}</button>
+        ${data.client.media_enabled ? `<button type="button" role="tab" id="tab-media" data-tab="media" aria-controls="portal-tab-media" aria-selected="${state.activeTab === 'media'}" tabindex="${state.activeTab === 'media' ? '0' : '-1'}">${esc(mediaTabLabel(state.language))}</button>` : ''}
       </nav>
       <div class="portal-account"><span class="account-initials" aria-hidden="true">${esc(state.user.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase())}</span><span class="account-name">${esc(state.user.name)}</span><button id="logout" class="btn">${t('signOut')}</button></div>
     </header>
@@ -259,8 +268,20 @@ function renderDashboard() {
           ${tickets}</section></div>
         <section id="ticket-detail" class="card" hidden style="margin-top:16px"></section>
       </section>
+      ${data.client.media_enabled ? `<section class="portal-tab-panel" id="portal-tab-media" role="tabpanel" aria-labelledby="tab-media"${state.activeTab === 'media' ? '' : ' hidden'}></section>` : ''}
     </main>`;
-  $('#logout').onclick = async () => { await api('POST', '/auth/logout'); location.reload(); };
+  if (data.client.media_enabled) {
+    mediaPanel = createMediaPanel({
+      container: $('#portal-tab-media'), language: state.language, api,
+      support: () => { setPortalTab('support'); $('#ticket-create input').focus(); }
+    });
+    if (state.activeTab === 'media') mediaPanel.load();
+  }
+  $('#logout').onclick = async () => {
+    mediaPanel?.conceal();
+    try { await api('POST', '/auth/logout'); location.reload(); }
+    catch (error) { window.alert(error.message); }
+  };
   $('#portal-tabs').onclick = (event) => {
     const tab = event.target.closest('[data-tab]');
     if (!tab) return;
@@ -316,7 +337,9 @@ function renderDashboard() {
 }
 
 function setPortalTab(tabName) {
-  if (!['projects', 'quotes', 'invoices', 'support'].includes(tabName)) return;
+  if (!['projects', 'quotes', 'invoices', 'support', 'media'].includes(tabName)) return;
+  if (tabName === 'media' && !state.overview?.client.media_enabled) return;
+  mediaPanel?.conceal();
   state.activeTab = tabName;
   document.querySelectorAll('#portal-tabs [data-tab]').forEach((tab) => {
     tab.setAttribute('aria-selected', String(tab.dataset.tab === tabName));
@@ -325,6 +348,7 @@ function setPortalTab(tabName) {
   document.querySelectorAll('.portal-tab-panel').forEach((panel) => {
     panel.hidden = panel.id !== `portal-tab-${tabName}`;
   });
+  if (tabName === 'media') mediaPanel?.load();
 }
 
 async function handlePortalClick(event) {
