@@ -75,7 +75,7 @@ describe('website, headers and abuse protection', () => {
       assert.doesNotMatch(page.text, />Departments<\/a>/, `${path} no longer says Departments in navigation`);
     }
     const translations = await c.get('/i18n.js');
-    for (const phrase of ['What we do', 'Wat we doen', 'Nos services']) {
+    for (const phrase of ['What we do', 'Wat we doen', 'Nos services', 'Downloads', 'Téléchargements']) {
       assert.ok(translations.text.includes(phrase), `navigation translation includes “${phrase}”`);
     }
   });
@@ -167,6 +167,18 @@ describe('website, headers and abuse protection', () => {
       assert.match(page.text, new RegExp(`href="/${slug}/"`), `${slug} appears in the page navigation`);
       assert.match(page.text, /class="lang lang-footer"/, `${slug} has language controls`);
     }
+    assert.match(home.text, /href="\/downloads\/"/, 'downloads is linked from the homepage');
+    const downloads = await c.get('/downloads/');
+    assert.equal(downloads.status, 200);
+    assert.match(downloads.text, /data-downloads/);
+    assert.match(downloads.text, /downloads\.js/);
+    assert.match(downloads.text, /href="\/downloads\/"[^>]*aria-current="page"/);
+    const downloadScript = await c.get('/downloads/downloads.js');
+    assert.equal(downloadScript.status, 200);
+    for (const phrase of ['Apps and', 'Apps en', 'Applications', 'Nothing listed yet.', 'Nog niets vermeld.', 'Rien n’est listé pour le moment.', 'This page lists software we have published.']) {
+      assert.ok(downloadScript.text.includes(phrase), `downloads page includes “${phrase}”`);
+    }
+    assert.match(downloadScript.text, /protocol === 'https:'/, 'download links only allow normal web addresses');
     const studio = await c.get('/studio-pages.js');
     assert.equal(studio.status, 200);
     for (const phrase of ['Small teams.', 'Klein team.', 'Petite équipe.', 'Discover', 'Verkennen', 'Explorer', 'Ways to work together', 'Manieren om samen te werken', 'Façons de collaborer', 'Defined project', 'Afgebakend project', 'Projet défini', 'How can we work together?', 'Hoe kunnen we samenwerken?', 'Comment pouvons-nous collaborer ?', 'How much does a project cost?', 'Wat kost een project?', 'Quel est le prix d’un projet ?']) {
@@ -206,7 +218,8 @@ describe('website, headers and abuse protection', () => {
     assert.match(sitemap.text, /https:\/\/makeitso\.studio\/services\/web-landing-pages\//);
     assert.doesNotMatch(sitemap.text, /missions\/|\/portal\/|\/admin/);
 
-    for (const path of ['/', '/about/', '/approach/', '/faq/', '/services/web-landing-pages/']) {
+    assert.match(sitemap.text, /https:\/\/makeitso\.studio\/downloads\//);
+    for (const path of ['/', '/about/', '/approach/', '/faq/', '/downloads/', '/services/web-landing-pages/']) {
       const page = await c.get(path);
       assert.equal(page.status, 200, path);
       assert.match(page.text, /<link rel="canonical" href="https:\/\/makeitso\.studio\//, path);
@@ -232,7 +245,7 @@ describe('website, headers and abuse protection', () => {
   it('shows the registered business address and VAT number in every public page footer', async () => {
     const c = new Client(ctx.base);
     const pages = [
-      '/', '/about/', '/approach/', '/faq/',
+      '/', '/about/', '/approach/', '/faq/', '/downloads/',
       '/services/brand-strategy/', '/services/social-content/', '/services/paid-media/',
       '/services/web-landing-pages/', '/services/video-motion/', '/services/growth-analytics/',
       '/missions/nova-coffee/', '/missions/orbit-fitness/', '/missions/luna-records/',
