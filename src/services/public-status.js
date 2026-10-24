@@ -1,6 +1,6 @@
 const CACHE_MS = 15_000;
 const TIMEOUT_MS = 5_000;
-const MAX_BODY_BYTES = 16 * 1024;
+const MAX_BODY_BYTES = 64 * 1024;
 const DEGRADED_AFTER_MS = 1_500;
 
 async function readBody(response) {

@@ -22,6 +22,12 @@ describe('public live system status', () => {
     if (url.pathname === '/health') {
       return new Response('Healthy', { status: 200, headers: { 'content-type': 'text/plain' } });
     }
+    if (url.pathname === '/') {
+      return new Response(`<!doctype html><html><body>${'a'.repeat(35_000)}</body></html>`, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' }
+      });
+    }
     return new Response('<!doctype html><html><body>ok</body></html>', {
       status: 200,
       headers: { 'content-type': 'text/html; charset=utf-8' }
