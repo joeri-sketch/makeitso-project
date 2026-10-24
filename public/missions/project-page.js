@@ -24,7 +24,7 @@
       campaignChannels: ['A campaign idea built for real-life moments', 'Consistent creative across social and search', 'Simple calls to action that turn interest into visits'],
       finalKicker: 'NEXT MISSION', finalTitle: ['Good ideas deserve', 'a proper launch.'],
       finalCopy: 'This is a fictional sample concept. Have a real business, brand or website in mind? Let’s build its next chapter together.',
-      finalButton: 'Tell us about your project', nav: ['What we do', 'Mission log', 'About', 'Approach', 'FAQ', 'Downloads', 'Hail us', 'System status'],
+      finalButton: 'Tell us about your project', nav: ['What we do', 'Mission log', 'About', 'Approach', 'FAQ', 'Hail us', 'System status'],
       menuOpen: 'Open menu', menuClose: 'Close menu', footerButton: 'Start a project',
       footerNote: 'Powered by Earl Grey. Hot. Live long and prosper.', footerNav: 'Footer navigation',
       mainNav: 'Main navigation', mobileNav: 'Mobile navigation', footerCopyright: 'Fictional sample project.'
@@ -47,7 +47,7 @@
       campaignChannels: ['Een campagne-idee voor echte momenten', 'Herkenbare creatie op social en in zoekmachines', 'Duidelijke oproepen die interesse omzetten in bezoek'],
       finalKicker: 'VOLGENDE MISSIE', finalTitle: ['Goede ideeën verdienen', 'een sterke lancering.'],
       finalCopy: 'Dit is een fictief voorbeeldconcept. Heb je een echt bedrijf, merk of website in gedachten? Samen bouwen we aan het volgende hoofdstuk.',
-      finalButton: 'Vertel over je project', nav: ['Wat we doen', 'Missielogboek', 'Over ons', 'Aanpak', 'FAQ', 'Downloads', 'Contact', 'Systeemstatus'],
+      finalButton: 'Vertel over je project', nav: ['Wat we doen', 'Missielogboek', 'Over ons', 'Aanpak', 'FAQ', 'Contact', 'Systeemstatus'],
       menuOpen: 'Menu openen', menuClose: 'Menu sluiten', footerButton: 'Start een project',
       footerNote: 'Powered by Earl Grey. Hot. Live long and prosper.', footerNav: 'Footernavigatie',
       mainNav: 'Hoofdnavigatie', mobileNav: 'Mobiele navigatie', footerCopyright: 'Fictional sample project.'
@@ -70,7 +70,7 @@
       campaignChannels: ['Une idée de campagne ancrée dans le réel', 'Une création cohérente sur les réseaux et dans la recherche', 'Des appels à l’action qui transforment l’intérêt en visite'],
       finalKicker: 'PROCHAINE MISSION', finalTitle: ['Les bonnes idées méritent', 'un vrai lancement.'],
       finalCopy: 'Ce concept est fictif. Vous avez une vraie entreprise, une marque ou un site en tête ? Créons ensemble son prochain chapitre.',
-      finalButton: 'Parlons de votre projet', nav: ['Nos services', 'Journal de mission', 'À propos', 'Approche', 'FAQ', 'Téléchargements', 'Contact', 'État des services'],
+      finalButton: 'Parlons de votre projet', nav: ['Nos services', 'Journal de mission', 'À propos', 'Approche', 'FAQ', 'Contact', 'État des services'],
       menuOpen: 'Ouvrir le menu', menuClose: 'Fermer le menu', footerButton: 'Démarrer un projet',
       footerNote: 'Powered by Earl Grey. Hot. Live long and prosper.', footerNav: 'Navigation de pied de page',
       mainNav: 'Navigation principale', mobileNav: 'Navigation mobile', footerCopyright: 'Fictional sample project.'

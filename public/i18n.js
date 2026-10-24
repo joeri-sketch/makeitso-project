@@ -44,7 +44,6 @@
     ['About', 'Over ons', 'À propos'],
     ['Approach', 'Aanpak', 'Approche'],
     ['FAQ', 'Veelgestelde vragen', 'FAQ'],
-    ['Downloads', 'Downloads', 'Téléchargements'],
     ['System status', 'Systeemstatus', 'État des services'],
     ['Hail us', 'Contact', 'Contact'],
     ['Engage', 'Vooruit', 'Engagez'],

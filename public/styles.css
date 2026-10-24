@@ -553,6 +553,7 @@ button, input, textarea { font: inherit; }
 /* ---------- footer ---------- */
 .footer { padding: 70px 0 34px; overflow: hidden; }
 .foot-top { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center; }
+.footer-account-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .foot-top nav { display: flex; flex-wrap: wrap; gap: 8px 30px; font-weight: 500; }
 .foot-top nav a { opacity: .75; transition: opacity .2s, color .2s; }
 .foot-top nav a:hover { opacity: 1; color: var(--gold); }

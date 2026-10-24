@@ -38,15 +38,6 @@ export const seoPages = [
     ]
   },
   {
-    path: '/downloads/',
-    titles: ['Apps & Software Downloads | Make It So', 'Apps en software downloaden | Make It So', 'Téléchargements d’apps et de logiciels | Make It So'],
-    descriptions: [
-      'Download the apps and software published by Make It So. Each listing shows the current version and where to open or download it.',
-      'Download de apps en software die Make It So publiceert. Bij elke vermelding zie je de huidige versie en waar je die opent of downloadt.',
-      'Téléchargez les applications et logiciels publiés par Make It So. Chaque fiche indique la version actuelle et où l’ouvrir ou la télécharger.'
-    ]
-  },
-  {
     path: '/status/',
     titles: ['Service Status | Make It So Websites, Apps & Email', 'Systeemstatus | Make It So websites, apps & e-mail', 'État des services | Make It So : sites, apps et e-mail'],
     descriptions: [
