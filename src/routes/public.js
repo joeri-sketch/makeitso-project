@@ -5,8 +5,13 @@ import { HttpError, v } from '../lib/validate.js';
 import { asyncHandler as h } from '../middleware/security.js';
 
 // Public endpoint used by the contact form on the website. No login, so it is strictly validated and rate limited.
-export function publicRoutes({ db, config, limits, mailer, log }) {
+export function publicRoutes({ db, config, limits, mailer, log, getPublicStatus }) {
   const r = Router();
+
+  r.get('/status', limits.publicStatus, h(async (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(await getPublicStatus());
+  }));
 
   r.post('/leads', limits.publicLead, h(async (req, res) => {
     const body = req.body ?? {};

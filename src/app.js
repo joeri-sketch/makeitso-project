@@ -9,6 +9,7 @@ import { portalRoutes } from './routes/portal.js';
 import { quoteRoutes } from './routes/quotes.js';
 import { publicRoutes } from './routes/public.js';
 import { createContactMailer } from './services/contact-mail.js';
+import { createPublicStatusChecker } from './services/public-status.js';
 import { supportRoutes } from './routes/support.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
@@ -18,7 +19,14 @@ const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 
 export const defaultLog = (entry) => console.log(JSON.stringify({ t: new Date().toISOString(), ...entry }));
 
-export function createApp({ db, config, rateLimits = !config.isTest, log = defaultLog, mailer = createContactMailer(config) }) {
+export function createApp({
+  db,
+  config,
+  rateLimits = !config.isTest,
+  log = defaultLog,
+  mailer = createContactMailer(config),
+  statusFetch = globalThis.fetch
+}) {
   const app = express();
   app.disable('x-powered-by');
   const hops = Number(config.trustProxy);
@@ -32,7 +40,8 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
     general: limiter(60_000, 300, 'Too many requests. Please slow down.'),
     login: limiter(15 * 60_000, 10, 'Too many attempts. Please try again later.'),
     twofa: limiter(15 * 60_000, 15, 'Too many attempts. Please try again later.'),
-    publicLead: limiter(60 * 60_000, 5, 'Too many messages. Please try again later or email us directly.')
+    publicLead: limiter(60 * 60_000, 5, 'Too many messages. Please try again later or email us directly.'),
+    publicStatus: limiter(60_000, 60, 'Too many status checks. Please try again shortly.')
   };
 
   app.use(requestLogger(log));
@@ -52,7 +61,8 @@ export function createApp({ db, config, rateLimits = !config.isTest, log = defau
   app.use('/api', (req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
-  app.use('/api/public', publicRoutes({ db, config, limits, mailer, log }));
+  const getPublicStatus = createPublicStatusChecker({ config, fetchImpl: statusFetch, log });
+  app.use('/api/public', publicRoutes({ db, config, limits, mailer, log, getPublicStatus }));
   app.use('/api', adminMediaRoutes({ db }));
   app.use('/api/portal', portalMediaRoutes({ db, limits }));
   app.use('/api/portal', portalRoutes({ db, config, limits }));

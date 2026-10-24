@@ -50,9 +50,9 @@ export const seoPages = [
     path: '/status/',
     titles: ['Service Status | Make It So Websites, Apps & Email', 'Systeemstatus | Make It So websites, apps & e-mail', 'État des services | Make It So : sites, apps et e-mail'],
     descriptions: [
-      'Manually published status updates for Make It So websites, apps, client portal, email and billing. This page does not perform automated uptime checks.',
-      'Handmatig gepubliceerde statusupdates voor Make It So-websites, apps, klantportaal, e-mail en facturatie. Geen automatische uptimecontroles.',
-      'Statuts publiés manuellement pour les sites, apps, portail client, e-mails et facturation de Make It So. Sans surveillance automatique de disponibilité.'
+      'Live status and availability updates for Make It So websites, apps, client portal, email and billing services.',
+      'Live status en beschikbaarheidsupdates voor de website, apps, het klantportaal, e-mail en facturatie van Make It So.',
+      'État en direct et mises à jour de disponibilité du site, des applications, du portail client, des e-mails et de la facturation de Make It So.'
     ]
   },
   {

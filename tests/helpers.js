@@ -12,6 +12,7 @@ export async function startTestServer({
   rateLimits = false,
   sendContactEmail = async () => {},
   publicOrigins = config.publicOrigins,
+  statusFetch = globalThis.fetch,
   configOverrides = {}
 } = {}) {
   const previousConfig = Object.fromEntries(
@@ -20,7 +21,14 @@ export async function startTestServer({
   Object.assign(config, configOverrides);
   const db = await createDb(config);
   await migrate(db);
-  const app = createApp({ db, config: { ...config, publicOrigins }, rateLimits, log: () => {}, mailer: { send: sendContactEmail } });
+  const app = createApp({
+    db,
+    config: { ...config, publicOrigins },
+    rateLimits,
+    log: () => {},
+    mailer: { send: sendContactEmail },
+    statusFetch
+  });
   const server = await new Promise((resolve) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
   return {

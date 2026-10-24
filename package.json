@@ -11,6 +11,7 @@
     "build:seo": "node scripts/build-seo.js",
     "test:seo": "node scripts/check-seo-browser.js",
     "test:media": "node scripts/check-media-browser.js",
+    "test:status": "node scripts/check-status-browser.js",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node --test tests/",

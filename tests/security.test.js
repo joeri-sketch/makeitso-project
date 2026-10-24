@@ -27,7 +27,7 @@ describe('website, headers and abuse protection', () => {
     assert.match(home.text, /<h1/);
   });
 
-  it('serves the localized manual system status page without implying live monitoring', async () => {
+  it('serves the localized live system status page', async () => {
     const c = new Client(ctx.base);
     const page = await c.get('/status/');
     assert.equal(page.status, 200);
@@ -39,9 +39,9 @@ describe('website, headers and abuse protection', () => {
     for (const phrase of [
       'Website & public pages', 'Client portal & project status', 'Email & contact form',
       'Website & openbare pagina’s', 'Portail client et suivi de projet',
-      'Statuses on this page are updated manually.',
-      'The page does not run automatic uptime checks',
-      "status: 'operational'", "const lastUpdatedAt = '2026-10-15T10:57:00.000Z';", 'const incidents = [];'
+      'Live checks · refreshed automatically',
+      'Vérifications en direct · actualisation automatique',
+      "status: 'unknown'", "fetch('/api/public/status'", 'window.setInterval(refreshStatus, 60_000)'
     ]) {
       assert.ok(script.text.includes(phrase), `status page includes “${phrase}”`);
     }
