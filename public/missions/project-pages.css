@@ -15,9 +15,9 @@
 .project-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 40px; font-size: .88rem; font-weight: 700; opacity: .9; }
 .project-back:hover { opacity: 1; }
 .project-eyebrow { margin-bottom: 15px; font-size: .76rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; opacity: .82; }
-.project-hero h1 { max-width: 680px; margin-bottom: 22px; font: 800 clamp(3.6rem, 7.4vw, 7rem)/.88 var(--font-display); letter-spacing: -.07em; }
+.project-hero h1 { max-width: 680px; margin-bottom: 22px; font: 800 clamp(3.5rem, 7vw, 6.5rem)/1 var(--font-display); letter-spacing: -.04em; }
 .project-hero h1 span { color: var(--project-accent); }
-.project-hero-lead { max-width: 500px; font-size: clamp(1.05rem, 1.35vw, 1.25rem); line-height: 1.65; color: rgba(255,255,255,.88); }
+.project-hero-lead { max-width: 500px; font-size: clamp(1.05rem, 1.35vw, 1.25rem); line-height: 1.7; color: rgba(255,255,255,.88); }
 .project-tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
 .project-tag { padding: 8px 13px; border: 1px solid rgba(255,255,255,.3); border-radius: 99px; background: rgba(255,255,255,.12); font-size: .75rem; font-weight: 700; }
 .project-hero-art { position: relative; min-width: 0; }
