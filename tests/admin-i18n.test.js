@@ -24,3 +24,21 @@ test('admin English mode preserves the source interface strings', () => {
   assert.equal(translateMarkup('<p>Clients</p>'), '<p>Clients</p>');
   setLanguage('nl');
 });
+
+test('admin navigation, attention and mobile table hints have Dutch labels', () => {
+  setLanguage('nl');
+  assert.equal(translateText('Work'), 'Werk');
+  assert.equal(translateText('Finances'), 'Financiën');
+  assert.equal(translateText('Needs attention'), 'Aandacht nodig');
+  assert.equal(translateText('Overdue milestones'), 'Achterstallige mijlpalen');
+  assert.equal(translateText('Contracts'), 'Contracten');
+  assert.equal(translateText('Swipe horizontally to see more →'), 'Veeg horizontaal om meer te zien →');
+});
+
+test('admin theme choices have Dutch labels', () => {
+  setLanguage('nl');
+  assert.equal(translateText('Theme'), 'Thema');
+  assert.equal(translateText('Classic'), 'Klassiek');
+  assert.equal(translateText('Mission Control'), 'Mission Control');
+  assert.equal(translateText('Orbit Glass'), 'Orbit Glass');
+});

@@ -3,7 +3,7 @@ import { createMediaPanel, mediaTabLabel } from './media.js';
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const app = $('#app');
-const state = { user: null, overview: null, invoices: [], tickets: [], language: 'en', activeTab: 'projects' };
+const state = { user: null, overview: null, invoices: [], tickets: [], contracts: [], language: 'en', activeTab: 'projects' };
 let mediaPanel;
 const COPY = {
   en: { portal: 'Client portal', signIn: 'Sign in', email: 'Email', password: 'Password', continue: 'Continue', dashboard: 'Your projects', signOut: 'Sign out', quotes: 'Quotes', milestones: 'Milestones', workItems: 'Current work', updates: 'Project updates', noProjects: 'No active projects yet.', noNotes: 'No shared updates yet.', noQuotes: 'No quotes yet.', progress: 'Progress', next: 'Next step', target: 'Target date', accept: 'Accept quote', decline: 'Decline quote', decision: 'Your decision', valid: 'Valid until', invitation: 'Set up your client account', setPassword: 'Create password', activate: 'Activate account', passwordHelp: 'Use at least 12 characters.', invitationBad: 'This invitation is invalid or expired. Ask your contact for a new one.', admin: 'This is an admin account. Go to the admin area.', quote: 'Quote', subtotal: 'Subtotal', vat: 'VAT', total: 'Total', response: 'Message (optional)', noMilestones: 'No milestones yet.', status: 'Status', description: 'Description', tax: 'VAT', terms: 'Terms', error: 'Something went wrong.', invoices: 'Invoices', noInvoices: 'No invoices yet.', downloadPdf: 'Download PDF', due: 'Due', balance: 'Balance due', tickets: 'Support', noTickets: 'No support tickets yet.', newTicket: 'Create a support ticket', subject: 'Subject', message: 'Message', send: 'Send', reply: 'Reply', closed: 'This ticket is closed.', priority: 'Priority', feedbackNeeded: 'Feedback needed', noMessages: 'No messages yet.', addMessage: 'Add a message', sendMessage: 'Send message', you: 'You', studio: 'Make It So', workDescription: 'Feature details', testSite: 'Test site', testSiteReady: 'A preview is ready for you to explore.', testSitePending: 'Your preview link will appear here when it is ready to share.', openTestSite: 'Open test site', projectConversation: 'Project conversation', projectConversationIntro: 'Questions or feedback? Keep the conversation with the studio here.', featureLabel: 'Feature', sendProjectMessage: 'Send message' },
@@ -47,11 +47,29 @@ Object.assign(COPY.fr, {
   featureStatus: 'Statut de la fonctionnalité',   projectStatus: 'Statut du projet', invoicesTitle: 'Factures et détails du projet',
   projectsTab: 'Projets', quotesTab: 'Devis', invoicesTab: 'Factures', supportTab: 'Assistance'
 });
+Object.assign(COPY.en, {
+  contracts: 'Contracts', contractsTab: 'Contracts', noContracts: 'No contracts to review yet.',
+  contractApprovalNote: 'Portal approval is recorded with your account and timestamp. It is not a qualified electronic signature.',
+  approveContract: 'Approve contract', requestChanges: 'Request changes', changeNote: 'Describe the requested changes',
+  version: 'Version', decisionRecorded: 'Decision recorded'
+});
+Object.assign(COPY.nl, {
+  contracts: 'Contracten', contractsTab: 'Contracten', noContracts: 'Er staan nog geen contracten klaar om te beoordelen.',
+  contractApprovalNote: 'Je akkoord wordt met je account en tijdstip geregistreerd. Dit is geen gekwalificeerde elektronische handtekening.',
+  approveContract: 'Contract goedkeuren', requestChanges: 'Wijzigingen vragen', changeNote: 'Beschrijf de gewenste wijzigingen',
+  version: 'Versie', decisionRecorded: 'Beslissing geregistreerd'
+});
+Object.assign(COPY.fr, {
+  contracts: 'Contrats', contractsTab: 'Contrats', noContracts: 'Aucun contrat à examiner pour le moment.',
+  contractApprovalNote: 'Votre approbation est enregistrée avec votre compte et la date. Il ne s’agit pas d’une signature électronique qualifiée.',
+  approveContract: 'Approuver le contrat', requestChanges: 'Demander des modifications', changeNote: 'Décrivez les modifications souhaitées',
+  version: 'Version', decisionRecorded: 'Décision enregistrée'
+});
 const t = (key) => COPY[state.language]?.[key] || COPY.en[key] || key;
 const STATUS = {
-  en: { discovery: 'Discovery', wireframing: 'Wireframes', development: 'In progress', review: 'In review', launched: 'Launched', on_hold: 'On hold', todo: 'Up next', doing: 'In progress', in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked', done: 'Done', sent: 'Sent', accepted: 'Accepted', declined: 'Declined', expired: 'Expired' },
-  nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', in_progress: 'Bezig', in_review: 'Ter controle', blocked: 'Geblokkeerd', done: 'Klaar', sent: 'Verzonden', accepted: 'Goedgekeurd', declined: 'Afgewezen', expired: 'Verlopen' },
-  fr: { discovery: 'Découverte', wireframing: 'Maquettes', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', in_progress: 'En cours', in_review: 'À vérifier', blocked: 'Bloqué', done: 'Terminé', sent: 'Envoyé', accepted: 'Accepté', declined: 'Refusé', expired: 'Expiré' }
+  en: { discovery: 'Discovery', wireframing: 'Wireframes', development: 'In progress', review: 'In review', launched: 'Launched', on_hold: 'On hold', todo: 'Up next', doing: 'In progress', in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked', done: 'Done', sent: 'Sent', accepted: 'Accepted', declined: 'Declined', expired: 'Expired', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn' },
+  nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', in_progress: 'Bezig', in_review: 'Ter controle', blocked: 'Geblokkeerd', done: 'Klaar', sent: 'Verzonden', accepted: 'Goedgekeurd', declined: 'Afgewezen', expired: 'Verlopen', approved: 'Goedgekeurd', changes_requested: 'Wijzigingen gevraagd', withdrawn: 'Ingetrokken' },
+  fr: { discovery: 'Découverte', wireframing: 'Maquettes', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', in_progress: 'En cours', in_review: 'À vérifier', blocked: 'Bloqué', done: 'Terminé', sent: 'Envoyé', accepted: 'Accepté', declined: 'Refusé', expired: 'Expiré', approved: 'Approuvé', changes_requested: 'Modifications demandées', withdrawn: 'Retiré' }
 };
 
 async function api(method, path, body) {
@@ -125,14 +143,16 @@ function showInvitation(token, message = '') {
 }
 
 async function loadOverview() {
-  const [data, invoiceData, ticketData] = await Promise.all([
+  const [data, invoiceData, ticketData, contractData] = await Promise.all([
     api('GET', '/portal/overview'),
     api('GET', '/portal/invoices'),
-    api('GET', '/portal/tickets')
+    api('GET', '/portal/tickets'),
+    api('GET', '/portal/contracts')
   ]);
   state.overview = data;
   state.invoices = invoiceData.invoices;
   state.tickets = ticketData.tickets;
+  state.contracts = contractData.contracts;
   state.language = ['nl', 'fr', 'en'].includes(data.client.language) ? data.client.language : 'en';
   renderDashboard();
 }
@@ -237,6 +257,19 @@ function renderDashboard() {
   const invoices = state.invoices.length
     ? `<ul class="list">${state.invoices.map((invoice) => `<li><span class="grow"><strong>${esc(invoice.invoice_number)}</strong> · ${esc(invoice.title)}<span class="sub">${t('due')}: ${date(invoice.due_date)} · ${t('balance')}: ${money(invoice.balance_cents)}</span></span>${status(invoice.display_status)}<a class="btn small" href="/api/portal/invoices/${esc(invoice.id)}/pdf">${t('downloadPdf')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noInvoices')}</p>`;
+  const contracts = state.contracts.length
+    ? state.contracts.map((contract) => `<article class="card contract-card">
+        <header><div><h3>${esc(contract.title)}</h3><p class="muted">${esc(contract.project_name || data.client.company_name)} · ${t('version')} ${esc(contract.version)}</p></div>${status(contract.status)}</header>
+        <p><a class="btn small" href="/api/portal/contracts/${esc(contract.id)}/document" download>${t('downloadPdf')}</a></p>
+        ${contract.status === 'sent' ? `<form class="contract-response" data-contract-response="${esc(contract.id)}">
+          <p class="muted">${t('contractApprovalNote')}</p>
+          <label class="field">${t('changeNote')}<textarea name="note" maxlength="1000"></textarea></label>
+          <p class="error" role="alert"></p><div class="actions">
+            <button type="button" class="btn primary" data-contract-decision="approved">${t('approveContract')}</button>
+            <button type="button" class="btn" data-contract-decision="changes_requested">${t('requestChanges')}</button>
+          </div></form>` : `<p class="muted">${t('decisionRecorded')}: ${date(contract.decision_at)}${contract.decision_note ? ` · ${esc(contract.decision_note)}` : ''}</p>`}
+      </article>`).join('')
+    : `<p class="empty">${t('noContracts')}</p>`;
   const tickets = state.tickets.length
     ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noTickets')}</p>`;
@@ -244,6 +277,7 @@ function renderDashboard() {
       <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
         <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
         <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>
+        <button type="button" role="tab" id="tab-contracts" data-tab="contracts" aria-controls="portal-tab-contracts" aria-selected="${state.activeTab === 'contracts'}" tabindex="${state.activeTab === 'contracts' ? '0' : '-1'}">${t('contractsTab')}</button>
         <button type="button" role="tab" id="tab-invoices" data-tab="invoices" aria-controls="portal-tab-invoices" aria-selected="${state.activeTab === 'invoices'}" tabindex="${state.activeTab === 'invoices' ? '0' : '-1'}">${t('invoicesTab')}</button>
         <button type="button" role="tab" id="tab-support" data-tab="support" aria-controls="portal-tab-support" aria-selected="${state.activeTab === 'support'}" tabindex="${state.activeTab === 'support' ? '0' : '-1'}">${t('supportTab')}</button>
         ${data.client.media_enabled ? `<button type="button" role="tab" id="tab-media" data-tab="media" aria-controls="portal-tab-media" aria-selected="${state.activeTab === 'media'}" tabindex="${state.activeTab === 'media' ? '0' : '-1'}">${esc(mediaTabLabel(state.language))}</button>` : ''}
@@ -255,6 +289,9 @@ function renderDashboard() {
       <section class="portal-tab-panel portal-extras" id="portal-tab-quotes" role="tabpanel" aria-labelledby="tab-quotes"${state.activeTab === 'quotes' ? '' : ' hidden'}><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('quotes')}</h2></div></header>
         <section class="card"><header><h2>${t('quotes')}</h2></header>${quotes}</section>
         <section id="quote-detail" class="card" hidden style="margin-top:16px"></section>
+      </section>
+      <section class="portal-tab-panel portal-extras" id="portal-tab-contracts" role="tabpanel" aria-labelledby="tab-contracts"${state.activeTab === 'contracts' ? '' : ' hidden'}><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('contracts')}</h2></div></header>
+        <div class="contract-list">${contracts}</div>
       </section>
       <section class="portal-tab-panel portal-extras" id="portal-tab-invoices" role="tabpanel" aria-labelledby="tab-invoices"${state.activeTab === 'invoices' ? '' : ' hidden'}><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('invoices')}</h2></div></header>
         <section class="card"><header><h2>${t('invoices')}</h2></header>${invoices}</section>
@@ -337,7 +374,7 @@ function renderDashboard() {
 }
 
 function setPortalTab(tabName) {
-  if (!['projects', 'quotes', 'invoices', 'support', 'media'].includes(tabName)) return;
+  if (!['projects', 'quotes', 'contracts', 'invoices', 'support', 'media'].includes(tabName)) return;
   if (tabName === 'media' && !state.overview?.client.media_enabled) return;
   mediaPanel?.conceal();
   state.activeTab = tabName;
@@ -352,6 +389,33 @@ function setPortalTab(tabName) {
 }
 
 async function handlePortalClick(event) {
+  const decisionButton = event.target.closest('[data-contract-decision]');
+  if (decisionButton) {
+    const form = decisionButton.closest('[data-contract-response]');
+    if (!form) return;
+    event.preventDefault();
+    const decision = decisionButton.dataset.contractDecision;
+    const note = form.elements.note.value.trim();
+    const error = $('.error', form);
+    error.textContent = '';
+    if (decision === 'changes_requested' && !note) {
+      error.textContent = t('changeNote');
+      form.elements.note.focus();
+      return;
+    }
+    const buttons = form.querySelectorAll('button');
+    buttons.forEach((button) => { button.disabled = true; });
+    try {
+      await api('POST', `/portal/contracts/${encodeURIComponent(form.dataset.contractResponse)}/respond`, { decision, note });
+      state.activeTab = 'contracts';
+      await loadOverview();
+      setPortalTab('contracts');
+    } catch (requestError) {
+      error.textContent = requestError.message;
+      buttons.forEach((button) => { button.disabled = false; });
+    }
+    return;
+  }
   const link = event.target.closest('a[href^="#quote-"]');
   if (link) {
     event.preventDefault();

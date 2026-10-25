@@ -20,7 +20,23 @@ const html = (strings, ...vals) => {
   return new Raw(localized);
 };
 const raw = (s) => new Raw(s);
-const show = (el, tpl) => { el.innerHTML = tpl.s; };
+const show = (el, tpl) => {
+  el.innerHTML = tpl.s;
+  const wrappers = [...(el.matches?.('.table-wrap') ? [el] : []), ...el.querySelectorAll('.table-wrap')];
+  for (const wrapper of wrappers) {
+    const table = wrapper.querySelector('table');
+    if (!table) continue;
+    wrapper.tabIndex = 0;
+    if (!wrapper.querySelector('.table-hint')) {
+      const hint = document.createElement('span');
+      hint.className = 'table-hint';
+      hint.textContent = translateText('Swipe horizontally to see more →');
+      wrapper.insertBefore(hint, table);
+    }
+    const lastHeading = table.querySelector('thead tr')?.lastElementChild?.textContent.trim().toLowerCase();
+    if (lastHeading === 'actions' || lastHeading === 'acties') wrapper.classList.add('has-actions');
+  }
+};
 
 const date = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString(state.language === 'en' ? 'en-GB' : 'nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 function ago(iso) {
@@ -41,6 +57,8 @@ const LABEL = {
   draft: 'Draft', issued: 'Issued', paid: 'Paid', overdue: 'Overdue', void: 'Void',
   open: 'Open', in_progress: 'In progress', waiting_client: 'Waiting for client', resolved: 'Resolved', closed: 'Closed',
   low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent',
+  monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly',
+  sent: 'Awaiting client', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn',
   nl: 'Nederlands', fr: 'Français', en: 'English'
 };
 const label = (k) => translateText(LABEL[k] ?? k);
@@ -163,8 +181,13 @@ function showCopyLink({ title, description, url }) {
 
 /* ---------------- app state + shell ---------------- */
 const app = $('#app');
-const state = { user: null, auth: 'anonymous', leads: 0, language: 'nl' };
+const state = { user: null, auth: 'anonymous', leads: 0, language: 'nl', theme: readThemePreference() };
 const brand = html`<span class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l3 8.4L28 15l-9 2.6L16 26l-3-8.4L4 15l9-2.6z" fill="#ff6a1f"/></svg></span>${raw('<span class="word">make it so<em>.</em></span>')}<span class="tag">ADMIN</span></span>`;
+
+function readThemePreference() {
+  const theme = localStorage.getItem('makeitso.adminTheme');
+  return ['mission-control', 'orbit-glass'].includes(theme) ? theme : 'classic';
+}
 
 async function boot() {
   try {
@@ -279,20 +302,46 @@ async function logout() {
   loginScreen();
 }
 
-const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/work', 'Current work'], ['#/timesheets', 'Timesheets'], ['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/tickets', 'Support'], ['#/leads', 'Leads'], ['#/account', 'Account']];
-NAV.push(['#/settings/email', 'Email settings']);
+function applyThemePreference(event) {
+  const next = event.target.value;
+  if (!['classic', 'mission-control', 'orbit-glass'].includes(next)) return;
+  try {
+    localStorage.setItem('makeitso.adminTheme', next);
+    state.theme = next;
+    $('.shell').dataset.theme = next;
+    document.documentElement.dataset.adminTheme = next;
+  } catch (error) {
+    event.target.value = state.theme;
+    toast(error.message, 'error');
+  }
+}
+
+const NAV_GROUPS = [
+  ['Work', [['#/projects', 'Projects'], ['#/work', 'Current work'], ['#/maintenance', 'Maintenance'], ['#/timesheets', 'Timesheets'], ['#/tickets', 'Support']]],
+  ['Clients', [['#/clients', 'Clients'], ['#/leads', 'Leads']]],
+  ['Finances', [['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/contracts', 'Contracts']]],
+  ['Settings', [['#/account', 'Account'], ['#/settings/email', 'Email settings']]]
+];
 
 function shell() {
-  show(app, html`<div class="shell">
+  document.documentElement.dataset.adminTheme = state.theme;
+  show(app, html`<div class="shell" data-theme="${state.theme}">
     <aside class="sidebar"><div class="brand-wrap">${brand}</div>
-      <nav aria-label="Main">${NAV.map(([href, text]) => html`<a class="nav-link" href="${href}" data-nav="${href}"><span>${translateText(text)}</span>${href === '#/leads' ? html`<span class="badge" id="lead-badge" hidden></span>` : ''}</a>`)}</nav>
+      <nav aria-label="Main">
+        <a class="nav-link dashboard-link" href="#/" data-nav="#/"><span>${translateText('Dashboard')}</span></a>
+        ${NAV_GROUPS.map(([group, links]) => html`<section class="nav-group"><h2>${translateText(group)}</h2>
+          ${links.map(([href, text]) => html`<a class="nav-link" href="${href}" data-nav="${href}"><span>${translateText(text)}</span>${href === '#/leads' ? html`<span class="badge" id="lead-badge" hidden></span>` : ''}</a>`)}
+        </section>`)}
+      </nav>
       <div class="side-foot"><span class="muted">${state.user.name}</span>
         <label class="language-picker"><span>Language</span><select id="language-select" aria-label="Language"><option value="nl" ${state.language === 'nl' ? 'selected' : ''}>Nederlands</option><option value="en" ${state.language === 'en' ? 'selected' : ''}>English</option></select></label>
+        <label class="language-picker theme-picker"><span>Theme</span><select id="theme-select" aria-label="Theme"><option value="classic" ${state.theme === 'classic' ? 'selected' : ''}>Classic</option><option value="mission-control" ${state.theme === 'mission-control' ? 'selected' : ''}>Mission Control</option><option value="orbit-glass" ${state.theme === 'orbit-glass' ? 'selected' : ''}>Orbit Glass</option></select></label>
         <button class="btn small" id="logout">Sign out</button></div>
     </aside>
     <main id="view" tabindex="-1"></main>
   </div>`);
   $('#logout').onclick = logout;
+  $('#theme-select').onchange = applyThemePreference;
   $('#language-select').onchange = async (event) => {
     const next = event.target.value === 'en' ? 'en' : 'nl';
     try {
@@ -335,11 +384,13 @@ const routes = [
   [/^#\/projects$/, projectsView],
   [/^#\/projects\/(\d+)$/, projectView],
   [/^#\/work$/, workView],
+  [/^#\/maintenance$/, maintenanceView],
   [/^#\/timesheets$/, timesheetsView],
   [/^#\/quotes$/, quotesView],
   [/^#\/quotes\/(\d+)$/, quoteView],
   [/^#\/invoices$/, invoicesView],
   [/^#\/invoices\/(\d+)$/, invoiceView],
+  [/^#\/contracts$/, contractsView],
   [/^#\/tickets$/, ticketsView],
   [/^#\/tickets\/(\d+)$/, ticketView],
   [/^#\/leads$/, leadsView],
@@ -425,7 +476,15 @@ const ACTIVITY = {
   'lead.created': () => 'a new message came in from the website',
   'lead.status_changed': (m) => `set a lead to ${label(m.to)}`,
   'lead.converted': (m) => `converted lead ${q(m.name)} into a client`,
-  'lead.deleted': () => 'deleted a lead'
+  'lead.deleted': () => 'deleted a lead',
+  'maintenance_plan.created': (m) => `created maintenance plan ${q(m.title)}`,
+  'maintenance_plan.updated': () => 'updated a maintenance plan',
+  'contract.created': (m) => `created contract ${q(m.title)}`,
+  'contract.shared': () => 'shared a contract with the client',
+  'contract.version_uploaded': (m) => `uploaded contract version ${m.version}`,
+  'contract.approved': () => 'client approved a contract',
+  'contract.changes_requested': () => 'client requested contract changes',
+  'contract.withdrawn': () => 'withdrew a contract'
 };
 const activityList = (items) => (items.length
   ? html`<ul class="list">${items.map((a) => html`<li><span class="grow"><strong>${a.actor_name || 'Website'}</strong> ${translateText((ACTIVITY[a.action] || (() => a.action))(a.meta || {}))}</span><span class="muted">${ago(a.created_at)}</span></li>`)}</ul>`
@@ -608,6 +667,13 @@ async function dashboardView(view) {
   const d = await get('/dashboard');
   const c = d.counts;
   const total = d.projects_by_status.reduce((n, s) => n + s.n, 0);
+  const attentionItems = [
+    ['Overdue milestones', c.overdue_milestones, '#/projects'],
+    ['Blocked work items', c.blocked_work_items, '#/work'],
+    ['Open support tickets', c.open_tickets, '#/tickets'],
+    ['Unanswered leads', c.new_leads, '#/leads'],
+    ['Unpaid invoices', c.unpaid_invoices, '#/invoices']
+  ].filter(([, count]) => Number(count) > 0);
   state.leads = c.new_leads;
   const badge = $('#lead-badge'); if (badge) { badge.textContent = c.new_leads; badge.hidden = !c.new_leads; }
   show(view, html`
@@ -619,6 +685,9 @@ async function dashboardView(view) {
       <div class="card kpi"><span>Open projects</span><strong>${c.open_projects}</strong></div>
       <a class="card kpi" href="#/leads" style="text-decoration:none;color:inherit"><span>New leads</span><strong>${c.new_leads}</strong></a>
     </div>
+    <section class="card attention-card"><header><div><h2>Needs attention</h2><p class="muted">Items that may need a follow-up.</p></div></header>
+      ${attentionItems.length ? html`<ul class="attention-list">${attentionItems.map(([title, count, href]) => html`<li><a href="${href}"><span>${title}</span><strong>${count}</strong></a></li>`)}</ul>` : html`<p class="muted">Nothing needs attention right now.</p>`}
+    </section>
     <div class="grid two">
       <section class="card"><header><h2>Upcoming milestones</h2></header>
         ${d.upcoming_milestones.length ? html`<ul class="list">${d.upcoming_milestones.map((m) => html`<li><span class="grow"><a href="#/projects/${m.project_id}">${m.title}</a><span class="sub">${m.project_name} · ${m.company_name}</span></span><span class="muted">${m.due_date ? date(m.due_date) : 'No date'}</span></li>`)}</ul>` : html`<p class="muted">No open milestones. Add some on a project page.</p>`}
@@ -627,6 +696,9 @@ async function dashboardView(view) {
         ${total ? html`<ul class="list status-list">${d.projects_by_status.map((s) => html`<li>${chip(s.status)}<progress max="${total}" value="${s.n}"></progress><strong>${s.n}</strong></li>`)}</ul>` : html`<p class="muted">No projects yet.</p>`}
       </section>
     </div>
+    <section class="card maintenance-reminders"><header><div><h2>Maintenance reminders</h2><p class="muted">Recurring client work coming up.</p></div><a class="btn small" href="#/maintenance">Manage plans</a></header>
+      ${d.maintenance_reminders.length ? html`<ul class="list">${d.maintenance_reminders.map((plan) => html`<li><span class="grow"><strong>${plan.title}</strong><span class="sub">${plan.project_name} · ${plan.company_name}</span></span><span class="muted">${date(plan.next_due_date)}</span></li>`)}</ul>` : html`<p class="muted">No maintenance tasks are due soon.</p>`}
+    </section>
     <section class="card" style="margin-top:16px"><header><h2>Recent activity</h2></header>${activityList(d.recent_activity)}</section>`);
   actions(view, { 'new-client': () => newClient(), 'new-project': () => newProject() });
 }
@@ -880,6 +952,175 @@ async function workView(view) {
       const next = { todo: 'in_progress', in_progress: 'in_review', in_review: 'done', blocked: 'todo' }[el.dataset.status];
       await patch(`/work-items/${id}`, { status: next });
       reload();
+    }
+  });
+}
+
+const MAINTENANCE_FREQUENCIES = options(['monthly', 'quarterly', 'yearly']);
+
+function maintenancePlanForm(plan, projects, after) {
+  const fields = [
+    ...(!plan ? [{ name: 'project_id', label: 'Project', type: 'select', options: projects.map((project) => [project.id, `${project.name} · ${project.company_name}`]), full: true }] : []),
+    { name: 'title', label: 'Maintenance task', required: true, full: true },
+    { name: 'description', label: 'Description', type: 'textarea', max: 2000, full: true },
+    { name: 'frequency', label: 'Frequency', type: 'select', options: MAINTENANCE_FREQUENCIES, required: true },
+    { name: 'next_due_date', label: 'Next due date', type: 'date', required: true },
+    { name: 'reminder_days', label: 'Reminder (days before)', type: 'number', min: 0, max: 90, default: 7 }
+  ];
+  openForm({
+    title: plan ? 'Edit maintenance plan' : 'New maintenance plan',
+    submit: plan ? 'Save plan' : 'Create plan',
+    fields,
+    values: plan || { project_id: projects[0]?.id, frequency: 'monthly', reminder_days: 7 },
+    onSubmit: async (values) => {
+      if (plan) await patch(`/maintenance-plans/${plan.id}`, values);
+      else await post('/maintenance-plans', values);
+      toast(plan ? 'Maintenance plan updated' : 'Maintenance plan created');
+      after();
+    }
+  });
+}
+
+async function maintenanceView(view) {
+  const [{ plans }, { projects }] = await Promise.all([get('/maintenance-plans'), get('/projects')]);
+  show(view, html`
+    <header class="page-head"><div><h1>Maintenance</h1><p class="muted">Recurring care plans create a work item automatically when their due date arrives.</p></div>
+      <button class="btn primary" data-action="new">+ New maintenance plan</button></header>
+    <section class="card"><header><h2>Recurring plans</h2></header>
+      ${plans.length ? html`<div class="table-wrap"><table><thead><tr><th>Task</th><th>Client / project</th><th>Frequency</th><th>Next due</th><th>Reminder</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        ${plans.map((plan) => html`<tr><td><strong>${plan.title}</strong><span class="sub">${plan.description || ''}</span></td>
+          <td>${plan.company_name}<span class="sub">${plan.project_name}</span></td><td>${label(plan.frequency)}</td><td>${date(plan.next_due_date)}</td>
+          <td>${plan.reminder_days} ${translateText('days before')}</td><td>${plan.active ? chip('active') : chip('inactive')}</td>
+          <td><div class="row-actions"><button class="btn small" data-action="edit" data-id="${plan.id}">Edit</button>
+            <button class="btn small" data-action="toggle" data-id="${plan.id}">${plan.active ? 'Pause' : 'Resume'}</button></div></td></tr>`)}</tbody></table></div>`
+        : html`<div class="empty">No maintenance plans yet. Create one to schedule recurring client work.</div>`}
+    </section>`);
+  const reload = () => maintenanceView(view);
+  actions(view, {
+    new: () => projects.length ? maintenancePlanForm(null, projects, reload) : toast('Create a project first', 'error'),
+    edit: (_, id) => {
+      const plan = plans.find((item) => Number(item.id) === id);
+      if (plan) maintenancePlanForm(plan, projects, reload);
+    },
+    toggle: async (_, id) => {
+      const plan = plans.find((item) => Number(item.id) === id);
+      if (!plan) return;
+      await patch(`/maintenance-plans/${id}`, { active: !plan.active });
+      toast(plan.active ? 'Maintenance plan paused' : 'Maintenance plan resumed');
+      reload();
+    }
+  });
+}
+
+async function uploadContractDocument(path, file, metadata = {}) {
+  const response = await fetch(`/api${path}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/pdf',
+      'X-Requested-With': 'makeitso',
+      'X-File-Name': encodeURIComponent(file.name),
+      ...(metadata.clientId ? { 'X-Client-Id': String(metadata.clientId) } : {}),
+      ...(metadata.projectId ? { 'X-Project-Id': String(metadata.projectId) } : {}),
+      ...(metadata.title ? { 'X-Contract-Title': encodeURIComponent(metadata.title) } : {})
+    },
+    body: file
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(translateText(result?.error || `Request failed (${response.status})`));
+  return result;
+}
+
+async function contractsView(view) {
+  const [{ contracts }, { clients }, { projects }] = await Promise.all([
+    get('/contracts'), get('/clients'), get('/projects')
+  ]);
+  show(view, html`
+    <header class="page-head"><div><h1>Contracts</h1><p class="muted">Share PDF agreements in the client portal and keep an auditable record of each decision. This records portal approval, not a qualified electronic signature.</p></div></header>
+    <form id="contract-upload" class="card stack">
+      <header><h2>Upload a contract</h2></header>
+      <div class="form-grid">
+        <label class="field" for="contract-client"><span>Client</span><select id="contract-client" name="client_id" required><option value="">Choose a client</option>${clients.map((client) => html`<option value="${client.id}">${client.company_name}</option>`)}</select></label>
+        <label class="field" for="contract-project"><span>Project (optional)</span><select id="contract-project" name="project_id"><option value="">Client-wide agreement</option>${projects.map((project) => html`<option value="${project.id}" data-client="${project.client_id}">${project.name} · ${project.company_name}</option>`)}</select></label>
+        <label class="field full" for="contract-title"><span>Contract title</span><input id="contract-title" name="title" maxlength="160" required></label>
+        <label class="field full" for="contract-file"><span>PDF document (max. 10 MB)</span><input id="contract-file" name="document" type="file" accept="application/pdf,.pdf" required></label>
+      </div>
+      <p class="form-error" role="alert"></p><div class="actions"><button class="btn primary">Upload draft</button></div>
+    </form>
+    <section class="card contracts-list"><header><h2>Contract register</h2></header>
+      ${contracts.length ? html`<div class="table-wrap"><table><thead><tr><th>Contract</th><th>Client / project</th><th>Status</th><th>Version</th><th>Decision</th><th>Actions</th></tr></thead><tbody>
+        ${contracts.map((contract) => html`<tr><td><strong>${contract.title}</strong><span class="sub">${contract.file_name || 'PDF document'}</span></td>
+          <td>${contract.company_name}<span class="sub">${contract.project_name || translateText('Client-wide')}</span></td><td>${chip(contract.status)}</td>
+          <td>${contract.version ? `v${contract.version}` : '—'}</td>
+          <td>${contract.decision_at ? `${contract.decision_by_name || 'Client'} · ${date(contract.decision_at)}` : '—'}${contract.decision_note ? html`<span class="sub">${contract.decision_note}</span>` : ''}</td>
+          <td><div class="row-actions"><a class="btn small" href="/api/contracts/${contract.id}/document">PDF</a>
+            ${['draft', 'changes_requested'].includes(contract.status) ? html`<button class="btn small" data-action="revision" data-id="${contract.id}">Upload version</button><button class="btn small primary" data-action="send" data-id="${contract.id}">Share</button>` : ''}
+            ${['sent', 'changes_requested'].includes(contract.status) ? html`<button class="btn small danger" data-action="withdraw" data-id="${contract.id}">Withdraw</button>` : ''}</div></td></tr>`)}</tbody></table></div>`
+        : html`<div class="empty">No contracts yet. Upload a PDF to create a draft.</div>`}
+    </section>`);
+
+  const form = $('#contract-upload', view);
+  const clientSelect = $('#contract-client', form);
+  const projectSelect = $('#contract-project', form);
+  clientSelect.onchange = () => {
+    for (const option of projectSelect.options) {
+      if (option.value) option.hidden = option.dataset.client !== clientSelect.value;
+    }
+    if (projectSelect.selectedOptions[0]?.hidden) projectSelect.value = '';
+  };
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const error = $('.form-error', form);
+    const file = form.elements.document.files[0];
+    error.textContent = '';
+    if (!file || file.size > 10 * 1024 * 1024) {
+      error.textContent = translateText('Choose a PDF smaller than 10 MB.');
+      return;
+    }
+    const button = $('button.primary', form);
+    button.disabled = true;
+    try {
+      await uploadContractDocument('/contracts', file, {
+        clientId: form.elements.client_id.value,
+        projectId: form.elements.project_id.value,
+        title: form.elements.title.value
+      });
+      toast('Contract draft created');
+      await contractsView(view);
+    } catch (exception) {
+      error.textContent = exception.message;
+      button.disabled = false;
+    }
+  };
+
+  actions(view, {
+    send: async (_, id) => {
+      await post(`/contracts/${id}/send`);
+      toast('Contract shared in the client portal');
+      contractsView(view);
+    },
+    withdraw: async (_, id) => {
+      if (!confirm(translateText('Withdraw this contract from the client portal?'))) return;
+      await post(`/contracts/${id}/withdraw`);
+      toast('Contract withdrawn');
+      contractsView(view);
+    },
+    revision: (_, id) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/pdf,.pdf';
+      input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        try {
+          await uploadContractDocument(`/contracts/${id}/versions`, file);
+          toast('Contract version uploaded');
+          contractsView(view);
+        } catch (error) {
+          toast(error.message, 'error');
+        }
+      };
+      input.click();
     }
   });
 }

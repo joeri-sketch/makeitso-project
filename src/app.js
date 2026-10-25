@@ -13,6 +13,8 @@ import { createPublicStatusChecker } from './services/public-status.js';
 import { supportRoutes } from './routes/support.js';
 import { statusSubscriptionRoutes } from './routes/status-subscriptions.js';
 import { adminSettingsRoutes } from './routes/admin-settings.js';
+import { contractRoutes } from './routes/contracts.js';
+import { maintenanceRoutes } from './routes/maintenance.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
 import { seoPagesMiddleware } from './middleware/seo.js';
@@ -66,6 +68,8 @@ export function createApp({
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
   app.use('/api/admin', adminSettingsRoutes({ db, config, mailer }));
+  const contracts = contractRoutes({ db });
+  app.use('/api/contracts', contracts.admin);
   const getPublicStatus = suppliedPublicStatus || createPublicStatusChecker({
     config,
     fetchImpl: statusFetch,
@@ -77,9 +81,11 @@ export function createApp({
   app.use('/api', adminMediaRoutes({ db }));
   app.use('/api/portal', portalMediaRoutes({ db, limits }));
   app.use('/api/portal', portalRoutes({ db, config, limits }));
+  app.use('/api/portal/contracts', contracts.client);
   app.use('/api/portal', portalInvoiceRoutes({ db }));
   app.use('/api', supportRoutes({ db, limits }));
   app.use('/api', crmRoutes({ db, config, mailer, log }));
+  app.use('/api', maintenanceRoutes({ db }));
   app.use('/api', invoiceRoutes({ db }));
   app.use('/api', quoteRoutes({ db }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));

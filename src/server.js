@@ -8,6 +8,7 @@ import { createContactMailer } from './services/contact-mail.js';
 import { createPublicStatusChecker } from './services/public-status.js';
 import { createStatusNotificationMonitor } from './services/status-notifications.js';
 import { getEmailConfig } from './services/email-settings.js';
+import { createMaintenanceScheduler } from './services/maintenance-scheduler.js';
 
 const log = defaultLog;
 
@@ -43,11 +44,14 @@ const mediaMonitor = createMediaMonitor({ db, config, log });
 mediaMonitor.start();
 const statusNotificationMonitor = createStatusNotificationMonitor({ db, getPublicStatus, mailer, config, log });
 statusNotificationMonitor.start();
+const maintenanceScheduler = createMaintenanceScheduler({ db, log });
+maintenanceScheduler.start();
 
 async function shutdown(signal) {
   log({ level: 'info', msg: `${signal} received, shutting down` });
   await mediaMonitor.stop();
   await statusNotificationMonitor.stop();
+  maintenanceScheduler.stop();
   server.close(async () => {
     await db.close().catch(() => {});
     process.exit(0);

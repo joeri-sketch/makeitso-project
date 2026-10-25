@@ -163,12 +163,22 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
 
   // ---------------- dashboard + activity ----------------
   r.get('/dashboard', h(async (req, res) => {
-    const [counts, byStatus, milestones, activity] = await Promise.all([
+    const [counts, byStatus, milestones, activity, maintenance] = await Promise.all([
       db.query(`SELECT
           (SELECT count(*) FROM clients WHERE archived_at IS NULL AND status = 'active')::int AS active_clients,
           (SELECT count(*) FROM clients WHERE archived_at IS NULL AND status = 'prospect')::int AS prospects,
           (SELECT count(*) FROM projects WHERE archived_at IS NULL AND status NOT IN ('launched'))::int AS open_projects,
-          (SELECT count(*) FROM leads WHERE status = 'new')::int AS new_leads`),
+          (SELECT count(*) FROM leads WHERE status = 'new')::int AS new_leads,
+          (SELECT count(*) FROM milestones m JOIN projects p ON p.id = m.project_id
+            WHERE m.status <> 'done' AND m.due_date < CURRENT_DATE AND p.archived_at IS NULL)::int AS overdue_milestones,
+          (SELECT count(*) FROM work_items wi JOIN projects p ON p.id = wi.project_id
+            WHERE wi.status = 'blocked' AND p.archived_at IS NULL)::int AS blocked_work_items,
+          (SELECT count(*) FROM support_tickets WHERE status NOT IN ('resolved', 'closed'))::int AS open_tickets,
+          (SELECT count(*) FROM invoices inv
+            WHERE inv.status = 'issued'
+              AND COALESCE((SELECT SUM(ROUND(i.quantity * i.unit_price * 100) + ROUND(i.quantity * i.unit_price * i.vat_rate))
+                              FROM invoice_items i WHERE i.invoice_id = inv.id), 0)
+                > COALESCE((SELECT ROUND(SUM(p.amount) * 100) FROM invoice_payments p WHERE p.invoice_id = inv.id), 0))::int AS unpaid_invoices`),
       db.query(`SELECT status, count(*)::int AS n FROM projects WHERE archived_at IS NULL GROUP BY status`),
       db.query(`SELECT m.id, m.title, m.due_date, m.status, p.id AS project_id, p.name AS project_name, c.company_name
                   FROM milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id
@@ -177,9 +187,24 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
       db.query(`SELECT a.id, a.action, a.entity, a.entity_id, a.meta, a.created_at, u.name AS actor_name
                   FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
                  WHERE a.action NOT LIKE 'auth.%' AND a.action NOT LIKE '2fa.%'
-                 ORDER BY a.created_at DESC, a.id DESC LIMIT 10`)
+                 ORDER BY a.created_at DESC, a.id DESC LIMIT 10`),
+      db.query(`SELECT mp.id, mp.title, mp.next_due_date, mp.reminder_days, p.id AS project_id,
+                       p.name AS project_name, c.company_name
+                  FROM maintenance_plans mp
+                  JOIN projects p ON p.id = mp.project_id
+                  JOIN clients c ON c.id = p.client_id
+                 WHERE mp.active
+                   AND mp.next_due_date <= CURRENT_DATE + mp.reminder_days
+                   AND p.archived_at IS NULL AND c.archived_at IS NULL
+                 ORDER BY mp.next_due_date, mp.id LIMIT 6`)
     ]);
-    res.json({ counts: counts.rows[0], projects_by_status: byStatus.rows, upcoming_milestones: milestones.rows, recent_activity: activity.rows });
+    res.json({
+      counts: counts.rows[0],
+      projects_by_status: byStatus.rows,
+      upcoming_milestones: milestones.rows,
+      maintenance_reminders: maintenance.rows,
+      recent_activity: activity.rows
+    });
   }));
 
   r.get('/activity', h(async (req, res) => {
