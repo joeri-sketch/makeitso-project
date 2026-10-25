@@ -334,8 +334,10 @@ function shell() {
         </section>`)}
       </nav>
       <div class="side-foot"><span class="muted">${state.user.name}</span>
+        <div class="side-preferences">
         <label class="language-picker"><span>Language</span><select id="language-select" aria-label="Language"><option value="nl" ${state.language === 'nl' ? 'selected' : ''}>Nederlands</option><option value="en" ${state.language === 'en' ? 'selected' : ''}>English</option></select></label>
         <label class="language-picker theme-picker"><span>Theme</span><select id="theme-select" aria-label="Theme"><option value="classic" ${state.theme === 'classic' ? 'selected' : ''}>Classic</option><option value="mission-control" ${state.theme === 'mission-control' ? 'selected' : ''}>Mission Control</option><option value="orbit-glass" ${state.theme === 'orbit-glass' ? 'selected' : ''}>Orbit Glass</option></select></label>
+        </div>
         <button class="btn small" id="logout">Sign out</button></div>
     </aside>
     <main id="view" tabindex="-1"></main>
@@ -673,33 +675,36 @@ async function dashboardView(view) {
     ['Open support tickets', c.open_tickets, '#/tickets'],
     ['Unanswered leads', c.new_leads, '#/leads'],
     ['Unpaid invoices', c.unpaid_invoices, '#/invoices']
-  ].filter(([, count]) => Number(count) > 0);
+  ];
   state.leads = c.new_leads;
   const badge = $('#lead-badge'); if (badge) { badge.textContent = c.new_leads; badge.hidden = !c.new_leads; }
   show(view, html`
-    <header class="page-head"><div><h1>Dashboard</h1><p class="muted">Welcome back, ${state.user.name}.</p></div>
+    <header class="page-head dashboard-head"><div><p class="dashboard-eyebrow">Make It So · Admin overview</p><h1>Dashboard</h1><p class="muted">Welcome back, ${state.user.name}.</p></div>
       <div class="actions"><button class="btn" data-action="new-project">+ New project</button><button class="btn primary" data-action="new-client">+ New client</button></div></header>
-    <div class="grid kpis">
+    <div class="grid kpis dashboard-kpis">
       <div class="card kpi"><span>Active clients</span><strong>${c.active_clients}</strong></div>
       <div class="card kpi"><span>Prospects</span><strong>${c.prospects}</strong></div>
       <div class="card kpi"><span>Open projects</span><strong>${c.open_projects}</strong></div>
       <a class="card kpi" href="#/leads" style="text-decoration:none;color:inherit"><span>New leads</span><strong>${c.new_leads}</strong></a>
     </div>
-    <section class="card attention-card"><header><div><h2>Needs attention</h2><p class="muted">Items that may need a follow-up.</p></div></header>
-      ${attentionItems.length ? html`<ul class="attention-list">${attentionItems.map(([title, count, href]) => html`<li><a href="${href}"><span>${title}</span><strong>${count}</strong></a></li>`)}</ul>` : html`<p class="muted">Nothing needs attention right now.</p>`}
+    <section class="card attention-card dashboard-attention"><header><div><h2>Needs attention</h2><p class="muted">Items that may need a follow-up.</p></div></header>
+      <ul class="attention-list">${attentionItems.map(([title, count, href]) => html`<li><a href="${href}"><span>${title}</span><strong>${count}</strong></a></li>`)}</ul>
     </section>
-    <div class="grid two">
-      <section class="card"><header><h2>Upcoming milestones</h2></header>
-        ${d.upcoming_milestones.length ? html`<ul class="list">${d.upcoming_milestones.map((m) => html`<li><span class="grow"><a href="#/projects/${m.project_id}">${m.title}</a><span class="sub">${m.project_name} · ${m.company_name}</span></span><span class="muted">${m.due_date ? date(m.due_date) : 'No date'}</span></li>`)}</ul>` : html`<p class="muted">No open milestones. Add some on a project page.</p>`}
-      </section>
-      <section class="card"><header><h2>Projects by status</h2></header>
-        ${total ? html`<ul class="list status-list">${d.projects_by_status.map((s) => html`<li>${chip(s.status)}<progress max="${total}" value="${s.n}"></progress><strong>${s.n}</strong></li>`)}</ul>` : html`<p class="muted">No projects yet.</p>`}
-      </section>
+    <div class="dashboard-content">
+      <div class="dashboard-primary">
+        <section class="card"><header><h2>Upcoming milestones</h2></header>
+          ${d.upcoming_milestones.length ? html`<ul class="list">${d.upcoming_milestones.map((m) => html`<li><span class="grow"><a href="#/projects/${m.project_id}">${m.title}</a><span class="sub">${m.project_name} · ${m.company_name}</span></span><span class="muted">${m.due_date ? date(m.due_date) : 'No date'}</span></li>`)}</ul>` : html`<p class="muted">No open milestones. Add some on a project page.</p>`}
+        </section>
+        <section class="card"><header><h2>Projects by status</h2></header>
+          ${total ? html`<ul class="list status-list">${d.projects_by_status.map((s) => html`<li>${chip(s.status)}<progress max="${total}" value="${s.n}"></progress><strong>${s.n}</strong></li>`)}</ul>` : html`<p class="muted">No projects yet.</p>`}
+        </section>
+        <section class="card maintenance-reminders"><header><div><h2>Maintenance reminders</h2><p class="muted">Recurring client work coming up.</p></div><a class="btn small" href="#/maintenance">Manage plans</a></header>
+          ${d.maintenance_reminders.length ? html`<ul class="list">${d.maintenance_reminders.map((plan) => html`<li><span class="grow"><strong>${plan.title}</strong><span class="sub">${plan.project_name} · ${plan.company_name}</span></span><span class="muted">${date(plan.next_due_date)}</span></li>`)}</ul>` : html`<p class="muted">No maintenance tasks are due soon.</p>`}
+        </section>
+      </div>
+      <section class="card dashboard-activity"><header><h2>Recent activity</h2></header>${activityList(d.recent_activity)}</section>
     </div>
-    <section class="card maintenance-reminders"><header><div><h2>Maintenance reminders</h2><p class="muted">Recurring client work coming up.</p></div><a class="btn small" href="#/maintenance">Manage plans</a></header>
-      ${d.maintenance_reminders.length ? html`<ul class="list">${d.maintenance_reminders.map((plan) => html`<li><span class="grow"><strong>${plan.title}</strong><span class="sub">${plan.project_name} · ${plan.company_name}</span></span><span class="muted">${date(plan.next_due_date)}</span></li>`)}</ul>` : html`<p class="muted">No maintenance tasks are due soon.</p>`}
-    </section>
-    <section class="card" style="margin-top:16px"><header><h2>Recent activity</h2></header>${activityList(d.recent_activity)}</section>`);
+  `);
   actions(view, { 'new-client': () => newClient(), 'new-project': () => newProject() });
 }
 

@@ -25,6 +25,7 @@ const NL = new Map(Object.entries({
   "I've saved them — continue": 'Ik heb ze bewaard — doorgaan',
   'Sign out': 'Uitloggen',
   'Dashboard': 'Dashboard',
+  'Make It So · Admin overview': 'Make It So · Beheeroverzicht',
   'Work': 'Werk',
   'Finances': 'Financiën',
   'Settings': 'Instellingen',
