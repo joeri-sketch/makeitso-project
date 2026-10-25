@@ -27,6 +27,10 @@ export function createStatusNotificationMonitor({
   async function createEvents(status) {
     return db.tx(async (tx) => {
       const events = [];
+      const statusSnapshot = JSON.stringify(status.services.map(({ id, status: currentStatus }) => ({
+        id,
+        status: currentStatus
+      })));
       for (const service of status.services) {
         const previous = (await tx.query(
           'SELECT status FROM public_status_states WHERE service = $1 FOR UPDATE',
@@ -56,9 +60,9 @@ export function createStatusNotificationMonitor({
         if (!incidentStarted && !serviceRecovered) continue;
 
         const event = (await tx.query(
-          `INSERT INTO public_status_events (service, previous_status, current_status)
-           VALUES ($1, $2, $3) RETURNING id`,
-          [service.id, previous.status, service.status]
+          `INSERT INTO public_status_events (service, previous_status, current_status, status_snapshot)
+           VALUES ($1, $2, $3, $4) RETURNING id`,
+          [service.id, previous.status, service.status, statusSnapshot]
         )).rows[0];
         await tx.query(
           `INSERT INTO public_status_deliveries (event_id, subscription_id)
@@ -75,7 +79,7 @@ export function createStatusNotificationMonitor({
   async function deliverPending() {
     const { rows } = await db.query(
       `SELECT d.id AS delivery_id, d.attempts, e.service, e.current_status, s.email, s.language,
-              s.unsubscribe_token_enc
+              e.status_snapshot, s.unsubscribe_token_enc
          FROM public_status_deliveries d
          JOIN public_status_events e ON e.id = d.event_id
          JOIN status_email_subscriptions s ON s.id = d.subscription_id
@@ -89,13 +93,19 @@ export function createStatusNotificationMonitor({
       try {
         const unsubscribeUrl = new URL(statusUrl);
         unsubscribeUrl.searchParams.set('unsubscribe', decrypt(delivery.unsubscribe_token_enc));
+        const report = JSON.parse(delivery.status_snapshot || '[]').map(({ id, status }) => ({
+          service: localized(SERVICE_LABELS, delivery.language, id),
+          status: localized(STATUS_LABELS, delivery.language, status),
+          statusCode: status
+        }));
         await mailer.sendStatusUpdate({
           email: delivery.email,
           service: localized(SERVICE_LABELS, delivery.language, delivery.service),
           status: localized(STATUS_LABELS, delivery.language, delivery.current_status),
           recovered: delivery.current_status === 'operational',
           unsubscribeUrl: unsubscribeUrl.href,
-          language: delivery.language
+          language: delivery.language,
+          report
         });
         await db.query(
           'UPDATE public_status_deliveries SET sent_at = now(), attempts = attempts + 1 WHERE id = $1 AND sent_at IS NULL',

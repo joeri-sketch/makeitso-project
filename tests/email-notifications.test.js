@@ -99,7 +99,25 @@ describe('client and public status email notifications', () => {
       assert.equal(statusMessages[0].service, 'Website & public pages');
       assert.equal(statusMessages[0].status, 'unavailable');
       assert.equal(statusMessages[0].recovered, false);
+      assert.equal(statusMessages[0].report.length, 5);
+      assert.deepEqual(statusMessages[0].report.map(({ service }) => service), [
+        'Website & public pages',
+        'Apps',
+        'Client portal',
+        'Email & contact form',
+        'Quotes & invoices'
+      ]);
+      assert.equal(statusMessages[0].report.find(({ service }) => service === 'Website & public pages').status, 'unavailable');
       assert.equal(statusMessages[1].recovered, true);
+      assert.equal(statusMessages[1].report.length, 5);
+      assert.equal(statusMessages[1].report.find(({ service }) => service === 'Website & public pages').status, 'operational');
+      const events = (await ctx.db.query(
+        'SELECT status_snapshot FROM public_status_events ORDER BY id'
+      )).rows.map(({ status_snapshot }) => JSON.parse(status_snapshot));
+      assert.equal(events.length, 2);
+      assert.equal(events[0].length, 5);
+      assert.equal(events[0].find(({ id }) => id === 'website').status, 'outage');
+      assert.equal(events[1].find(({ id }) => id === 'website').status, 'operational');
 
       const unsubscribeToken = new URL(statusMessages[0].unsubscribeUrl).searchParams.get('unsubscribe');
       assert.equal((await client.post('/api/public/status-subscriptions/unsubscribe', { token: unsubscribeToken })).status, 200);

@@ -89,7 +89,11 @@ describe('contact form email delivery', () => {
     });
     await mailer.sendStatusUpdate({
       email: 'alerts@example.net', service: 'Site web', status: 'indisponible',
-      recovered: false, unsubscribeUrl: 'https://makeitso.studio/status/?unsubscribe=token', language: 'fr'
+      recovered: false, unsubscribeUrl: 'https://makeitso.studio/status/?unsubscribe=token', language: 'fr',
+      report: [
+        { service: 'Site web', status: 'indisponible', statusCode: 'outage' },
+        { service: 'Applications', status: 'opérationnel', statusCode: 'operational' }
+      ]
     });
     assert.equal(await mailer.verify(), 'operational');
     assert.equal(await mailer.verify(), 'operational');
@@ -99,6 +103,17 @@ describe('contact form email delivery', () => {
     assert.match(messages[2].text, /Prototype/);
     assert.match(messages[3].text, /Confirmez votre abonnement/);
     assert.match(messages[4].text, /indisponible/);
+    assert.match(messages[0].html, /JOUW KLANTPORTAAL/);
+    assert.match(messages[0].html, /Stel je toegang in/);
+    assert.match(messages[1].html, /PROJECTLOGBOEK/);
+    assert.match(messages[2].html, /MIJLPAAL/);
+    assert.match(messages[3].html, /Confirmer l’abonnement/);
+    assert.match(messages[4].html, /ÉTAT DU SERVICE · ALERTE/);
+    assert.match(messages[4].html, /LES CINQ SYSTÈMES/);
+    assert.match(messages[4].html, /Applications/);
+    assert.match(messages[4].text, /État des cinq services/);
+    assert.match(messages[4].text, /Site web : indisponible/);
+    assert.equal(messages.every((message) => message.from === smtpConfig.smtpFrom), true);
     assert.equal(messages.every((message) => message.from === smtpConfig.smtpFrom), true);
   });
 
@@ -126,11 +141,11 @@ describe('contact form email delivery', () => {
       language: 'nl'
     });
     await mailer.sendInvitation({
-      email: 'alex@example.net', name: 'Alex', company: 'Northstar',
+      email: 'alex@example.net', name: '<Alex>', company: '<Northstar>',
       url: 'https://makeitso.studio/portal/?invite=token', language: 'nl'
     });
     await mailer.sendProjectUpdate({
-      email: 'alex@example.net', name: 'Alex', project: 'Website',
+      email: 'alex@example.net', name: 'Alex', project: '<Website>',
       from: 'discovery', to: 'development', language: 'nl'
     });
     await mailer.sendStatusSubscriptionConfirmation({
@@ -138,7 +153,11 @@ describe('contact form email delivery', () => {
     });
     await mailer.sendStatusUpdate({
       email: 'alerts@example.net', service: 'Site web', status: 'indisponible',
-      recovered: false, unsubscribeUrl: 'https://makeitso.studio/status/?unsubscribe=token', language: 'fr'
+      recovered: false, unsubscribeUrl: 'https://makeitso.studio/status/?unsubscribe=token', language: 'fr',
+      report: [
+        { service: 'Site web', status: 'indisponible', statusCode: 'outage' },
+        { service: 'Applications', status: 'opérationnel', statusCode: 'operational' }
+      ]
     });
 
     assert.equal(requests.length, 5);
@@ -161,12 +180,24 @@ describe('contact form email delivery', () => {
     assert.equal(requests[1].body.to, 'alex@example.net');
     assert.equal(requests[1].body.subject, 'Uitnodiging voor het Make It So-klantenportaal');
     assert.match(requests[1].body.text, /portal\/\?invite=token/);
+    assert.match(requests[1].body.html, /JOUW KLANTPORTAAL/);
+    assert.match(requests[1].body.html, /&lt;Alex&gt;/);
+    assert.match(requests[1].body.html, /&lt;Northstar&gt;/);
+    assert.doesNotMatch(requests[1].body.html, /<Alex>|<Northstar>/);
     assert.equal(requests[2].body.to, 'alex@example.net');
     assert.match(requests[2].body.text, /Ontwikkeling/);
+    assert.match(requests[2].body.html, /PROJECTLOGBOEK/);
+    assert.match(requests[2].body.html, /&lt;Website&gt;/);
     assert.equal(requests[3].body.to, 'alerts@example.net');
     assert.match(requests[3].body.text, /Confirmez votre abonnement/);
+    assert.match(requests[3].body.html, /Confirmer l’abonnement/);
     assert.equal(requests[4].body.to, 'alerts@example.net');
     assert.match(requests[4].body.text, /indisponible/);
+    assert.match(requests[4].body.html, /ÉTAT DU SERVICE · ALERTE/);
+    assert.match(requests[4].body.html, /status\/\?unsubscribe=token/);
+    assert.match(requests[4].body.html, /LES CINQ SYSTÈMES/);
+    assert.match(requests[4].body.html, /Applications/);
+    assert.match(requests[4].body.text, /État des cinq services/);
     assert.equal(await mailer.verify(), 'operational');
   });
 
