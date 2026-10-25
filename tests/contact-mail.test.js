@@ -52,6 +52,10 @@ describe('contact form email delivery', () => {
     assert.match(message.text, /Company: Northstar/);
     assert.match(message.text, /Language: nl/);
     assert.match(message.text, /We need a new website\./);
+    assert.match(message.html, /background-color:#07103a/);
+    assert.match(message.html, /NIEUW BERICHT/);
+    assert.match(message.html, /Beantwoord dit bericht/);
+    assert.match(message.html, /href="mailto:alex@example\.net"/);
   });
 
   it('refuses to claim delivery when SMTP credentials are not configured', async () => {
@@ -117,8 +121,8 @@ describe('contact form email delivery', () => {
     await mailer.send({
       name: 'Alex Visitor',
       email: 'alex@example.net',
-      company: 'Northstar',
-      message: 'We need a new website.',
+      company: '<img src=x onerror=alert(1)>',
+      message: '<script>alert(1)</script>\nSecond line & more',
       language: 'nl'
     });
     await mailer.sendInvitation({
@@ -145,8 +149,14 @@ describe('contact form email delivery', () => {
     assert.equal(requests[0].body.from, resendConfig.emailFrom);
     assert.equal(requests[0].body.to, resendConfig.contactEmail);
     assert.equal(requests[0].body.subject, 'New website contact form message');
-    assert.match(requests[0].body.text, /We need a new website\./);
+    assert.match(requests[0].body.text, /<script>alert\(1\)<\/script>/);
     assert.equal(requests[0].body.reply_to, 'Alex Visitor <alex@example.net>');
+    assert.match(requests[0].body.html, /&lt;img src=x onerror=alert\(1\)&gt;/);
+    assert.match(requests[0].body.html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+    assert.match(requests[0].body.html, /Second line &amp; more/);
+    assert.doesNotMatch(requests[0].body.html, /<script>|<img src=x onerror/);
+    assert.match(requests[0].body.html, /background-color:#07103a/);
+    assert.match(requests[0].body.html, /NIEUW BERICHT/);
     assert.equal(requests[1].body.from, resendConfig.emailFrom);
     assert.equal(requests[1].body.to, 'alex@example.net');
     assert.equal(requests[1].body.subject, 'Uitnodiging voor het Make It So-klantenportaal');

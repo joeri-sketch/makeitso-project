@@ -34,6 +34,111 @@ const copy = {
 };
 
 const languageCopy = (language) => copy[language] || copy.en;
+const contactEmailCopy = {
+  en: {
+    kicker: 'NEW TRANSMISSION',
+    title: 'A new message is in orbit.',
+    intro: 'Someone has sent a message through the Make It So website.',
+    name: 'NAME',
+    email: 'EMAIL',
+    company: 'COMPANY',
+    language: 'LANGUAGE',
+    message: 'MESSAGE',
+    reply: 'Reply to this message',
+    footer: 'Built for ambitious ideas, from first signal to final launch.'
+  },
+  nl: {
+    kicker: 'NIEUW BERICHT',
+    title: 'Er is een nieuw bericht binnengekomen.',
+    intro: 'Iemand heeft een bericht verstuurd via de Make It So-website.',
+    name: 'NAAM',
+    email: 'E-MAIL',
+    company: 'BEDRIJF',
+    language: 'TAAL',
+    message: 'BERICHT',
+    reply: 'Beantwoord dit bericht',
+    footer: 'Voor ambitieuze ideeën, van eerste signaal tot lancering.'
+  },
+  fr: {
+    kicker: 'NOUVEAU MESSAGE',
+    title: 'Un nouveau message est arrivé.',
+    intro: 'Quelqu’un a envoyé un message depuis le site Make It So.',
+    name: 'NOM',
+    email: 'E-MAIL',
+    company: 'ENTREPRISE',
+    language: 'LANGUE',
+    message: 'MESSAGE',
+    reply: 'Répondre à ce message',
+    footer: 'Pour les idées ambitieuses, du premier signal au lancement.'
+  }
+};
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+})[character]);
+
+function contactEmailHtml(lead) {
+  const text = contactEmailCopy[lead.language] || contactEmailCopy.en;
+  const company = lead.company || (lead.language === 'nl' ? 'Niet opgegeven' : lead.language === 'fr' ? 'Non renseignée' : 'Not provided');
+  return `<!doctype html>
+<html lang="${escapeHtml(lead.language)}">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+  <body style="margin:0;padding:0;background-color:#eef1f8;font-family:Arial,Helvetica,sans-serif;color:#10172f;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(text.intro)}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eef1f8;">
+      <tr><td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;">
+          <tr><td style="padding:0 0 14px;color:#07103a;font-size:13px;font-weight:bold;letter-spacing:2px;">MAKE IT SO <span style="color:#0b3bff;">/</span> CREATIVE STUDIO</td></tr>
+          <tr><td style="background-color:#07103a;border-top:5px solid #ff6a1f;border-radius:18px 18px 0 0;padding:32px 36px;color:#ffffff;">
+            <div style="display:inline-block;margin:0 0 18px;padding:7px 11px;border-radius:5px;background-color:#ff6a1f;color:#07103a;font-size:10px;font-weight:bold;letter-spacing:1.5px;">${escapeHtml(text.kicker)}</div>
+            <h1 style="margin:0 0 12px;font-size:30px;line-height:1.2;color:#ffffff;">${escapeHtml(text.title)}</h1>
+            <p style="margin:0;color:#c7d0ef;font-size:15px;line-height:1.6;">${escapeHtml(text.intro)}</p>
+          </td></tr>
+          <tr><td style="padding:28px 36px;background-color:#ffffff;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+              <tr>
+                <td width="50%" valign="top" style="padding:0 12px 20px 0;">
+                  <div style="margin-bottom:6px;color:#68718a;font-size:10px;font-weight:bold;letter-spacing:1.3px;">${escapeHtml(text.name)}</div>
+                  <div style="color:#10172f;font-size:15px;line-height:1.5;overflow-wrap:anywhere;">${escapeHtml(lead.name)}</div>
+                </td>
+                <td width="50%" valign="top" style="padding:0 0 20px 12px;">
+                  <div style="margin-bottom:6px;color:#68718a;font-size:10px;font-weight:bold;letter-spacing:1.3px;">${escapeHtml(text.email)}</div>
+                  <div style="color:#0b3bff;font-size:15px;line-height:1.5;overflow-wrap:anywhere;"><a href="mailto:${escapeHtml(lead.email)}" style="color:#0b3bff;text-decoration:underline;">${escapeHtml(lead.email)}</a></div>
+                </td>
+              </tr>
+              <tr>
+                <td width="50%" valign="top" style="padding:0 12px 20px 0;">
+                  <div style="margin-bottom:6px;color:#68718a;font-size:10px;font-weight:bold;letter-spacing:1.3px;">${escapeHtml(text.company)}</div>
+                  <div style="color:#10172f;font-size:15px;line-height:1.5;overflow-wrap:anywhere;">${escapeHtml(company)}</div>
+                </td>
+                <td width="50%" valign="top" style="padding:0 0 20px 12px;">
+                  <div style="margin-bottom:6px;color:#68718a;font-size:10px;font-weight:bold;letter-spacing:1.3px;">${escapeHtml(text.language)}</div>
+                  <div style="color:#10172f;font-size:15px;line-height:1.5;">${escapeHtml(lead.language)}</div>
+                </td>
+              </tr>
+            </table>
+            <div style="margin:2px 0 10px;color:#68718a;font-size:10px;font-weight:bold;letter-spacing:1.3px;">${escapeHtml(text.message)}</div>
+            <div style="padding:18px 20px;border-left:3px solid #0b3bff;border-radius:0 8px 8px 0;background-color:#f3f5fc;color:#10172f;font-size:15px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(lead.message)}</div>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:24px;"><tr>
+              <td align="center" style="border-radius:8px;background-color:#0b3bff;">
+                <a href="mailto:${escapeHtml(lead.email)}" style="display:inline-block;padding:13px 20px;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;">${escapeHtml(text.reply)} &rarr;</a>
+              </td>
+            </tr></table>
+          </td></tr>
+          <tr><td style="padding:20px 24px;border-radius:0 0 18px 18px;background-color:#ffffff;border-top:1px solid #e5e9f2;color:#68718a;font-size:12px;line-height:1.6;">
+            ${escapeHtml(text.footer)}<br>
+            <a href="https://makeitso.studio/" style="color:#0b3bff;text-decoration:none;">makeitso.studio</a>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
+
 const projectStatuses = {
   en: { discovery: 'Discovery', wireframing: 'Wireframing', development: 'Development', review: 'Review', launched: 'Launched', on_hold: 'On hold', todo: 'To do', doing: 'In progress', done: 'Done' },
   nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', done: 'Afgerond' },
@@ -81,6 +186,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
           to: message.to,
           subject: message.subject,
           text: message.text,
+          ...(message.html ? { html: message.html } : {}),
           ...(replyTo ? { reply_to: replyTo } : {})
         })
       });
@@ -140,7 +246,8 @@ export function createContactMailer(config, createTransport = nodemailer.createT
           '',
           'Message:',
           lead.message
-        ].join('\n')
+          ].join('\n'),
+          html: contactEmailHtml(lead)
       });
     },
     async sendInvitation({ email, name, company, url, language }) {
