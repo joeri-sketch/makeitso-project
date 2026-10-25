@@ -11,6 +11,7 @@ import { publicRoutes } from './routes/public.js';
 import { createContactMailer } from './services/contact-mail.js';
 import { createPublicStatusChecker } from './services/public-status.js';
 import { supportRoutes } from './routes/support.js';
+import { statusSubscriptionRoutes } from './routes/status-subscriptions.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
 import { seoPagesMiddleware } from './middleware/seo.js';
@@ -24,8 +25,9 @@ export function createApp({
   config,
   rateLimits = !config.isTest,
   log = defaultLog,
-  mailer = createContactMailer(config),
-  statusFetch = globalThis.fetch
+  mailer = createContactMailer(config, undefined, log),
+  statusFetch = globalThis.fetch,
+  getPublicStatus: suppliedPublicStatus
 }) {
   const app = express();
   app.disable('x-powered-by');
@@ -41,6 +43,7 @@ export function createApp({
     login: limiter(15 * 60_000, 10, 'Too many attempts. Please try again later.'),
     twofa: limiter(15 * 60_000, 15, 'Too many attempts. Please try again later.'),
     publicLead: limiter(60 * 60_000, 5, 'Too many messages. Please try again later or email us directly.'),
+    publicStatusSubscribe: limiter(60 * 60_000, 5, 'Too many subscription requests. Please try again later.'),
     publicStatus: limiter(60_000, 60, 'Too many status checks. Please try again shortly.')
   };
 
@@ -61,14 +64,20 @@ export function createApp({
   app.use('/api', (req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
-  const getPublicStatus = createPublicStatusChecker({ config, fetchImpl: statusFetch, log });
+  const getPublicStatus = suppliedPublicStatus || createPublicStatusChecker({
+    config,
+    fetchImpl: statusFetch,
+    log,
+    checkEmailStatus: mailer.verify ? () => mailer.verify() : undefined
+  });
   app.use('/api/public', publicRoutes({ db, config, limits, mailer, log, getPublicStatus }));
+  app.use('/api/public/status-subscriptions', statusSubscriptionRoutes({ db, config, limits, mailer, log }));
   app.use('/api', adminMediaRoutes({ db }));
   app.use('/api/portal', portalMediaRoutes({ db, limits }));
   app.use('/api/portal', portalRoutes({ db, config, limits }));
   app.use('/api/portal', portalInvoiceRoutes({ db }));
   app.use('/api', supportRoutes({ db, limits }));
-  app.use('/api', crmRoutes({ db, config }));
+  app.use('/api', crmRoutes({ db, config, mailer, log }));
   app.use('/api', invoiceRoutes({ db }));
   app.use('/api', quoteRoutes({ db }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));

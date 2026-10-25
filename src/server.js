@@ -4,6 +4,9 @@ import { createDb } from './db/index.js';
 import { migrate } from './db/migrate.js';
 import { ensureAdmin } from './services/bootstrap.js';
 import { createMediaMonitor } from './services/media-monitor.js';
+import { createContactMailer } from './services/contact-mail.js';
+import { createPublicStatusChecker } from './services/public-status.js';
+import { createStatusNotificationMonitor } from './services/status-notifications.js';
 
 const log = defaultLog;
 
@@ -11,16 +14,25 @@ const db = await createDb(config);
 await migrate(db, (msg) => log({ level: 'info', msg }));
 await ensureAdmin(db, config, log);
 
-const app = createApp({ db, config, log });
+const mailer = createContactMailer(config, undefined, log);
+const getPublicStatus = createPublicStatusChecker({
+  config,
+  log,
+  checkEmailStatus: () => mailer.verify()
+});
+const app = createApp({ db, config, log, mailer, getPublicStatus });
 const server = app.listen(config.port, '0.0.0.0', () => {
   log({ level: 'info', msg: `Make It So is running on port ${config.port} (${config.env}, database: ${db.kind})` });
 });
 const mediaMonitor = createMediaMonitor({ db, config, log });
 mediaMonitor.start();
+const statusNotificationMonitor = createStatusNotificationMonitor({ db, getPublicStatus, mailer, config, log });
+statusNotificationMonitor.start();
 
 async function shutdown(signal) {
   log({ level: 'info', msg: `${signal} received, shutting down` });
   await mediaMonitor.stop();
+  await statusNotificationMonitor.stop();
   server.close(async () => {
     await db.close().catch(() => {});
     process.exit(0);

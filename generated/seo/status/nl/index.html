@@ -78,7 +78,7 @@
               <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Niet bevestigd</span>
             </article><article class="status-row status-unknown">
               <span class="status-num">04</span>
-              <div><h3>E-mail &amp; contactformulier</h3><p>E-mailbezorging en inzendingen via het contactformulier zijn momenteel niet beschikbaar en in onderhoud.</p></div>
+              <div><h3>E-mail &amp; contactformulier</h3><p>E-mailbezorging voor berichten en inzendingen via het contactformulier.</p></div>
               <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Niet bevestigd</span>
             </article><article class="status-row status-unknown">
               <span class="status-num">05</span>
@@ -98,6 +98,24 @@
           <p>Actuele meldingen op basis van de laatste controles.</p>
         </header>
         <div class="status-incident-list"><p class="status-empty">Er zijn geen actieve storingen of onderhoudsmeldingen.</p></div>
+      </section>
+
+      <section class="status-block" aria-labelledby="status-notification-title">
+        <div class="status-notifications">
+          <div>
+            <p class="kicker">03 · Scheepslog</p>
+            <h2 id="status-notification-title">Statusupdates per e-mail ontvangen</h2>
+            <p>We mailen je wanneer een gecontroleerde dienst een storing heeft en wanneer die hersteld is. Bevestig je e-mailadres om je aan te melden. Uitschrijven kan altijd.</p>
+          </div>
+          <form class="status-notification-form" id="status-notification-form">
+          <label for="status-notification-email">Je e-mailadres</label>
+          <input id="status-notification-email" name="email" type="email" maxlength="254" autocomplete="email" required="">
+          <label class="status-notification-consent"><input name="consent" type="checkbox" required=""><span>Ik ga akkoord met e-mails over storingen en herstel van diensten.</span></label>
+          <input class="status-notification-trap" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn-dark" type="submit">Aanmelden voor statusupdates</button>
+          <p class="status-notification-feedback" role="status"></p>
+        </form>
+        </div>
       </section>
 
       <section class="panel cta status-hail">

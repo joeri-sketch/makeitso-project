@@ -78,7 +78,7 @@
               <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
             </article><article class="status-row status-unknown">
               <span class="status-num">04</span>
-              <div><h3>Email &amp; contact form</h3><p>Email delivery and contact-form submissions are currently unavailable and under maintenance.</p></div>
+              <div><h3>Email &amp; contact form</h3><p>Email delivery for messages and contact-form submissions.</p></div>
               <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Not confirmed</span>
             </article><article class="status-row status-unknown">
               <span class="status-num">05</span>
@@ -98,6 +98,24 @@
           <p>Active service notices based on the latest checks.</p>
         </header>
         <div class="status-incident-list"><p class="status-empty">There are no active service incidents or maintenance notices.</p></div>
+      </section>
+
+      <section class="status-block" aria-labelledby="status-notification-title">
+        <div class="status-notifications">
+          <div>
+            <p class="kicker">03 · Ship’s log</p>
+            <h2 id="status-notification-title">Get status updates by email</h2>
+            <p>We’ll email you when a monitored service has an incident and when it is restored. Confirm your address to subscribe. Unsubscribe at any time.</p>
+          </div>
+          <form class="status-notification-form" id="status-notification-form">
+          <label for="status-notification-email">Your email address</label>
+          <input id="status-notification-email" name="email" type="email" maxlength="254" autocomplete="email" required="">
+          <label class="status-notification-consent"><input name="consent" type="checkbox" required=""><span>I agree to receive service incident and recovery emails.</span></label>
+          <input class="status-notification-trap" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn-dark" type="submit">Subscribe to status updates</button>
+          <p class="status-notification-feedback" role="status"></p>
+        </form>
+        </div>
       </section>
 
       <section class="panel cta status-hail">

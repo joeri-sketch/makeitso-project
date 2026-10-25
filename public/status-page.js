@@ -35,7 +35,7 @@
         website: ['Website & public pages', 'The main Make It So website and public information pages.'],
         apps: ['Apps', 'Availability of the applications service.'],
         portal: ['Client portal & project status', 'Secure client access to project progress and account services.'],
-        email: ['Email & contact form', 'Email delivery and contact-form submissions are currently unavailable and under maintenance.'],
+        email: ['Email & contact form', 'Email delivery for messages and contact-form submissions.'],
         billing: ['Quotes & invoices', 'Quote and invoice access follows the client portal status.']
       },
       status: {
@@ -87,6 +87,17 @@
       incidentTitle: 'Status update: {name}',
       incidentMessage: '{name} is currently {status}. This page refreshes automatically.',
       emailMaintenance: 'Email delivery and contact-form submissions are currently unavailable and under maintenance.',
+      notificationTitle: 'Get status updates by email',
+      notificationLead: 'We’ll email you when a monitored service has an incident and when it is restored. Confirm your address to subscribe. Unsubscribe at any time.',
+      notificationEmail: 'Your email address',
+      notificationConsent: 'I agree to receive service incident and recovery emails.',
+      notificationButton: 'Subscribe to status updates',
+      notificationConfirm: 'Confirm email subscription',
+      notificationUnsubscribe: 'Unsubscribe from status emails',
+      notificationRequested: 'If this address is not already subscribed, check your inbox to confirm.',
+      notificationConfirmed: 'Your email address is confirmed. You’ll receive incident and recovery updates.',
+      notificationUnsubscribed: 'You have been unsubscribed from status emails.',
+      notificationError: 'We could not process that request. Please try again later.',
       short: { website: 'Website', apps: 'Apps', portal: 'Portal', email: 'Email', billing: 'Billing' },
       counts: {
         operational: '{n} operational',
@@ -117,7 +128,7 @@
         website: ['Website & openbare pagina’s', 'De Make It So-website en openbare informatiepagina’s.'],
         apps: ['Apps', 'Beschikbaarheid van de applicatiedienst.'],
         portal: ['Klantportaal & projectstatus', 'Beveiligde toegang voor klanten tot projectvoortgang en accountdiensten.'],
-        email: ['E-mail & contactformulier', 'E-mailbezorging en inzendingen via het contactformulier zijn momenteel niet beschikbaar en in onderhoud.'],
+        email: ['E-mail & contactformulier', 'E-mailbezorging voor berichten en inzendingen via het contactformulier.'],
         billing: ['Offertes & facturen', 'Toegang tot offertes en facturen volgt de status van het klantportaal.']
       },
       status: {
@@ -169,6 +180,17 @@
       incidentTitle: 'Statusupdate: {name}',
       incidentMessage: '{name} heeft momenteel de status {status}. Deze pagina wordt automatisch vernieuwd.',
       emailMaintenance: 'E-mailbezorging en inzendingen via het contactformulier zijn momenteel niet beschikbaar en in onderhoud.',
+      notificationTitle: 'Statusupdates per e-mail ontvangen',
+      notificationLead: 'We mailen je wanneer een gecontroleerde dienst een storing heeft en wanneer die hersteld is. Bevestig je e-mailadres om je aan te melden. Uitschrijven kan altijd.',
+      notificationEmail: 'Je e-mailadres',
+      notificationConsent: 'Ik ga akkoord met e-mails over storingen en herstel van diensten.',
+      notificationButton: 'Aanmelden voor statusupdates',
+      notificationConfirm: 'E-mailinschrijving bevestigen',
+      notificationUnsubscribe: 'Uitschrijven voor statusmails',
+      notificationRequested: 'Als dit adres nog niet is aangemeld, vind je een bevestigingsmail in je inbox.',
+      notificationConfirmed: 'Je e-mailadres is bevestigd. Je ontvangt updates over storingen en herstel.',
+      notificationUnsubscribed: 'Je ontvangt geen statusmails meer.',
+      notificationError: 'We konden dit verzoek niet verwerken. Probeer het later opnieuw.',
       short: { website: 'Website', apps: 'Apps', portal: 'Portaal', email: 'E-mail', billing: 'Facturatie' },
       counts: {
         operational: '{n} operationeel',
@@ -199,7 +221,7 @@
         website: ['Site web et pages publiques', 'Le site Make It So et ses pages d’information publiques.'],
         apps: ['Applications', 'Disponibilité du service des applications.'],
         portal: ['Portail client et suivi de projet', 'Accès sécurisé à l’avancement du projet et aux services du compte.'],
-        email: ['E-mail et formulaire de contact', 'La remise des e-mails et les demandes envoyées via le formulaire sont actuellement indisponibles et en maintenance.'],
+        email: ['E-mail et formulaire de contact', 'Envoi des messages et des demandes via le formulaire de contact.'],
         billing: ['Devis et factures', 'L’accès aux devis et factures suit le statut du portail client.']
       },
       status: {
@@ -251,6 +273,17 @@
       incidentTitle: 'Mise à jour du statut : {name}',
       incidentMessage: '{name} est actuellement {status}. Cette page s’actualise automatiquement.',
       emailMaintenance: 'La remise des e-mails et les demandes envoyées via le formulaire sont actuellement indisponibles et en maintenance.',
+      notificationTitle: 'Recevoir les mises à jour par e-mail',
+      notificationLead: 'Nous vous écrirons lorsqu’un service surveillé rencontre un incident et lorsqu’il est rétabli. Confirmez votre adresse pour vous abonner. Désabonnement possible à tout moment.',
+      notificationEmail: 'Votre adresse e-mail',
+      notificationConsent: 'J’accepte de recevoir les e-mails d’incident et de rétablissement.',
+      notificationButton: 'S’abonner aux alertes de statut',
+      notificationConfirm: 'Confirmer l’abonnement par e-mail',
+      notificationUnsubscribe: 'Se désabonner des alertes',
+      notificationRequested: 'Si cette adresse n’est pas déjà abonnée, consultez votre boîte de réception pour confirmer.',
+      notificationConfirmed: 'Votre adresse est confirmée. Vous recevrez les alertes d’incident et de rétablissement.',
+      notificationUnsubscribed: 'Vous ne recevrez plus les alertes de statut.',
+      notificationError: 'Nous n’avons pas pu traiter cette demande. Veuillez réessayer plus tard.',
       short: { website: 'Site', apps: 'Applications', portal: 'Portail', email: 'E-mail', billing: 'Facturation' },
       counts: {
         operational: '{n} opérationnel',
@@ -273,6 +306,16 @@
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
   const fill = (template, values) => String(template).replace(/\{(\w+)\}/g, (_, key) => values[key] ?? '');
+  let notificationEmail = '';
+  let notificationConsent = false;
+  let notificationFeedback = '';
+  let notificationActionFeedback = '';
+  const statusUrlParams = new URLSearchParams(window.location.search);
+  let notificationAction = statusUrlParams.has('confirm')
+    ? { type: 'confirm', token: statusUrlParams.get('confirm') }
+    : statusUrlParams.has('unsubscribe')
+      ? { type: 'unsubscribe', token: statusUrlParams.get('unsubscribe') }
+      : null;
 
   function storyFor(text, states) {
     const named = services.map((service, index) => ({
@@ -305,6 +348,7 @@
   function render() {
     const language = window.i18n?.lang || 'en';
     const text = copy[language] || copy.en;
+    const focusedId = document.activeElement?.id;
     const states = services.map(getStatus);
     const story = storyFor(text, states);
     const checkedLabel = lastUpdatedAt && Number.isFinite(Date.parse(lastUpdatedAt))
@@ -339,6 +383,20 @@
         </article>`;
       }).join('')
       : `<p class="status-empty">${esc(text.emptyText)}</p>`;
+    const notificationActionMarkup = notificationAction
+      ? `<div class="status-notification-action">
+          <p>${esc(notificationAction.type === 'confirm' ? text.notificationConfirm : text.notificationUnsubscribe)}</p>
+          <button class="btn btn-dark" type="button" data-status-action="${esc(notificationAction.type)}">${esc(notificationAction.type === 'confirm' ? text.notificationConfirm : text.notificationUnsubscribe)}</button>
+          <p class="status-notification-feedback" role="status">${esc(notificationActionFeedback)}</p>
+        </div>`
+      : `<form class="status-notification-form" id="status-notification-form">
+          <label for="status-notification-email">${esc(text.notificationEmail)}</label>
+          <input id="status-notification-email" name="email" type="email" maxlength="254" autocomplete="email" required>
+          <label class="status-notification-consent"><input name="consent" type="checkbox" required><span>${esc(text.notificationConsent)}</span></label>
+          <input class="status-notification-trap" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn-dark" type="submit">${esc(text.notificationButton)}</button>
+          <p class="status-notification-feedback" role="status">${esc(notificationFeedback)}</p>
+        </form>`;
 
     document.documentElement.lang = language;
     document.title = text.title;
@@ -403,6 +461,17 @@
         <div class="status-incident-list">${incidentMarkup}</div>
       </section>
 
+      <section class="status-block" aria-labelledby="status-notification-title">
+        <div class="status-notifications">
+          <div>
+            <p class="kicker">${esc(text.logKicker)}</p>
+            <h2 id="status-notification-title">${esc(text.notificationTitle)}</h2>
+            <p>${esc(text.notificationLead)}</p>
+          </div>
+          ${notificationActionMarkup}
+        </div>
+      </section>
+
       <section class="panel cta status-hail">
         <div class="status-hail-grid">
           <div>
@@ -413,7 +482,76 @@
           <a class="btn btn-dark btn-lg" href="/?lang=${encodeURIComponent(language)}#contact">${esc(text.contactBridge)} <span class="chip" aria-hidden="true">→</span></a>
         </div>
       </section>`;
+    const emailInput = app.querySelector('#status-notification-email');
+    if (emailInput) emailInput.value = notificationEmail;
+    const consentInput = app.querySelector('[name="consent"]');
+    if (consentInput) consentInput.checked = notificationConsent;
+    if (focusedId) app.querySelector(`#${CSS.escape(focusedId)}`)?.focus({ preventScroll: true });
   }
+
+  app.addEventListener('input', (event) => {
+    if (event.target.id === 'status-notification-email') notificationEmail = event.target.value;
+  });
+  app.addEventListener('change', (event) => {
+    if (event.target.name === 'consent') notificationConsent = event.target.checked;
+  });
+  app.addEventListener('submit', async (event) => {
+    if (event.target.id !== 'status-notification-form') return;
+    event.preventDefault();
+    if (!event.target.reportValidity()) return;
+    const formData = new FormData(event.target);
+    const language = window.i18n?.lang || 'en';
+    const button = event.target.querySelector('button[type="submit"]');
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/public/status-subscriptions', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'makeitso' },
+        body: JSON.stringify({
+          email: formData.get('email'),
+          consent: formData.get('consent') === 'on',
+          website: formData.get('website'),
+          language
+        })
+      });
+      if (!response.ok) throw new Error('Subscription request failed.');
+      notificationEmail = '';
+      notificationConsent = false;
+      notificationFeedback = copy[language]?.notificationRequested || copy.en.notificationRequested;
+    } catch {
+      notificationFeedback = copy[language]?.notificationError || copy.en.notificationError;
+    } finally {
+      render();
+    }
+  });
+  app.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-status-action]');
+    if (!button || !notificationAction) return;
+    const action = notificationAction.type;
+    button.disabled = true;
+    const language = window.i18n?.lang || 'en';
+    try {
+      const response = await fetch(`/api/public/status-subscriptions/${action}`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'makeitso' },
+        body: JSON.stringify({ token: notificationAction.token })
+      });
+      if (!response.ok) throw new Error('Subscription action failed.');
+      notificationActionFeedback = copy[language]?.[action === 'confirm' ? 'notificationConfirmed' : 'notificationUnsubscribed']
+        || copy.en[action === 'confirm' ? 'notificationConfirmed' : 'notificationUnsubscribed'];
+      notificationAction = null;
+      notificationFeedback = notificationActionFeedback;
+      statusUrlParams.delete(action === 'confirm' ? 'confirm' : 'unsubscribe');
+      const query = statusUrlParams.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+    } catch {
+      notificationActionFeedback = copy[language]?.notificationError || copy.en.notificationError;
+    } finally {
+      render();
+    }
+  });
 
   let statusLoading = false;
   async function refreshStatus() {

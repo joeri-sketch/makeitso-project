@@ -34,6 +34,9 @@ describe('contact form SMTP delivery', () => {
       host: 'smtp.hostinger.com',
       port: 465,
       secure: true,
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
       auth: { user: 'hello@example.com', pass: 'mailbox-password' }
     });
     assert.equal(message.from, 'hello@example.com');
@@ -47,7 +50,46 @@ describe('contact form SMTP delivery', () => {
 
   it('refuses to claim delivery when SMTP credentials are not configured', async () => {
     const mailer = createContactMailer({ ...smtpConfig, smtpPassword: '' });
-    await assert.rejects(mailer.send({}), /SMTP_HOST, SMTP_USER and SMTP_PASSWORD/);
+    await assert.rejects(mailer.send({}), /SMTP_HOST, SMTP_USER, SMTP_PASSWORD/);
+    assert.equal(await mailer.verify(), 'maintenance');
+  });
+
+  it('sends invitations, project updates and status emails through the same SMTP transport', async () => {
+    const messages = [];
+    let verificationCount = 0;
+    const mailer = createContactMailer(smtpConfig, () => ({
+      sendMail: async (message) => messages.push(message),
+      verify: async () => { verificationCount += 1; }
+    }));
+
+    await mailer.sendInvitation({
+      email: 'alex@example.net', name: 'Alex', company: 'Northstar',
+      url: 'https://makeitso.studio/portal/?invite=one-time-token', language: 'nl'
+    });
+    await mailer.sendProjectUpdate({
+      email: 'alex@example.net', name: 'Alex', project: 'Website', from: 'discovery',
+      to: 'development', language: 'nl'
+    });
+    await mailer.sendProjectUpdate({
+      email: 'alex@example.net', name: 'Alex', project: 'Website', item: 'Prototype',
+      from: 'doing', to: 'done', language: 'nl'
+    });
+    await mailer.sendStatusSubscriptionConfirmation({
+      email: 'alerts@example.net', url: 'https://makeitso.studio/status/?confirm=token', language: 'fr'
+    });
+    await mailer.sendStatusUpdate({
+      email: 'alerts@example.net', service: 'Site web', status: 'indisponible',
+      recovered: false, unsubscribeUrl: 'https://makeitso.studio/status/?unsubscribe=token', language: 'fr'
+    });
+    assert.equal(await mailer.verify(), 'operational');
+    assert.equal(await mailer.verify(), 'operational');
+    assert.equal(verificationCount, 1, 'SMTP verification is cached briefly');
+    assert.match(messages[0].text, /uitgenodigd/i);
+    assert.match(messages[1].text, /Ontwikkeling/);
+    assert.match(messages[2].text, /Prototype/);
+    assert.match(messages[3].text, /Confirmez votre abonnement/);
+    assert.match(messages[4].text, /indisponible/);
+    assert.equal(messages.every((message) => message.from === smtpConfig.smtpFrom), true);
   });
 
   it('stores a lead and reports an explicit delivery error if SMTP fails', async () => {

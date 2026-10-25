@@ -63,6 +63,7 @@ export const config = {
     .split(',')
     .map((origin) => origin.trim().replace(/\/+$/, ''))
     .filter(Boolean),
+  publicOrigin: (env.PUBLIC_ORIGIN || '').split(',')[0].trim().replace(/\/+$/, ''),
   publicStatusSite: mediaTarget('PUBLIC_STATUS_SITE_URL', 'https://makeitso.studio/'),
   trustProxy: env.TRUST_PROXY ?? (isProd ? '1' : '0'),
   adminEmail: env.ADMIN_EMAIL || '',

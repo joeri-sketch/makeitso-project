@@ -7,6 +7,9 @@ import { chromium } from 'playwright';
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 const app = express();
 let requests = 0;
+let subscriptionRequest;
+let confirmationRequest;
+app.use(express.json());
 app.get('/api/public/status', (req, res) => {
   requests += 1;
   const checkedAt = new Date(Date.UTC(2026, 0, 1, 0, requests)).toISOString();
@@ -24,6 +27,14 @@ app.get('/api/public/status', (req, res) => {
     ]
   });
 });
+app.post('/api/public/status-subscriptions', (req, res) => {
+  subscriptionRequest = req.body;
+  res.status(202).json({ ok: true });
+});
+app.post('/api/public/status-subscriptions/confirm', (req, res) => {
+  confirmationRequest = req.body;
+  res.json({ ok: true });
+});
 app.use(express.static(publicDir));
 const server = app.listen(0, '127.0.0.1');
 await once(server, 'listening');
@@ -40,6 +51,8 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/status/?lang=en`);
   await page.locator('.status-row.status-outage').waitFor();
   assert.equal(await page.locator('.status-row').count(), 5);
+  await page.locator('#status-notification-email').fill('captain@example.net');
+  await page.locator('[name="consent"]').check();
   assert.match(await page.locator('.status-row').nth(3).innerText(), /Email & contact form/);
   assert.match(await page.locator('.status-row').nth(3).innerText(), /Maintenance/);
   assert.match(await page.locator('.status-row').filter({ hasText: 'Quotes & invoices' }).innerText(), /Operational/);
@@ -53,6 +66,22 @@ try {
   await page.clock.fastForward(60_000);
   await page.locator('.status-row.status-operational').filter({ hasText: 'Apps' }).waitFor();
   assert.equal(requests, 2, 'the page should fetch fresh statuses every minute');
+  assert.equal(await page.locator('#status-notification-email').inputValue(), 'captain@example.net', 'status refresh must preserve subscription form input');
+  assert.equal(await page.locator('[name="consent"]').isChecked(), true);
+  await page.locator('#status-notification-form button[type="submit"]').click();
+  await page.locator('.status-notification-feedback').filter({ hasText: 'Als dit adres' }).waitFor();
+  assert.deepEqual(subscriptionRequest, {
+    email: 'captain@example.net',
+    consent: true,
+    website: '',
+    language: 'nl'
+  });
+
+  const confirmationPage = await context.newPage();
+  await confirmationPage.goto(`http://127.0.0.1:${server.address().port}/status/?lang=fr&confirm=sample-confirm-token`);
+  await confirmationPage.locator('[data-status-action="confirm"]').click();
+  await confirmationPage.locator('.status-notification-feedback').filter({ hasText: 'Votre adresse est confirmée' }).waitFor();
+  assert.deepEqual(confirmationRequest, { token: 'sample-confirm-token' });
   assert.deepEqual(errors, []);
   console.log('Verified live status rendering, incident updates, localization, automatic refresh and public redaction.');
 } finally {

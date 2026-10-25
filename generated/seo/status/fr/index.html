@@ -78,7 +78,7 @@
               <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Non confirmé</span>
             </article><article class="status-row status-unknown">
               <span class="status-num">04</span>
-              <div><h3>E-mail et formulaire de contact</h3><p>La remise des e-mails et les demandes envoyées via le formulaire sont actuellement indisponibles et en maintenance.</p></div>
+              <div><h3>E-mail et formulaire de contact</h3><p>Envoi des messages et des demandes via le formulaire de contact.</p></div>
               <span class="status-pill status-pill-unknown"><i aria-hidden="true"></i>Non confirmé</span>
             </article><article class="status-row status-unknown">
               <span class="status-num">05</span>
@@ -98,6 +98,24 @@
           <p>Avis actifs basés sur les dernières vérifications.</p>
         </header>
         <div class="status-incident-list"><p class="status-empty">Aucun incident ou avis de maintenance n’est actif.</p></div>
+      </section>
+
+      <section class="status-block" aria-labelledby="status-notification-title">
+        <div class="status-notifications">
+          <div>
+            <p class="kicker">03 · Journal de bord</p>
+            <h2 id="status-notification-title">Recevoir les mises à jour par e-mail</h2>
+            <p>Nous vous écrirons lorsqu’un service surveillé rencontre un incident et lorsqu’il est rétabli. Confirmez votre adresse pour vous abonner. Désabonnement possible à tout moment.</p>
+          </div>
+          <form class="status-notification-form" id="status-notification-form">
+          <label for="status-notification-email">Votre adresse e-mail</label>
+          <input id="status-notification-email" name="email" type="email" maxlength="254" autocomplete="email" required="">
+          <label class="status-notification-consent"><input name="consent" type="checkbox" required=""><span>J’accepte de recevoir les e-mails d’incident et de rétablissement.</span></label>
+          <input class="status-notification-trap" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn-dark" type="submit">S’abonner aux alertes de statut</button>
+          <p class="status-notification-feedback" role="status"></p>
+        </form>
+        </div>
       </section>
 
       <section class="panel cta status-hail">

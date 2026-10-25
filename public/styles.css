@@ -490,6 +490,19 @@ button, input, textarea { font: inherit; }
 .status-notice h3 { margin: 8px 0; font: 800 1.7rem/1.1 var(--font-display); letter-spacing: -.04em; }
 .status-notice p:last-child, .status-empty { max-width: 62ch; color: rgba(255,255,255,.72); }
 .status-empty { margin: 0; padding: 8px 4px 18px; }
+.status-notifications { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .85fr); align-items: center; gap: 30px; padding: 28px; border: 1px solid rgba(255,255,255,.14); border-radius: 28px; background: rgba(255,255,255,.055); }
+.status-notifications h2 { margin: 8px 0; font: 800 clamp(1.8rem, 3vw, 2.7rem)/1.05 var(--font-display); letter-spacing: -.035em; }
+.status-notifications > div > p:last-child { max-width: 58ch; color: rgba(255,255,255,.68); line-height: 1.6; }
+.status-notification-form, .status-notification-action { display: grid; gap: 12px; }
+.status-notification-form > label:first-child { font-size: .85rem; font-weight: 700; }
+.status-notification-form > input[type="email"] { width: 100%; min-height: 48px; padding: 10px 13px; border: 1px solid rgba(255,255,255,.25); border-radius: 13px; color: #fff; background: rgba(5,8,23,.65); }
+.status-notification-form > input[type="email"]:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.status-notification-consent { display: flex; align-items: flex-start; gap: 9px; color: rgba(255,255,255,.78); font-size: .82rem; line-height: 1.45; }
+.status-notification-consent input { margin-top: 3px; accent-color: var(--mint); }
+.status-notification-form .btn, .status-notification-action .btn { justify-self: start; }
+.status-notification-trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.status-notification-feedback { min-height: 1.4em; color: var(--mint); font-size: .82rem; }
+.status-notification-action > p:first-child { color: rgba(255,255,255,.78); }
 .status-hail { padding: 36px clamp(24px, 4vw, 48px); }
 .status-hail-grid { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 24px; align-items: center; }
 .status-hail h2 { font-size: clamp(2.4rem, 5vw, 4.2rem); line-height: .95; }
@@ -671,6 +684,7 @@ button, input, textarea { font: inherit; }
   .status-page { width: calc(100% - 20px); }
   .status-bridge { padding: 28px 20px; }
   .status-bridge .hero-title { font-size: clamp(2.6rem, 12vw, 3.6rem); line-height: 1; }
+  .status-notifications { grid-template-columns: 1fr; gap: 22px; padding: 22px; border-radius: 22px; }
   .status-row { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 16px; }
   .status-row .status-pill { grid-column: 2; }
   .status-hail-grid { flex-direction: column; align-items: flex-start; }

@@ -697,10 +697,12 @@ async function clientView(view, id) {
         submit: 'Create invitation',
         onSubmit: async ({ email }) => {
           const invitation = await post(`/clients/${id}/invitations`, { email });
-          toast('Invitation link created');
+          toast(invitation.email_sent ? 'Invitation email sent' : 'Invitation created, but email could not be sent', invitation.email_sent ? 'success' : 'error');
           setTimeout(() => showCopyLink({
-            title: 'Invitation link created',
-            description: 'Copy this one-time link and send it to the client yourself. It expires in 7 days. The link is not sent by email.',
+            title: invitation.email_sent ? 'Invitation email sent' : 'Invitation email could not be sent',
+            description: invitation.email_sent
+              ? 'The client has been emailed this one-time link. You can copy it as a backup. It expires in 7 days.'
+              : 'Email delivery failed. Copy and send this one-time link to the client yourself. It expires in 7 days.',
             url: invitation.invitation_url
           }), 0);
         }
@@ -959,10 +961,11 @@ async function projectView(view, id) {
     'quick-save': async () => {
       const update = { status: $('#quick-status').value, next_step: $('#quick-next').value };
       if (!d.work_items.length) update.progress = Number($('#quick-progress').value);
-      await patch(`/projects/${id}`, update);
-      toast('Project updated'); reload();
+      const result = await patch(`/projects/${id}`, update);
+      toast(result.email_sent === false ? 'Project updated, but the client email could not be sent' : 'Project updated', result.email_sent === false ? 'error' : '');
+      reload();
     },
-    edit: () => openForm({ title: 'Edit project', fields: projectFields(null), values: p, onSubmit: async (v) => { await patch(`/projects/${id}`, v); toast('Saved'); reload(); } }),
+    edit: () => openForm({ title: 'Edit project', fields: projectFields(null), values: p, onSubmit: async (v) => { const result = await patch(`/projects/${id}`, v); toast(result.email_sent === false ? 'Saved, but the client email could not be sent' : 'Saved', result.email_sent === false ? 'error' : ''); reload(); } }),
     archive: async () => { if (confirm('Archive this project?')) { await post(`/projects/${id}/archive`); reload(); } },
     restore: async () => { await post(`/projects/${id}/restore`); reload(); },
     'add-work-item': () => newWorkItem(id, null, reload),
@@ -983,8 +986,8 @@ async function projectView(view, id) {
     },
     'delete-time-entry': async (_, entryId) => { if (confirm('Delete this time entry?')) { await del(`/time-entries/${entryId}`); reload(); } },
     'add-milestone': () => openForm({ title: 'Add milestone', fields: milestoneFields, submit: 'Add', onSubmit: async (v) => { await post(`/projects/${id}/milestones`, v); reload(); } }),
-    'edit-milestone': (_, mid) => openForm({ title: 'Edit milestone', fields: milestoneFields, values: d.milestones.find((m) => m.id === mid), onSubmit: async (v) => { await patch(`/milestones/${mid}`, v); reload(); } }),
-    'cycle-milestone': async (el, mid) => { await patch(`/milestones/${mid}`, { status: NEXT[el.dataset.status] }); reload(); },
+    'edit-milestone': (_, mid) => openForm({ title: 'Edit milestone', fields: milestoneFields, values: d.milestones.find((m) => m.id === mid), onSubmit: async (v) => { const result = await patch(`/milestones/${mid}`, v); if (result.email_sent === false) toast('Milestone updated, but the client email could not be sent', 'error'); reload(); } }),
+    'cycle-milestone': async (el, mid) => { const result = await patch(`/milestones/${mid}`, { status: NEXT[el.dataset.status] }); if (result.email_sent === false) toast('Milestone updated, but the client email could not be sent', 'error'); reload(); },
     'delete-milestone': async (_, mid) => { if (confirm('Delete this milestone?')) { await del(`/milestones/${mid}`); reload(); } },
     'pin-note': async (el, nid) => { await patch(`/notes/${nid}`, { pinned: el.dataset.pinned !== 'true' }); reload(); },
     'toggle-note-visibility': async (el, nid) => { await patch(`/notes/${nid}`, { client_visible: el.dataset.visible !== 'true' }); reload(); },

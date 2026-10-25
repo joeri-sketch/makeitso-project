@@ -115,9 +115,50 @@ async function insertRow(db, table, fields) {
   return rows[0];
 }
 
-export function crmRoutes({ db, config }) {
+export function crmRoutes({ db, config, mailer, log = () => {} }) {
   const r = Router();
   r.use(requireAdmin);
+
+  const sendProjectUpdate = async ({ clientId, project, kind, item, from, to }) => {
+    if (!mailer.sendProjectUpdate) return true;
+    const recipients = (await db.query(
+      `SELECT DISTINCT u.email, u.name, c.language
+         FROM users u JOIN clients c ON c.id = u.client_id
+        WHERE u.client_id = $1 AND u.role = 'client' AND u.active = TRUE AND c.archived_at IS NULL
+        UNION
+       SELECT k.email, k.name, c.language
+         FROM contacts k JOIN clients c ON c.id = k.client_id
+        WHERE k.client_id = $1 AND k.is_primary = TRUE AND k.email IS NOT NULL AND c.archived_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM users u WHERE u.client_id = $1 AND u.role = 'client' AND u.active = TRUE
+          )`,
+      [clientId]
+    )).rows;
+    let sent = recipients.length > 0;
+    if (!sent) {
+      log({ level: 'warn', msg: 'Project status email has no active client recipient.', code: 'CLIENT_EMAIL_RECIPIENT_MISSING' });
+    }
+    for (const recipient of recipients) {
+      try {
+        await mailer.sendProjectUpdate({
+          ...recipient,
+          project,
+          kind,
+          item,
+          from,
+          to
+        });
+      } catch (error) {
+        sent = false;
+        log({
+          level: 'error',
+          msg: 'Client project update email could not be sent.',
+          code: error.code || 'MAIL_SEND_FAILED'
+        });
+      }
+    }
+    return sent;
+  };
 
   // ---------------- dashboard + activity ----------------
   r.get('/dashboard', h(async (req, res) => {
@@ -207,7 +248,7 @@ export function crmRoutes({ db, config }) {
     const clientId = v.id(req.params.id);
     const email = v.email(req.body?.email, 'email', { required: true });
     const contact = await db.query(
-      `SELECT k.name, k.email, c.language FROM contacts k JOIN clients c ON c.id = k.client_id
+      `SELECT k.name, k.email, c.company_name, c.language FROM contacts k JOIN clients c ON c.id = k.client_id
         WHERE c.id = $1 AND c.archived_at IS NULL AND lower(k.email) = lower($2)
         ORDER BY k.is_primary DESC, k.id LIMIT 1`,
       [clientId, email]
@@ -234,8 +275,24 @@ export function crmRoutes({ db, config }) {
       });
     });
     const origin = config.publicOrigin || `${req.protocol}://${req.get('host')}`;
+    const invitationUrl = `${origin}/portal/?invite=${encodeURIComponent(token)}&lang=${contact.rows[0].language}`;
+    let emailSent = false;
+    try {
+      if (!mailer.sendInvitation) throw new Error('Invitation email is not configured.');
+      await mailer.sendInvitation({
+        email,
+        name: contact.rows[0].name,
+        company: contact.rows[0].company_name,
+        url: invitationUrl,
+        language: contact.rows[0].language
+      });
+      emailSent = true;
+    } catch (error) {
+      log({ level: 'error', msg: 'Client invitation email could not be sent.', code: error.code || 'MAIL_SEND_FAILED' });
+    }
     res.status(201).json({
-      invitation_url: `${origin}/portal/?invite=${encodeURIComponent(token)}&lang=${contact.rows[0].language}`,
+      invitation_url: invitationUrl,
+      email_sent: emailSent,
       expires_in_days: 7
     });
   }));
@@ -416,7 +473,16 @@ export function crmRoutes({ db, config }) {
     let action = 'project.updated';
     if (data.status && data.status !== before.status) { action = 'project.status_changed'; meta.from = before.status; meta.to = data.status; }
     await audit(db, req, action, { entity: 'project', entityId: id, clientId: before.client_id, projectId: id, meta });
-    res.json({ project });
+    const emailSent = action === 'project.status_changed'
+      ? await sendProjectUpdate({
+        clientId: before.client_id,
+        project: project.name,
+        kind: 'project',
+        from: before.status,
+        to: project.status
+      })
+      : null;
+    res.json({ project, ...(emailSent === null ? {} : { email_sent: emailSent }) });
   }));
 
   for (const [path, set, action] of [['archive', 'now()', 'project.archived'], ['restore', 'NULL', 'project.restored']]) {
@@ -458,7 +524,18 @@ export function crmRoutes({ db, config }) {
     const action = data.status && data.status !== current.status ? 'milestone.status_changed' : 'milestone.updated';
     await audit(db, req, action, { entity: 'milestone', entityId: id, clientId: current.client_id, projectId: current.project_id, meta: { title: milestone.title, from: current.status, to: milestone.status } });
     await db.query('UPDATE projects SET updated_at = now() WHERE id = $1', [current.project_id]);
-    res.json({ milestone });
+    const project = (await db.query('SELECT name FROM projects WHERE id = $1', [current.project_id])).rows[0];
+    const emailSent = action === 'milestone.status_changed'
+      ? await sendProjectUpdate({
+        clientId: current.client_id,
+        project: project.name,
+        kind: 'milestone',
+        item: milestone.title,
+        from: current.status,
+        to: milestone.status
+      })
+      : null;
+    res.json({ milestone, ...(emailSent === null ? {} : { email_sent: emailSent }) });
   }));
 
   r.delete('/milestones/:id', h(async (req, res) => {

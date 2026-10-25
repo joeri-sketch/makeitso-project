@@ -82,7 +82,8 @@ export function createPublicStatusChecker({
   fetchImpl = globalThis.fetch,
   clock = () => Date.now(),
   timeoutMs = TIMEOUT_MS,
-  log = () => {}
+  log = () => {},
+  checkEmailStatus = async () => 'maintenance'
 }) {
   let cached;
   let cacheExpires = 0;
@@ -98,7 +99,7 @@ export function createPublicStatusChecker({
       const apps = config.mediaTargets?.jellyfin
         ? new URL(config.mediaTargets.jellyfin).origin
         : null;
-      const [website, application, portal] = await Promise.all([
+      const [website, application, portal, email] = await Promise.all([
         checkSystem(
           'website',
           [new URL('/', site).href, new URL('/about/', site).href],
@@ -128,7 +129,8 @@ export function createPublicStatusChecker({
             return htmlPage(url, result);
           },
           options
-        )
+        ),
+        checkEmailStatus()
       ]);
       const checkedAt = new Date(clock()).toISOString();
       cached = {
@@ -138,7 +140,7 @@ export function createPublicStatusChecker({
           { id: 'website', status: website.status, checked_at: checkedAt, response_ms: website.response_ms },
           { id: 'apps', status: application.status, checked_at: checkedAt, response_ms: application.response_ms },
           { id: 'portal', status: portal.status, checked_at: checkedAt, response_ms: portal.response_ms },
-          { id: 'email', status: 'maintenance', checked_at: checkedAt, response_ms: null },
+          { id: 'email', status: email, checked_at: checkedAt, response_ms: null },
           { id: 'billing', status: portal.status, checked_at: checkedAt, response_ms: portal.response_ms }
         ]
       };
