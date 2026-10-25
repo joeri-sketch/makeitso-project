@@ -1,21 +1,34 @@
 // Make It So admin. Plain JavaScript, no build step. Every value is escaped by the html`` template.
+import { setLanguage, translateMarkup, translateText } from './i18n.js';
 
 /* ---------------- tiny helpers ---------------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 class Raw { constructor(s) { this.s = s; } toString() { return this.s; } }
 const fmt = (x) => (x instanceof Raw ? x.s : Array.isArray(x) ? x.map(fmt).join('') : esc(x));
-const html = (strings, ...vals) => new Raw(strings.reduce((out, s, i) => out + s + (i < vals.length ? fmt(vals[i]) : ''), ''));
+let htmlSlotId = 0;
+const html = (strings, ...vals) => {
+  const slots = [];
+  const markup = strings.reduce((out, part, index) => {
+    if (index >= vals.length) return out + part;
+    const token = `__MIS_SLOT_${htmlSlotId++}__`;
+    slots.push([token, fmt(vals[index])]);
+    return out + part + token;
+  }, '');
+  let localized = translateMarkup(markup);
+  for (const [token, value] of slots) localized = localized.split(token).join(value);
+  return new Raw(localized);
+};
 const raw = (s) => new Raw(s);
 const show = (el, tpl) => { el.innerHTML = tpl.s; };
 
-const date = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+const date = (d) => (d ? new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString(state.language === 'en' ? 'en-GB' : 'nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 function ago(iso) {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
-  if (s < 7 * 86400) return `${Math.floor(s / 86400)} d ago`;
+  if (s < 60) return state.language === 'nl' ? 'zojuist' : 'just now';
+  if (s < 3600) return state.language === 'nl' ? `${Math.floor(s / 60)} min geleden` : `${Math.floor(s / 60)} min ago`;
+  if (s < 86400) return state.language === 'nl' ? `${Math.floor(s / 3600)} u geleden` : `${Math.floor(s / 3600)} h ago`;
+  if (s < 7 * 86400) return state.language === 'nl' ? `${Math.floor(s / 86400)} d geleden` : `${Math.floor(s / 86400)} d ago`;
   return date(iso);
 }
 
@@ -30,7 +43,7 @@ const LABEL = {
   low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent',
   nl: 'Nederlands', fr: 'Français', en: 'English'
 };
-const label = (k) => LABEL[k] ?? k;
+const label = (k) => translateText(LABEL[k] ?? k);
 const chip = (k) => html`<span class="chip s-${k}">${label(k)}</span>`;
 const options = (keys) => keys.map((k) => [k, label(k)]);
 const CLIENT_STATUS = options(['prospect', 'active', 'inactive']);
@@ -50,7 +63,7 @@ async function api(method, path, body) {
   let data = null;
   try { data = await res.json(); } catch { /* empty body */ }
   if (!res.ok) {
-    const err = new Error(data?.error || `Request failed (${res.status})`);
+    const err = new Error(translateText(data?.error || `Request failed (${res.status})`));
     err.status = res.status; err.code = data?.code; err.field = data?.field;
     throw err;
   }
@@ -66,7 +79,7 @@ const del = (p) => api('DELETE', p);
 let toastTimer;
 function toast(message, kind = '') {
   const t = $('#toast');
-  t.textContent = message;
+  t.textContent = translateText(message);
   t.className = `show ${kind}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { t.className = ''; }, 3200);
@@ -74,6 +87,7 @@ function toast(message, kind = '') {
 
 function fieldHtml(f, value) {
   const id = `f-${f.name}`;
+  const fieldLabel = translateText(f.label);
   const v = value ?? f.default ?? '';
   let control;
   if (f.type === 'select') {
@@ -81,21 +95,21 @@ function fieldHtml(f, value) {
   } else if (f.type === 'textarea') {
     control = html`<textarea id="${id}" name="${f.name}" rows="${f.rows || 4}" maxlength="${f.max || 4000}">${v}</textarea>`;
   } else if (f.type === 'checkbox') {
-    return html`<label class="check full" for="${id}"><input type="checkbox" id="${id}" name="${f.name}" ${v ? 'checked' : ''}> ${f.label}</label>`;
+    return html`<label class="check full" for="${id}"><input type="checkbox" id="${id}" name="${f.name}" ${v ? 'checked' : ''}> ${fieldLabel}</label>`;
   } else {
     control = html`<input id="${id}" name="${f.name}" type="${f.type || 'text'}" value="${v}" ${f.required ? 'required' : ''} ${f.min !== undefined ? html`min="${f.min}"` : ''} ${f.max !== undefined && f.type === 'number' ? html`max="${f.max}"` : ''} ${f.step !== undefined ? html`step="${f.step}"` : ''} autocomplete="off">`;
   }
-  return html`<label class="field ${f.full ? 'full' : ''}" for="${id}"><span>${f.label}${f.required ? ' *' : ''}</span>${control}${f.hint ? html`<small>${f.hint}</small>` : ''}</label>`;
+  return html`<label class="field ${f.full ? 'full' : ''}" for="${id}"><span>${fieldLabel}${f.required ? ' *' : ''}</span>${control}${f.hint ? html`<small>${translateText(f.hint)}</small>` : ''}</label>`;
 }
 
 // Opens a form in a dialog. `onSubmit(values)` should throw to show an error message.
 function openForm({ title, fields, values = {}, submit = 'Save', onSubmit }) {
   const dlg = $('#modal');
   show(dlg, html`<form class="modal-form" novalidate>
-    <header><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
+    <header><h2>${translateText(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
     <div class="form-grid">${fields.map((f) => fieldHtml(f, values[f.name]))}</div>
     <p class="form-error" role="alert"></p>
-    <footer><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary">${submit}</button></footer>
+    <footer><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn primary">${translateText(submit)}</button></footer>
   </form>`);
   const form = $('form', dlg);
   dlg.onclick = (e) => { if (e.target.closest('[data-close]') || e.target === dlg) dlg.close(); };
@@ -127,8 +141,8 @@ function openForm({ title, fields, values = {}, submit = 'Save', onSubmit }) {
 function showCopyLink({ title, description, url }) {
   const dlg = $('#modal');
   show(dlg, html`<form class="modal-form">
-    <header><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
-    <p class="muted">${description}</p>
+    <header><h2>${translateText(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Close">×</button></header>
+    <p class="muted">${translateText(description)}</p>
     <label class="field full"><span>Link</span><input id="invitation-link" value="${url}" readonly></label>
     <footer><button type="button" class="btn" data-close>Close</button><button type="button" class="btn primary" id="copy-invitation">Copy link</button></footer>
   </form>`);
@@ -149,7 +163,7 @@ function showCopyLink({ title, description, url }) {
 
 /* ---------------- app state + shell ---------------- */
 const app = $('#app');
-const state = { user: null, auth: 'anonymous', leads: 0 };
+const state = { user: null, auth: 'anonymous', leads: 0, language: 'nl' };
 const brand = html`<span class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l3 8.4L28 15l-9 2.6L16 26l-3-8.4L4 15l9-2.6z" fill="#ff6a1f"/></svg></span>${raw('<span class="word">make it so<em>.</em></span>')}<span class="tag">ADMIN</span></span>`;
 
 async function boot() {
@@ -157,6 +171,8 @@ async function boot() {
     const me = await get('/auth/me');
     state.user = me.user;
     state.auth = me.state;
+    state.language = me.user?.admin_language === 'en' ? 'en' : 'nl';
+    setLanguage(state.language);
   } catch {
     state.auth = 'anonymous';
   }
@@ -257,23 +273,49 @@ function recoveryScreen(codes) {
 async function logout() {
   try { await post('/auth/logout'); } catch { /* already signed out */ }
   state.user = null; state.auth = 'anonymous';
+  state.language = 'nl';
+  setLanguage('nl');
   location.hash = '';
   loginScreen();
 }
 
 const NAV = [['#/', 'Dashboard'], ['#/clients', 'Clients'], ['#/projects', 'Projects'], ['#/work', 'Current work'], ['#/timesheets', 'Timesheets'], ['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/tickets', 'Support'], ['#/leads', 'Leads'], ['#/account', 'Account']];
+NAV.push(['#/settings/email', 'Email settings']);
 
 function shell() {
   show(app, html`<div class="shell">
     <aside class="sidebar"><div class="brand-wrap">${brand}</div>
-      <nav aria-label="Main">${NAV.map(([href, text]) => html`<a class="nav-link" href="${href}" data-nav="${href}"><span>${text}</span>${href === '#/leads' ? html`<span class="badge" id="lead-badge" hidden></span>` : ''}</a>`)}</nav>
-      <div class="side-foot"><span class="muted">${state.user.name}</span><button class="btn small" id="logout">Sign out</button></div>
+      <nav aria-label="Main">${NAV.map(([href, text]) => html`<a class="nav-link" href="${href}" data-nav="${href}"><span>${translateText(text)}</span>${href === '#/leads' ? html`<span class="badge" id="lead-badge" hidden></span>` : ''}</a>`)}</nav>
+      <div class="side-foot"><span class="muted">${state.user.name}</span>
+        <label class="language-picker"><span>Language</span><select id="language-select" aria-label="Language"><option value="nl" ${state.language === 'nl' ? 'selected' : ''}>Nederlands</option><option value="en" ${state.language === 'en' ? 'selected' : ''}>English</option></select></label>
+        <button class="btn small" id="logout">Sign out</button></div>
     </aside>
     <main id="view" tabindex="-1"></main>
   </div>`);
   $('#logout').onclick = logout;
+  $('#language-select').onchange = async (event) => {
+    const next = event.target.value === 'en' ? 'en' : 'nl';
+    try {
+      await patch('/auth/preferences', { admin_language: next });
+      const unsaved = Array.from($('#view')?.querySelectorAll('input, select, textarea') || [])
+        .map((field) => ({ value: field.value, checked: field.type === 'checkbox' ? field.checked : undefined }));
+      state.language = next;
+      state.user.admin_language = next;
+      setLanguage(next);
+      await shell();
+      Array.from($('#view')?.querySelectorAll('input, select, textarea') || []).forEach((field, index) => {
+        const saved = unsaved[index];
+        if (!saved) return;
+        field.value = saved.value;
+        if (saved.checked !== undefined) field.checked = saved.checked;
+      });
+    } catch (error) {
+      event.target.value = state.language;
+      toast(error.message, 'error');
+    }
+  };
   refreshBadge();
-  route();
+  return route();
 }
 
 async function refreshBadge() {
@@ -301,6 +343,7 @@ const routes = [
   [/^#\/tickets$/, ticketsView],
   [/^#\/tickets\/(\d+)$/, ticketView],
   [/^#\/leads$/, leadsView],
+  [/^#\/settings\/email$/, emailSettingsView],
   [/^#\/account$/, accountView]
 ];
 
@@ -385,7 +428,7 @@ const ACTIVITY = {
   'lead.deleted': () => 'deleted a lead'
 };
 const activityList = (items) => (items.length
-  ? html`<ul class="list">${items.map((a) => html`<li><span class="grow"><strong>${a.actor_name || 'Website'}</strong> ${(ACTIVITY[a.action] || (() => a.action))(a.meta || {})}</span><span class="muted">${ago(a.created_at)}</span></li>`)}</ul>`
+  ? html`<ul class="list">${items.map((a) => html`<li><span class="grow"><strong>${a.actor_name || 'Website'}</strong> ${translateText((ACTIVITY[a.action] || (() => a.action))(a.meta || {}))}</span><span class="muted">${ago(a.created_at)}</span></li>`)}</ul>`
   : html`<p class="muted">Nothing yet.</p>`);
 
 /* ---------------- forms (shared) ---------------- */
@@ -697,6 +740,15 @@ async function clientView(view, id) {
         submit: 'Create invitation',
         onSubmit: async ({ email }) => {
           const invitation = await post(`/clients/${id}/invitations`, { email });
+          if (invitation.email_skipped) {
+            toast('Invitation email paused');
+            setTimeout(() => showCopyLink({
+              title: 'Invitation email paused',
+              description: 'Email notifications are paused. Copy and share this one-time link with the client. It expires in 7 days.',
+              url: invitation.invitation_url
+            }), 0);
+            return;
+          }
           toast(invitation.email_sent ? 'Invitation email sent' : 'Invitation created, but email could not be sent', invitation.email_sent ? 'success' : 'error');
           setTimeout(() => showCopyLink({
             title: invitation.email_sent ? 'Invitation email sent' : 'Invitation email could not be sent',
@@ -962,10 +1014,11 @@ async function projectView(view, id) {
       const update = { status: $('#quick-status').value, next_step: $('#quick-next').value };
       if (!d.work_items.length) update.progress = Number($('#quick-progress').value);
       const result = await patch(`/projects/${id}`, update);
+      if (result.email_skipped) { toast('Project updated; project notification email is paused.'); reload(); return; }
       toast(result.email_sent === false ? 'Project updated, but the client email could not be sent' : 'Project updated', result.email_sent === false ? 'error' : '');
       reload();
     },
-    edit: () => openForm({ title: 'Edit project', fields: projectFields(null), values: p, onSubmit: async (v) => { const result = await patch(`/projects/${id}`, v); toast(result.email_sent === false ? 'Saved, but the client email could not be sent' : 'Saved', result.email_sent === false ? 'error' : ''); reload(); } }),
+    edit: () => openForm({ title: 'Edit project', fields: projectFields(null), values: p, onSubmit: async (v) => { const result = await patch(`/projects/${id}`, v); toast(result.email_skipped ? 'Saved; project notification email is paused.' : result.email_sent === false ? 'Saved, but the client email could not be sent' : 'Saved', result.email_sent === false ? 'error' : ''); reload(); } }),
     archive: async () => { if (confirm('Archive this project?')) { await post(`/projects/${id}/archive`); reload(); } },
     restore: async () => { await post(`/projects/${id}/restore`); reload(); },
     'add-work-item': () => newWorkItem(id, null, reload),
@@ -986,8 +1039,8 @@ async function projectView(view, id) {
     },
     'delete-time-entry': async (_, entryId) => { if (confirm('Delete this time entry?')) { await del(`/time-entries/${entryId}`); reload(); } },
     'add-milestone': () => openForm({ title: 'Add milestone', fields: milestoneFields, submit: 'Add', onSubmit: async (v) => { await post(`/projects/${id}/milestones`, v); reload(); } }),
-    'edit-milestone': (_, mid) => openForm({ title: 'Edit milestone', fields: milestoneFields, values: d.milestones.find((m) => m.id === mid), onSubmit: async (v) => { const result = await patch(`/milestones/${mid}`, v); if (result.email_sent === false) toast('Milestone updated, but the client email could not be sent', 'error'); reload(); } }),
-    'cycle-milestone': async (el, mid) => { const result = await patch(`/milestones/${mid}`, { status: NEXT[el.dataset.status] }); if (result.email_sent === false) toast('Milestone updated, but the client email could not be sent', 'error'); reload(); },
+    'edit-milestone': (_, mid) => openForm({ title: 'Edit milestone', fields: milestoneFields, values: d.milestones.find((m) => m.id === mid), onSubmit: async (v) => { const result = await patch(`/milestones/${mid}`, v); if (result.email_skipped) toast('Milestone updated; project notification email is paused.'); else if (result.email_sent === false) toast('Milestone updated, but the client email could not be sent', 'error'); reload(); } }),
+    'cycle-milestone': async (el, mid) => { const result = await patch(`/milestones/${mid}`, { status: NEXT[el.dataset.status] }); if (result.email_skipped) toast('Milestone updated; project notification email is paused.'); else if (result.email_sent === false) toast('Milestone updated, but the client email could not be sent', 'error'); reload(); },
     'delete-milestone': async (_, mid) => { if (confirm('Delete this milestone?')) { await del(`/milestones/${mid}`); reload(); } },
     'pin-note': async (el, nid) => { await patch(`/notes/${nid}`, { pinned: el.dataset.pinned !== 'true' }); reload(); },
     'toggle-note-visibility': async (el, nid) => { await patch(`/notes/${nid}`, { client_visible: el.dataset.visible !== 'true' }); reload(); },
@@ -1317,7 +1370,7 @@ async function leadsView(view, _, filter = '') {
   const { leads } = await get(`/leads${filter ? `?status=${filter}` : ''}`);
   show(view, html`
     <header class="page-head"><div><h1>Leads</h1><p class="muted">Messages from the contact form on your website.</p></div></header>
-    <div class="tabs" role="group" aria-label="Filter leads">${LEAD_TABS.map(([k, t]) => html`<button class="tab" data-action="tab" data-filter="${k}" aria-pressed="${k === filter}">${t}</button>`)}</div>
+    <div class="tabs" role="group" aria-label="Filter leads">${LEAD_TABS.map(([k, t]) => html`<button class="tab" data-action="tab" data-filter="${k}" aria-pressed="${k === filter}">${translateText(t)}</button>`)}</div>
     <div class="stack">${leads.length ? leads.map((l) => html`<article class="card lead">
       <div class="lead-head"><div><strong>${l.name}</strong> ${chip(l.status)} <span class="chip">${label(l.language)}</span><br><span class="muted"><a href="mailto:${l.email}">${l.email}</a>${l.company ? ` · ${l.company}` : ''} · ${ago(l.created_at)}</span></div>
         <div class="row-actions">
@@ -1335,9 +1388,108 @@ async function leadsView(view, _, filter = '') {
   };
   actions(view, {
     tab: (el) => leadsView(view, null, el.dataset.filter),
-    convert: async (_, id) => { if (confirm('Create a client (with contact and note) from this lead?')) { const { client } = await post(`/leads/${id}/convert`); toast('Client created'); refreshBadge(); location.hash = `#/clients/${client.id}`; } },
-    delete: async (_, id) => { if (confirm('Delete this lead permanently?')) { await del(`/leads/${id}`); toast('Lead deleted'); leadsView(view, null, filter); refreshBadge(); } }
+    convert: async (_, id) => { if (confirm(translateText('Create a client (with contact and note) from this lead?'))) { const { client } = await post(`/leads/${id}/convert`); toast('Client created'); refreshBadge(); location.hash = `#/clients/${client.id}`; } },
+    delete: async (_, id) => { if (confirm(translateText('Delete this lead permanently?'))) { await del(`/leads/${id}`); toast('Lead deleted'); leadsView(view, null, filter); refreshBadge(); } }
   });
+}
+
+/* ---------------- email settings ---------------- */
+async function emailSettingsView(view) {
+  const { settings } = await get('/admin/settings/email');
+  const notifications = settings.notifications;
+  show(view, html`
+    <header class="page-head"><div><h1>Email settings</h1><p class="muted">Configure the service used for contact forms, client invitations, project updates and status notifications.</p></div></header>
+    <form id="email-settings" class="stack" novalidate>
+      <section class="card"><header><h2>Provider</h2></header>
+        <div class="form-grid">
+          <label class="field" for="email-provider"><span>Email provider</span><select id="email-provider" name="provider"><option value="resend" ${settings.provider === 'resend' ? 'selected' : ''}>Resend</option><option value="smtp" ${settings.provider === 'smtp' ? 'selected' : ''}>SMTP</option></select></label>
+          <label class="field" for="email-from"><span>From address</span><input id="email-from" name="email_from" type="text" value="${settings.email_from}" required placeholder="Make It So &lt;hello@example.com&gt;"></label>
+          <label class="field" for="contact-email"><span>Contact recipient</span><input id="contact-email" name="contact_email" type="email" value="${settings.contact_email}" placeholder="hello@example.com"></label>
+        </div>
+      </section>
+      <section class="card email-provider-settings" data-provider="resend"><header><h2>Resend</h2></header>
+        <div class="form-grid">
+          <label class="field full" for="resend-api-key"><span>Resend API key</span><input id="resend-api-key" name="resend_api_key" type="password" autocomplete="new-password" placeholder="${settings.resend_api_key_set ? 'Leave blank to keep the saved key.' : 'No key saved.'}"><small>${settings.resend_api_key_set ? 'A Resend API key is configured.' : 'No key saved.'}</small></label>
+          <label class="check full" for="clear-resend-key"><input id="clear-resend-key" name="clear_resend_api_key" type="checkbox"> Remove saved API key</label>
+        </div>
+      </section>
+      <section class="card email-provider-settings" data-provider="smtp"><header><h2>SMTP</h2></header>
+        <div class="form-grid">
+          <label class="field" for="smtp-host"><span>SMTP host</span><input id="smtp-host" name="smtp_host" type="text" value="${settings.smtp_host}" placeholder="smtp.example.com"></label>
+          <label class="field" for="smtp-port"><span>SMTP port</span><input id="smtp-port" name="smtp_port" type="number" min="1" max="65535" value="${settings.smtp_port}" required></label>
+          <label class="field" for="smtp-user"><span>SMTP username</span><input id="smtp-user" name="smtp_user" type="text" value="${settings.smtp_user}" autocomplete="username"></label>
+          <label class="field" for="smtp-password"><span>SMTP password</span><input id="smtp-password" name="smtp_password" type="password" autocomplete="new-password" placeholder="${settings.smtp_password_set ? 'Leave blank to keep the saved password.' : 'No password saved.'}"><small>${settings.smtp_password_set ? 'An SMTP password is configured.' : 'No password saved.'}</small></label>
+          <label class="check full" for="smtp-secure"><input id="smtp-secure" name="smtp_secure" type="checkbox" ${settings.smtp_secure ? 'checked' : ''}> Use a secure connection</label>
+          <label class="check full" for="clear-smtp-password"><input id="clear-smtp-password" name="clear_smtp_password" type="checkbox"> Remove saved SMTP password</label>
+        </div>
+      </section>
+      <section class="card"><header><h2>Notification preferences</h2></header>
+        <p class="muted">Choose which system emails are sent. Contact requests are always saved in the admin. Client invitations still create a link you can copy. Status subscription confirmations and unsubscribe requests are not affected by the status pause.</p>
+        <div class="notification-preferences">
+          <label class="check" for="notify-contact-leads"><input id="notify-contact-leads" name="notify_contact_leads" type="checkbox" ${notifications.contactLeads ? 'checked' : ''}> Email me when a website contact form is submitted</label>
+          <label class="check" for="notify-client-invitations"><input id="notify-client-invitations" name="notify_client_invitations" type="checkbox" ${notifications.clientInvitations ? 'checked' : ''}> Send client portal invitation emails</label>
+          <label class="check" for="notify-project-updates"><input id="notify-project-updates" name="notify_project_updates" type="checkbox" ${notifications.projectUpdates ? 'checked' : ''}> Send project and milestone update emails</label>
+          <label class="check" for="pause-status-updates"><input id="pause-status-updates" name="pause_status_updates" type="checkbox" ${notifications.statusUpdates ? '' : 'checked'}> Pause public status incident and recovery emails</label>
+        </div>
+      </section>
+      <section class="card stack">
+        <p class="muted"><span>Secrets are encrypted before they are stored and are never displayed again.</span> <span>A test email will be sent to your admin account address.</span></p>
+        <p class="form-error" role="alert"></p>
+        <div class="actions"><button class="btn primary" type="submit">Save email settings</button><button class="btn" type="button" id="test-email">Send test email</button></div>
+      </section>
+    </form>`);
+
+  const form = $('#email-settings', view);
+  const provider = $('#email-provider', form);
+  const updateProviderSections = () => {
+    for (const section of form.querySelectorAll('.email-provider-settings')) {
+      section.hidden = section.dataset.provider !== provider.value;
+    }
+  };
+  provider.onchange = updateProviderSections;
+  updateProviderSections();
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const error = $('.form-error', form);
+    error.textContent = '';
+    try {
+      await put('/admin/settings/email', {
+        provider: provider.value,
+        email_from: form.elements.email_from.value,
+        contact_email: form.elements.contact_email.value,
+        smtp_host: form.elements.smtp_host.value,
+        smtp_port: Number(form.elements.smtp_port.value),
+        smtp_secure: form.elements.smtp_secure.checked,
+        smtp_user: form.elements.smtp_user.value,
+        smtp_password: form.elements.smtp_password.value,
+        resend_api_key: form.elements.resend_api_key.value,
+        clear_smtp_password: form.elements.clear_smtp_password.checked,
+        clear_resend_api_key: form.elements.clear_resend_api_key.checked,
+        notifications: {
+          contactLeads: form.elements.notify_contact_leads.checked,
+          clientInvitations: form.elements.notify_client_invitations.checked,
+          projectUpdates: form.elements.notify_project_updates.checked,
+          statusUpdates: !form.elements.pause_status_updates.checked
+        }
+      });
+      toast('Email settings saved');
+      await emailSettingsView(view);
+    } catch (exception) {
+      error.textContent = exception.message;
+    }
+  };
+  $('#test-email', view).onclick = async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await post('/admin/settings/email/test');
+      toast('Test email sent');
+    } catch (exception) {
+      toast(exception.message, 'error');
+    } finally {
+      button.disabled = false;
+    }
+  };
 }
 
 /* ---------------- account ---------------- */

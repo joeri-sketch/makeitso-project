@@ -402,20 +402,32 @@ const projectStatuses = {
 };
 
 export function createContactMailer(config, createTransport = nodemailer.createTransport, log = () => {}, fetchImpl = globalThis.fetch) {
-  const resendConfigured = Boolean(config.resendApiKey && config.emailFrom);
-  const configured = resendConfigured || Boolean(config.smtpHost && config.smtpUser && config.smtpPassword && config.smtpFrom);
-  const transport = configured
-    && !resendConfigured
-    ? createTransport({
-      host: config.smtpHost,
-      port: config.smtpPort,
-      secure: config.smtpSecure,
-      auth: { user: config.smtpUser, pass: config.smtpPassword },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 10000
-    })
-    : null;
+  let activeConfig = { ...config };
+  let resendConfigured = false;
+  let configured = false;
+  let transport = null;
+  const configure = (next) => {
+    transport?.close?.();
+    activeConfig = { ...activeConfig, ...next };
+    resendConfigured = activeConfig.emailProvider === 'resend'
+      ? Boolean(activeConfig.resendApiKey && activeConfig.emailFrom)
+      : activeConfig.emailProvider === 'smtp'
+        ? false
+        : Boolean(activeConfig.resendApiKey && activeConfig.emailFrom);
+    configured = resendConfigured || Boolean(activeConfig.smtpHost && activeConfig.smtpUser && activeConfig.smtpPassword && activeConfig.smtpFrom);
+    transport = configured && !resendConfigured
+      ? createTransport({
+        host: activeConfig.smtpHost,
+        port: activeConfig.smtpPort,
+        secure: activeConfig.smtpSecure,
+        auth: { user: activeConfig.smtpUser, pass: activeConfig.smtpPassword },
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000
+      })
+      : null;
+  };
+  configure({});
   let lastVerification = null;
   let verificationExpires = 0;
   let verificationInFlight;
@@ -438,7 +450,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: config.emailFrom,
+          from: activeConfig.emailFrom,
           to: message.to,
           subject: message.subject,
           text: message.text,
@@ -468,7 +480,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
   const send = async (message) => {
     if (!transport) {
       if (resendConfigured) {
-        if (!config.contactEmail && !message.to) {
+        if (!activeConfig.contactEmail && !message.to) {
           const error = new Error('Email recipient is not configured. Set CONTACT_EMAIL.');
           error.code = 'MAIL_RECIPIENT_MISSING';
           throw error;
@@ -478,18 +490,36 @@ export function createContactMailer(config, createTransport = nodemailer.createT
       }
       throw new Error('Email is not configured. Set RESEND_API_KEY and EMAIL_FROM, or configure SMTP_HOST, SMTP_USER, SMTP_PASSWORD and SMTP_FROM.');
     }
-    if (!config.contactEmail && !message.to) {
+    if (!activeConfig.contactEmail && !message.to) {
       const error = new Error('Email recipient is not configured. Set CONTACT_EMAIL.');
       error.code = 'MAIL_RECIPIENT_MISSING';
       throw error;
     }
-    await transport.sendMail({ from: config.smtpFrom, ...message });
+    await transport.sendMail({ from: activeConfig.smtpFrom || activeConfig.emailFrom, ...message });
   };
+  const isNotificationEnabled = (notification) => activeConfig.notifications?.[notification] !== false;
 
   return {
-    async send(lead) {
+    updateConfig(next) {
+      configure(next);
+      lastVerification = null;
+      verificationExpires = 0;
+    },
+    isEnabled(notification) {
+      return isNotificationEnabled(notification);
+    },
+    async sendTestEmail(recipient) {
       await send({
-        to: config.contactEmail,
+        to: recipient,
+        subject: 'Make It So — test email',
+        text: 'Your Make It So admin email settings are working.',
+        html: '<div style="background:#f4f6ff;padding:32px;font-family:Arial,sans-serif;color:#07103a"><div style="max-width:560px;margin:auto;background:#fff;border-radius:18px;padding:32px"><p style="color:#0b3bff;font-weight:bold">MAKE IT SO</p><h1 style="font-size:24px">Email settings are working</h1><p>This test confirms that your admin email settings can send messages.</p></div></div>'
+      });
+    },
+    async send(lead) {
+      if (!isNotificationEnabled('contactLeads')) return;
+      await send({
+        to: activeConfig.contactEmail,
         replyTo: { name: lead.name, address: lead.email },
         subject: 'New website contact form message',
         text: [
@@ -507,6 +537,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
       });
     },
     async sendInvitation({ email, name, company, url, language }) {
+      if (!isNotificationEnabled('clientInvitations')) return;
       const text = languageCopy(language);
       await send({
         to: email,
@@ -516,6 +547,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
       });
     },
     async sendProjectUpdate({ email, name, project, item, from, to, language }) {
+      if (!isNotificationEnabled('projectUpdates')) return;
       const text = languageCopy(language);
       const labels = projectStatuses[language] || projectStatuses.en;
       const detail = `${labels[from] || from} → ${labels[to] || to}`;
@@ -527,6 +559,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
       });
     },
     async sendStatusUpdate({ email, service, status, recovered, unsubscribeUrl, language, report = [] }) {
+      if (!isNotificationEnabled('statusUpdates')) return;
       const text = languageCopy(language);
       await send({
         to: email,
@@ -566,6 +599,6 @@ export function createContactMailer(config, createTransport = nodemailer.createT
         verificationInFlight = null;
       }
     },
-    isConfigured: configured
+    get isConfigured() { return configured; }
   };
 }

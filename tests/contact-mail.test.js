@@ -201,6 +201,74 @@ describe('contact form email delivery', () => {
     assert.equal(await mailer.verify(), 'operational');
   });
 
+  it('switches provider at runtime and closes the previous SMTP transport', async () => {
+    const resendRequests = [];
+    const smtpMessages = [];
+    let transportClosed = 0;
+    const mailer = createContactMailer(
+      { ...resendConfig, emailProvider: 'resend' },
+      (options) => ({
+        options,
+        sendMail: async (message) => smtpMessages.push(message),
+        close: () => { transportClosed += 1; }
+      }),
+      () => {},
+      async (_url, options) => {
+        resendRequests.push(options);
+        return new Response(JSON.stringify({ id: 'test-email' }), { status: 200 });
+      }
+    );
+
+    await mailer.sendTestEmail('admin@example.com');
+    assert.equal(resendRequests.length, 1);
+
+    mailer.updateConfig({
+      emailProvider: 'smtp',
+      emailFrom: 'Make It So <hello@example.com>',
+      smtpFrom: 'Make It So <hello@example.com>',
+      smtpHost: 'smtp.example.com',
+      smtpPort: 465,
+      smtpSecure: true,
+      smtpUser: 'hello@example.com',
+      smtpPassword: 'smtp secret',
+      resendApiKey: 're_test_api_key'
+    });
+    await mailer.sendTestEmail('admin@example.com');
+
+    assert.equal(smtpMessages.length, 1);
+    assert.equal(smtpMessages[0].to, 'admin@example.com');
+    assert.equal(smtpMessages[0].from, 'Make It So <hello@example.com>');
+    assert.equal(transportClosed, 0);
+
+    mailer.updateConfig({ emailProvider: 'resend' });
+    assert.equal(transportClosed, 1);
+    await mailer.sendTestEmail('admin@example.com');
+    assert.equal(resendRequests.length, 2);
+  });
+
+  it('does not send categories disabled in email notification preferences', async () => {
+    const sent = [];
+    const mailer = createContactMailer({
+      ...resendConfig,
+      notifications: {
+        contactLeads: false,
+        clientInvitations: false,
+        projectUpdates: false,
+        statusUpdates: false
+      }
+    }, undefined, () => {}, async (_url, options) => {
+      sent.push(JSON.parse(options.body));
+      return new Response(JSON.stringify({ id: 'should-not-send' }), { status: 200 });
+    });
+
+    await mailer.send({ name: 'Alex', email: 'alex@example.net', message: 'Hello', language: 'en' });
+    await mailer.sendInvitation({ email: 'alex@example.net', name: 'Alex', company: 'Northstar', url: 'https://example.com', language: 'en' });
+    await mailer.sendProjectUpdate({ email: 'alex@example.net', name: 'Alex', project: 'Website', from: 'review', to: 'launched', language: 'en' });
+    await mailer.sendStatusUpdate({ email: 'alerts@example.net', service: 'Website', status: 'unavailable', recovered: false, unsubscribeUrl: 'https://example.com', language: 'en' });
+    assert.equal(sent.length, 0);
+    assert.equal(mailer.isEnabled('statusUpdates'), false);
+  });
+
   it('reports Resend HTTP failures without exposing provider response details', async () => {
     const mailer = createContactMailer(
       resendConfig,

@@ -12,6 +12,7 @@ import { createContactMailer } from './services/contact-mail.js';
 import { createPublicStatusChecker } from './services/public-status.js';
 import { supportRoutes } from './routes/support.js';
 import { statusSubscriptionRoutes } from './routes/status-subscriptions.js';
+import { adminSettingsRoutes } from './routes/admin-settings.js';
 import { csrfGuard, errorHandler, requestLogger, securityHeaders } from './middleware/security.js';
 import { sessionMiddleware } from './middleware/session.js';
 import { seoPagesMiddleware } from './middleware/seo.js';
@@ -64,6 +65,7 @@ export function createApp({
   app.use('/api', (req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   app.use('/api', limits.general, express.json({ limit: '100kb' }), csrfGuard(config), sessionMiddleware(db, config));
   app.use('/api/auth', authRoutes({ db, config, limits }));
+  app.use('/api/admin', adminSettingsRoutes({ db, config, mailer }));
   const getPublicStatus = suppliedPublicStatus || createPublicStatusChecker({
     config,
     fetchImpl: statusFetch,

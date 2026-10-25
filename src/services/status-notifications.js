@@ -64,6 +64,10 @@ export function createStatusNotificationMonitor({
            VALUES ($1, $2, $3, $4) RETURNING id`,
           [service.id, previous.status, service.status, statusSnapshot]
         )).rows[0];
+        if (mailer.isEnabled?.('statusUpdates') === false) {
+          events.push(event.id);
+          continue;
+        }
         await tx.query(
           `INSERT INTO public_status_deliveries (event_id, subscription_id)
            SELECT $1, id FROM status_email_subscriptions
@@ -77,6 +81,14 @@ export function createStatusNotificationMonitor({
   }
 
   async function deliverPending() {
+    if (mailer.isEnabled?.('statusUpdates') === false) {
+      await db.query(
+        `UPDATE public_status_deliveries
+            SET sent_at = now(), attempts = attempts + 1
+          WHERE sent_at IS NULL AND attempts < 12`
+      );
+      return;
+    }
     const { rows } = await db.query(
       `SELECT d.id AS delivery_id, d.attempts, e.service, e.current_status, s.email, s.language,
               e.status_snapshot, s.unsubscribe_token_enc

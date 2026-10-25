@@ -7,6 +7,7 @@ import { createMediaMonitor } from './services/media-monitor.js';
 import { createContactMailer } from './services/contact-mail.js';
 import { createPublicStatusChecker } from './services/public-status.js';
 import { createStatusNotificationMonitor } from './services/status-notifications.js';
+import { getEmailConfig } from './services/email-settings.js';
 
 const log = defaultLog;
 
@@ -14,7 +15,21 @@ const db = await createDb(config);
 await migrate(db, (msg) => log({ level: 'info', msg }));
 await ensureAdmin(db, config, log);
 
-const mailer = createContactMailer(config, undefined, log);
+const storedEmailConfig = await getEmailConfig(db, config);
+const mailer = createContactMailer({
+  ...config,
+  emailProvider: storedEmailConfig.provider,
+  emailFrom: storedEmailConfig.emailFrom,
+  smtpFrom: storedEmailConfig.emailFrom,
+  contactEmail: storedEmailConfig.contactEmail,
+  smtpHost: storedEmailConfig.smtpHost,
+  smtpPort: storedEmailConfig.smtpPort,
+  smtpSecure: storedEmailConfig.smtpSecure,
+  smtpUser: storedEmailConfig.smtpUser,
+  smtpPassword: storedEmailConfig.smtpPassword,
+  resendApiKey: storedEmailConfig.resendApiKey,
+  notifications: storedEmailConfig.notifications
+}, undefined, log);
 const getPublicStatus = createPublicStatusChecker({
   config,
   log,

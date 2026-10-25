@@ -39,11 +39,13 @@ export function publicRoutes({ db, config, limits, mailer, log, getPublicStatus 
         [lead.name, lead.email, lead.company, lead.message, lead.language, hashIp(req.ip), (req.get('user-agent') || '').slice(0, 200)]
       );
       await audit(db, { ip: req.ip }, 'lead.created', { entity: 'lead', entityId: rows[0].id });
-      try {
-        await mailer.send(lead);
-      } catch (error) {
-        log({ level: 'error', msg: 'Contact form email could not be sent.', code: error.code || 'MAIL_SEND_FAILED' });
-        throw new HttpError(503, 'Your message was saved, but email delivery failed. Please email hello@makeitso.studio directly.');
+      if (mailer.isEnabled?.('contactLeads') !== false) {
+        try {
+          await mailer.send(lead);
+        } catch (error) {
+          log({ level: 'error', msg: 'Contact form email could not be sent.', code: error.code || 'MAIL_SEND_FAILED' });
+          throw new HttpError(503, 'Your message was saved, but email delivery failed. Please email hello@makeitso.studio directly.');
+        }
       }
     }
     res.status(201).json({ ok: true });

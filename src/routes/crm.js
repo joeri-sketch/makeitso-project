@@ -120,6 +120,7 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
   r.use(requireAdmin);
 
   const sendProjectUpdate = async ({ clientId, project, kind, item, from, to }) => {
+    if (mailer.isEnabled?.('projectUpdates') === false) return null;
     if (!mailer.sendProjectUpdate) return true;
     const recipients = (await db.query(
       `SELECT DISTINCT u.email, u.name, c.language
@@ -274,25 +275,29 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
         entity: 'client', entityId: clientId, clientId, meta: { email }
       });
     });
-    const origin = config.publicOrigin || `${req.protocol}://${req.get('host')}`;
+    const origin = new URL(config.publicStatusSite).origin;
     const invitationUrl = `${origin}/portal/?invite=${encodeURIComponent(token)}&lang=${contact.rows[0].language}`;
     let emailSent = false;
-    try {
-      if (!mailer.sendInvitation) throw new Error('Invitation email is not configured.');
-      await mailer.sendInvitation({
-        email,
-        name: contact.rows[0].name,
-        company: contact.rows[0].company_name,
-        url: invitationUrl,
-        language: contact.rows[0].language
-      });
-      emailSent = true;
-    } catch (error) {
-      log({ level: 'error', msg: 'Client invitation email could not be sent.', code: error.code || 'MAIL_SEND_FAILED' });
+    const emailSkipped = mailer.isEnabled?.('clientInvitations') === false;
+    if (!emailSkipped) {
+      try {
+        if (!mailer.sendInvitation) throw new Error('Invitation email is not configured.');
+        await mailer.sendInvitation({
+          email,
+          name: contact.rows[0].name,
+          company: contact.rows[0].company_name,
+          url: invitationUrl,
+          language: contact.rows[0].language
+        });
+        emailSent = true;
+      } catch (error) {
+        log({ level: 'error', msg: 'Client invitation email could not be sent.', code: error.code || 'MAIL_SEND_FAILED' });
+      }
     }
     res.status(201).json({
       invitation_url: invitationUrl,
       email_sent: emailSent,
+      ...(emailSkipped ? { email_skipped: true } : {}),
       expires_in_days: 7
     });
   }));
@@ -482,7 +487,7 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
         to: project.status
       })
       : null;
-    res.json({ project, ...(emailSent === null ? {} : { email_sent: emailSent }) });
+    res.json({ project, ...(emailSent === null ? { email_skipped: true } : { email_sent: emailSent }) });
   }));
 
   for (const [path, set, action] of [['archive', 'now()', 'project.archived'], ['restore', 'NULL', 'project.restored']]) {
@@ -535,7 +540,7 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
         to: milestone.status
       })
       : null;
-    res.json({ milestone, ...(emailSent === null ? {} : { email_sent: emailSent }) });
+    res.json({ milestone, ...(emailSent === null ? { email_skipped: true } : { email_sent: emailSent }) });
   }));
 
   r.delete('/milestones/:id', h(async (req, res) => {

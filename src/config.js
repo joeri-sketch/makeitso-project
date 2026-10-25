@@ -19,6 +19,9 @@ if (isProd) {
   }
   if (problems.length) throw new Error(`Cannot start. Fix these settings first:\n - ${problems.join('\n - ')}`);
 }
+if (env.EMAIL_PROVIDER && !['resend', 'smtp'].includes(env.EMAIL_PROVIDER)) {
+  throw new Error('EMAIL_PROVIDER must be either resend or smtp.');
+}
 const appSecret = env.APP_SECRET || 'dev-only-secret-do-not-use-in-production-0123456789';
 const smtpPort = Number(env.SMTP_PORT) || 465;
 
@@ -78,6 +81,7 @@ export const config = {
   smtpUser: env.SMTP_USER || '',
   smtpPassword: env.SMTP_PASSWORD || '',
   resendApiKey: env.RESEND_API_KEY || '',
+  emailProvider: env.EMAIL_PROVIDER,
   emailFrom: env.EMAIL_FROM || env.SMTP_FROM || env.SMTP_USER || '',
   smtpFrom: env.SMTP_FROM || env.SMTP_USER || '',
   contactEmail: env.CONTACT_EMAIL || env.SMTP_USER || '',

@@ -39,7 +39,7 @@ export function sessionMiddleware(db, config) {
       if (token && /^[A-Za-z0-9_-]{30,80}$/.test(token)) {
         const { rows } = await db.query(
           `SELECT s.token_hash, s.mfa_verified, s.last_seen_at,
-                  u.id AS user_id, u.email, u.name, u.role, u.client_id, u.totp_enabled, u.active
+                  u.id AS user_id, u.email, u.name, u.role, u.client_id, u.totp_enabled, u.admin_language, u.active
              FROM sessions s JOIN users u ON u.id = s.user_id
             WHERE s.token_hash = $1
               AND s.expires_at > now()
@@ -54,7 +54,7 @@ export function sessionMiddleware(db, config) {
             totpEnabled: row.totp_enabled,
             role: row.role,
             clientId: row.client_id,
-            user: { id: row.user_id, email: row.email, name: row.name, role: row.role }
+            user: { id: row.user_id, email: row.email, name: row.name, role: row.role, admin_language: row.admin_language }
           };
           if (Date.now() - new Date(row.last_seen_at).getTime() > 60_000) {
             await db.query('UPDATE sessions SET last_seen_at = now() WHERE token_hash = $1', [row.token_hash]);

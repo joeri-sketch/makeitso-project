@@ -12,7 +12,13 @@ const LOCK_MINUTES = 15;
 // a real hash to compare against when the email is unknown, so timing does not reveal which emails exist
 const dummyHash = hashPassword('not-a-real-password-just-for-timing');
 
-export const publicUser = (u) => ({ id: u.id, email: u.email, name: u.name, role: u.role });
+export const publicUser = (u) => ({
+  id: u.id,
+  email: u.email,
+  name: u.name,
+  role: u.role,
+  ...(u.role === 'admin' ? { admin_language: u.admin_language || 'nl' } : {})
+});
 
 export function authState(auth) {
   if (!auth) return 'anonymous';
@@ -39,6 +45,17 @@ export function authRoutes({ db, config, limits }) {
   r.get('/me', (req, res) => {
     res.json({ state: authState(req.auth), user: req.auth ? publicUser(req.auth.user) : null });
   });
+
+  r.patch('/preferences', requireAdmin, h(async (req, res) => {
+    const language = v.oneOf(req.body?.admin_language, 'admin_language', ['nl', 'en'], { required: true });
+    const { rows } = await db.query(
+      'UPDATE users SET admin_language = $2 WHERE id = $1 RETURNING admin_language',
+      [req.auth.user.id, language]
+    );
+    req.auth.user.admin_language = rows[0].admin_language;
+    await audit(db, req, 'admin.language_updated', { entity: 'user', entityId: req.auth.user.id, meta: { language } });
+    res.json({ admin_language: language });
+  }));
 
   r.post('/login', limits.login, h(async (req, res) => {
     const email = v.email(req.body?.email, 'email', { required: true });

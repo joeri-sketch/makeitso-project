@@ -4,7 +4,7 @@ Website, admin area, client portal and quotes for the creative marketing agency 
 
 - **Website** (`public/`): the animated NL / FR / EN site, with six color-matched department detail pages, concept examples, an About page, a project approach page with engagement options, and practical FAQs.
 - **System status** (`/status/`): an EN / NL / FR public dashboard for the website, apps, client portal, email and billing. The anonymous `/api/public/status` endpoint checks the configured public site, the private apps health endpoint, the client portal/login API and email delivery readiness. Redirects are not followed, probe targets stay server-side, checks are cached briefly, and the page refreshes automatically. Visitors can opt in to double-confirmed email alerts for service incidents and recovery; alert deliveries retry temporarily if email sending fails.
-- **Admin area** (`/admin`): clients, contacts, projects, milestones, work-item status boards, project timesheets, notes, leads and an activity log, behind password + two-factor login. Project progress is calculated from work items when present; otherwise it can be updated manually.
+- **Admin area** (`/admin`): clients, contacts, projects, milestones, work-item status boards, project timesheets, notes, leads and an activity log, behind password + two-factor login. The admin interface defaults to Dutch, supports English, and remembers each admin's language choice. Email provider settings can be managed in the admin area.
 - **Client portal** (`/portal/`): invited clients can follow project progress, milestones and explicitly shared work items, reply in shared feature discussions, review quotes and invoices, download invoice PDFs, and manage support conversations. Time entries and internal notes remain admin-only.
 - **Private client media**: admins can enable per-client access and manage Jellyfin, Jellyseerr and Ubuntu connection details. Jellyfin and Jellyseerr HTTP availability and Ubuntu TCP port reachability are checked automatically against trusted server-only targets. Checks report endpoint availability only—not playback, host health, or media-library correctness. Passwords are encrypted at rest and only revealed to a shared client after they re-enter their portal password. This is separate from the public `/status/` page.
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
@@ -59,7 +59,7 @@ pnpm install
 ADMIN_EMAIL=you@example.com ADMIN_PASSWORD="a-long-passphrase" pnpm start
 ```
 
-Open <http://127.0.0.1:3000> for the website and <http://127.0.0.1:3000/admin/> for the admin. With no `DATABASE_URL`, an embedded PostgreSQL (PGlite) stores data in `./data` (git-ignored). The first start creates the admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`; at first sign-in you must set up an authenticator app and save your recovery codes.
+Open <http://127.0.0.1:3000> for the website and <http://127.0.0.1:3000/admin/> for the admin. With no `DATABASE_URL`, an embedded PostgreSQL (PGlite) stores data in `./data` (git-ignored). The first start creates the admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`; at first sign-in you must set up an authenticator app and save your recovery codes. After signing in, choose the admin language in the sidebar or configure email under **Email settings**. A test email is sent only to the signed-in admin address.
 
 From a client's record in the admin, invite a saved contact. The portal setup link is sent automatically by email and remains available as a manual backup. The invitation expires after seven days. Quotes appear in the client's portal, and the admin can copy the portal link to deliver them.
 
@@ -76,15 +76,17 @@ node src/cli/reset-2fa.js a@b.be   # admin lost phone and recovery codes
 
 ## Configuration
 
-Everything is environment variables; see [.env.example](.env.example).
+Environment variables provide the initial email configuration; see [.env.example](.env.example). Settings saved from **Admin → Email settings** are stored in the database and take precedence over those environment values. Provider secrets are encrypted with `APP_SECRET`, never returned to the browser, and shown only as configured/not configured. Keep `APP_SECRET` stable across deployments and backups. Leave a secret field blank to keep the current credential, or use its explicit remove option to delete it. Use the test-email button to verify delivery after saving. Admins can independently enable contact-form notifications, client invitation emails, and project/milestone updates, and pause public status incident/recovery notifications. Contact requests and invitation links are still saved when their emails are disabled; email confirmation and unsubscribe flows for status subscribers remain available during a status pause. Status changes during the pause are recorded, but their notification emails are not queued for later delivery.
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string. **Required in production.** Locally, empty means the embedded database |
 | `APP_SECRET` | Random string, at least 32 characters. **Required in production**; encrypts 2FA secrets and private media passwords. Keep it stable across deploys and backups or encrypted values cannot be decrypted |
 | `PUBLIC_ORIGIN` | Optional comma-separated list of trusted site origins, e.g. `https://makeitso.studio,https://your-app.up.railway.app`. The actual origin serving the app is also checked automatically |
+| `PUBLIC_STATUS_SITE_URL` | Canonical public website origin used for status checks and client invitation links. Defaults to `https://makeitso.studio/`; keep this on your branded domain rather than a Railway-generated hostname |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | Create the first admin on first start. Remove `ADMIN_PASSWORD` afterwards |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Recommended email delivery over HTTPS. `EMAIL_FROM` must be an address on a domain verified in Resend, e.g. `Make It So <hello@makeitso.studio>`. When `RESEND_API_KEY` is set, Resend takes precedence over SMTP |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Recommended email delivery over HTTPS. `EMAIL_FROM` must be an address on a domain verified in Resend, e.g. `Make It So <hello@makeitso.studio>`. When `EMAIL_PROVIDER` is unset, Resend takes precedence over SMTP if its API key is set |
+| `EMAIL_PROVIDER` | Optional initial provider selection: `resend` or `smtp`. Admin-saved email settings override this value |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | SMTP fallback for hosts that permit outbound SMTP. Hostinger Email uses `smtp.hostinger.com`, port `465`, secure `true` |
 | `SMTP_FROM`, `CONTACT_EMAIL` | Optional SMTP sender address (defaults to `SMTP_USER`) and inbox for contact messages (defaults to `SMTP_USER`) |
 | `MEDIA_JELLYFIN_URL`, `MEDIA_JELLYSEERR_URL` | Trusted server-only monitoring targets (default: `https://jellyfin.makeitso.studio/` and `https://seer.makeitso.studio/`). Set either explicitly to an empty value to disable that check. Values must be HTTP(S) base URLs without credentials, query strings, or fragments |

@@ -15,6 +15,9 @@ export async function startTestServer({
   sendProjectUpdateEmail = async () => {},
   sendStatusSubscriptionConfirmation = async () => {},
   sendStatusUpdate = async () => {},
+  sendTestEmail = async () => {},
+  updateMailerConfig = () => {},
+  emailPreferences = {},
   verifySmtp = async () => 'maintenance',
   publicOrigins = config.publicOrigins,
   statusFetch = globalThis.fetch,
@@ -26,6 +29,13 @@ export async function startTestServer({
   Object.assign(config, configOverrides);
   const db = await createDb(config);
   await migrate(db);
+  let activeEmailPreferences = {
+    contactLeads: true,
+    clientInvitations: true,
+    projectUpdates: true,
+    statusUpdates: true,
+    ...emailPreferences
+  };
   const app = createApp({
     db,
     config: { ...config, publicOrigins },
@@ -37,6 +47,12 @@ export async function startTestServer({
       sendProjectUpdate: sendProjectUpdateEmail,
       sendStatusSubscriptionConfirmation,
       sendStatusUpdate,
+      sendTestEmail,
+      isEnabled: (notification) => activeEmailPreferences[notification] !== false,
+      updateConfig: (settings) => {
+        activeEmailPreferences = { ...settings.notifications };
+        updateMailerConfig(settings);
+      },
       verify: verifySmtp
     },
     statusFetch
