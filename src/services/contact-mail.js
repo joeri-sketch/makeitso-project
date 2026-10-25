@@ -40,9 +40,11 @@ const projectStatuses = {
   fr: { discovery: 'Découverte', wireframing: 'Maquettes filaires', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', done: 'Terminé' }
 };
 
-export function createContactMailer(config, createTransport = nodemailer.createTransport, log = () => {}) {
-  const configured = Boolean(config.smtpHost && config.smtpUser && config.smtpPassword && config.smtpFrom);
+export function createContactMailer(config, createTransport = nodemailer.createTransport, log = () => {}, fetchImpl = globalThis.fetch) {
+  const resendConfigured = Boolean(config.resendApiKey && config.emailFrom);
+  const configured = resendConfigured || Boolean(config.smtpHost && config.smtpUser && config.smtpPassword && config.smtpFrom);
   const transport = configured
+    && !resendConfigured
     ? createTransport({
       host: config.smtpHost,
       port: config.smtpPort,
@@ -57,12 +59,67 @@ export function createContactMailer(config, createTransport = nodemailer.createT
   let verificationExpires = 0;
   let verificationInFlight;
 
+  const sendResend = async (message) => {
+    let replyTo;
+    if (message.replyTo) {
+      const { name, address } = message.replyTo;
+      const safeName = String(name).replace(/[\r\n"]/g, ' ').trim();
+      replyTo = safeName ? `${safeName} <${address}>` : address;
+    }
+    let response;
+    try {
+      response = await fetchImpl('https://api.resend.com/emails', {
+        method: 'POST',
+        redirect: 'error',
+        signal: AbortSignal.timeout(10_000),
+        headers: {
+          Authorization: `Bearer ${config.resendApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: config.emailFrom,
+          to: message.to,
+          subject: message.subject,
+          text: message.text,
+          ...(replyTo ? { reply_to: replyTo } : {})
+        })
+      });
+    } catch (error) {
+      lastVerification = 'outage';
+      verificationExpires = Date.now() + 60_000;
+      if (!error.code) error.code = error.name === 'TimeoutError' ? 'RESEND_TIMEOUT' : 'RESEND_REQUEST_FAILED';
+      throw error;
+    }
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      const error = new Error('Resend rejected the email request.');
+      error.code = typeof body?.name === 'string' ? body.name : `RESEND_HTTP_${response.status}`;
+      lastVerification = 'outage';
+      verificationExpires = Date.now() + 60_000;
+      throw error;
+    }
+    lastVerification = 'operational';
+    verificationExpires = Date.now() + 60_000;
+  };
+
   const send = async (message) => {
     if (!transport) {
-      throw new Error('Email is not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD and SMTP_FROM.');
+      if (resendConfigured) {
+        if (!config.contactEmail && !message.to) {
+          const error = new Error('Email recipient is not configured. Set CONTACT_EMAIL.');
+          error.code = 'MAIL_RECIPIENT_MISSING';
+          throw error;
+        }
+        await sendResend(message);
+        return;
+      }
+      throw new Error('Email is not configured. Set RESEND_API_KEY and EMAIL_FROM, or configure SMTP_HOST, SMTP_USER, SMTP_PASSWORD and SMTP_FROM.');
     }
     if (!config.contactEmail && !message.to) {
-      throw new Error('Email recipient is not configured. Set CONTACT_EMAIL.');
+      const error = new Error('Email recipient is not configured. Set CONTACT_EMAIL.');
+      error.code = 'MAIL_RECIPIENT_MISSING';
+      throw error;
     }
     await transport.sendMail({ from: config.smtpFrom, ...message });
   };
@@ -113,6 +170,7 @@ export function createContactMailer(config, createTransport = nodemailer.createT
       await send({ to: email, subject: text.confirmationSubject, text: text.confirmation(url) });
     },
     async verify() {
+      if (resendConfigured) return lastVerification || 'unknown';
       if (!transport) return 'maintenance';
       if (lastVerification && Date.now() < verificationExpires) return lastVerification;
       if (verificationInFlight) return verificationInFlight;

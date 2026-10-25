@@ -11,8 +11,11 @@ if (isProd) {
     problems.push('DATABASE_URL is missing. Add a PostgreSQL database and link its DATABASE_URL, otherwise all data would be lost on every deploy.');
   }
   const mailSettings = [env.SMTP_HOST, env.SMTP_USER, env.SMTP_PASSWORD].map((value) => Boolean(value));
-  if (mailSettings.some(Boolean) && !mailSettings.every(Boolean)) {
+  if (!env.RESEND_API_KEY && mailSettings.some(Boolean) && !mailSettings.every(Boolean)) {
     problems.push('SMTP_HOST, SMTP_USER and SMTP_PASSWORD must all be set to enable contact-form email.');
+  }
+  if (env.RESEND_API_KEY && !(env.EMAIL_FROM || env.SMTP_FROM || env.SMTP_USER)) {
+    problems.push('EMAIL_FROM is required when RESEND_API_KEY is set; use a sender address from a verified Resend domain.');
   }
   if (problems.length) throw new Error(`Cannot start. Fix these settings first:\n - ${problems.join('\n - ')}`);
 }
@@ -74,6 +77,8 @@ export const config = {
   smtpSecure: env.SMTP_SECURE === undefined ? smtpPort === 465 : env.SMTP_SECURE === 'true',
   smtpUser: env.SMTP_USER || '',
   smtpPassword: env.SMTP_PASSWORD || '',
+  resendApiKey: env.RESEND_API_KEY || '',
+  emailFrom: env.EMAIL_FROM || env.SMTP_FROM || env.SMTP_USER || '',
   smtpFrom: env.SMTP_FROM || env.SMTP_USER || '',
   contactEmail: env.CONTACT_EMAIL || env.SMTP_USER || '',
   sessionHours: 12,

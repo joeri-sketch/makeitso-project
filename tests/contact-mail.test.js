@@ -13,7 +13,13 @@ const smtpConfig = {
   contactEmail: 'hello@example.com'
 };
 
-describe('contact form SMTP delivery', () => {
+const resendConfig = {
+  resendApiKey: 're_test_api_key',
+  emailFrom: 'Make It So <hello@example.com>',
+  contactEmail: 'hello@example.com'
+};
+
+describe('contact form email delivery', () => {
   it('sends a formatted notification using the configured SMTP transport', async () => {
     let transportOptions;
     let message;
@@ -90,6 +96,91 @@ describe('contact form SMTP delivery', () => {
     assert.match(messages[3].text, /Confirmez votre abonnement/);
     assert.match(messages[4].text, /indisponible/);
     assert.equal(messages.every((message) => message.from === smtpConfig.smtpFrom), true);
+  });
+
+  it('sends all email through the Resend HTTPS API and reports the last delivery result', async () => {
+    const requests = [];
+    const mailer = createContactMailer(
+      resendConfig,
+      () => { throw new Error('SMTP must not be initialized when Resend is configured'); },
+      () => {},
+      async (url, options) => {
+        requests.push({ url, options, body: JSON.parse(options.body) });
+        return new Response(JSON.stringify({ id: `email-${requests.length}` }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    );
+    assert.equal(await mailer.verify(), 'unknown', 'a send-only API key cannot be safely probed without sending an email');
+
+    await mailer.send({
+      name: 'Alex Visitor',
+      email: 'alex@example.net',
+      company: 'Northstar',
+      message: 'We need a new website.',
+      language: 'nl'
+    });
+    await mailer.sendInvitation({
+      email: 'alex@example.net', name: 'Alex', company: 'Northstar',
+      url: 'https://makeitso.studio/portal/?invite=token', language: 'nl'
+    });
+    await mailer.sendProjectUpdate({
+      email: 'alex@example.net', name: 'Alex', project: 'Website',
+      from: 'discovery', to: 'development', language: 'nl'
+    });
+    await mailer.sendStatusSubscriptionConfirmation({
+      email: 'alerts@example.net', url: 'https://makeitso.studio/status/?confirm=token', language: 'fr'
+    });
+    await mailer.sendStatusUpdate({
+      email: 'alerts@example.net', service: 'Site web', status: 'indisponible',
+      recovered: false, unsubscribeUrl: 'https://makeitso.studio/status/?unsubscribe=token', language: 'fr'
+    });
+
+    assert.equal(requests.length, 5);
+    assert.equal(requests[0].url, 'https://api.resend.com/emails');
+    assert.equal(requests[0].options.method, 'POST');
+    assert.equal(requests[0].options.redirect, 'error');
+    assert.equal(requests[0].options.headers.Authorization, 'Bearer re_test_api_key');
+    assert.equal(requests[0].body.from, resendConfig.emailFrom);
+    assert.equal(requests[0].body.to, resendConfig.contactEmail);
+    assert.equal(requests[0].body.subject, 'New website contact form message');
+    assert.match(requests[0].body.text, /We need a new website\./);
+    assert.equal(requests[0].body.reply_to, 'Alex Visitor <alex@example.net>');
+    assert.equal(requests[1].body.from, resendConfig.emailFrom);
+    assert.equal(requests[1].body.to, 'alex@example.net');
+    assert.equal(requests[1].body.subject, 'Uitnodiging voor het Make It So-klantenportaal');
+    assert.match(requests[1].body.text, /portal\/\?invite=token/);
+    assert.equal(requests[2].body.to, 'alex@example.net');
+    assert.match(requests[2].body.text, /Ontwikkeling/);
+    assert.equal(requests[3].body.to, 'alerts@example.net');
+    assert.match(requests[3].body.text, /Confirmez votre abonnement/);
+    assert.equal(requests[4].body.to, 'alerts@example.net');
+    assert.match(requests[4].body.text, /indisponible/);
+    assert.equal(await mailer.verify(), 'operational');
+  });
+
+  it('reports Resend HTTP failures without exposing provider response details', async () => {
+    const mailer = createContactMailer(
+      resendConfig,
+      undefined,
+      () => {},
+      async () => new Response(JSON.stringify({ name: 'validation_error', message: 'private provider detail' }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    );
+    await assert.rejects(mailer.send({
+      name: 'Alex Visitor',
+      email: 'alex@example.net',
+      message: 'We need a new website.',
+      language: 'en'
+    }), (error) => {
+      assert.equal(error.code, 'validation_error');
+      assert.doesNotMatch(error.message, /private provider detail/);
+      return true;
+    });
+    assert.equal(await mailer.verify(), 'outage');
   });
 
   it('stores a lead and reports an explicit delivery error if SMTP fails', async () => {
