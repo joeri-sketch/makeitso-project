@@ -272,8 +272,9 @@ test('generated contracts use verified client, project, and quote data', async (
   assert.equal(download.status, 200);
   assert.equal(download.headers.get('content-type'), 'application/pdf');
   assert.deepEqual(download.body.subarray(0, 5), Buffer.from('%PDF-'));
+  assert.ok((download.body.toString('latin1').match(/\/Type \/Page\b/g) || []).length <= 6);
   const pdf = extractPdfText(download.body);
-  assert.match(pdf, /SAMENWERKING OVEREENKOMST/);
+  assert.match(pdf, /Samenwerking overeenkomst/);
   assert.match(pdf, /MAKE IT SO BV/);
   assert.match(pdf, /BE1030043889/);
   assert.match(pdf, /Stichelendries 47A/);
