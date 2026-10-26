@@ -38,6 +38,13 @@ async function downloadPdf(client, path) {
   return { status: response.status, headers: response.headers, body: Buffer.from(await response.arrayBuffer()) };
 }
 
+function extractPdfText(pdf) {
+  const encodedStrings = pdf.toString('latin1').matchAll(/<([0-9a-f]+)>/gi);
+  return [...encodedStrings]
+    .map(([, encoded]) => Buffer.from(encoded, 'hex').toString('latin1'))
+    .join('');
+}
+
 test('dashboard shows project, support, sales and invoice attention counts', async (t) => {
   const ctx = await startTestServer();
   t.after(() => ctx.close());
@@ -183,4 +190,107 @@ test('client contracts support private PDF review, versioning, decisions and aud
   );
   assert.deepEqual(events.rows.map((event) => event.event_type), ['created', 'shared', 'changes_requested', 'version_uploaded', 'shared', 'approved']);
   assert.equal(events.rows.at(-1).version, 2);
+});
+
+test('generated contracts use verified client, project, and quote data', async (t) => {
+  const ctx = await startTestServer();
+  t.after(() => ctx.close());
+  const { client: admin } = await signedInAdmin(ctx);
+  const unauthenticated = new Client(ctx.base);
+  assert.equal((await unauthenticated.post('/api/contracts/generate', {})).status, 401);
+
+  const client = (await admin.post('/api/clients', {
+    company_name: 'Northstar Studio BV',
+    legal_form: 'BV',
+    company_number: '0123456749',
+    email: 'office@northstar.example',
+    address_line1: 'Ruimtevaartlaan 12',
+    postal_code: '9000',
+    city: 'Gent',
+    country: 'BE',
+    contact: { name: 'Alex Morgan', email: 'alex@northstar.example', role: 'Zaakvoerder', is_primary: true }
+  })).json.client;
+  const incomplete = (await admin.post('/api/clients', { company_name: 'Incomplete Client' })).json.client;
+  const project = (await admin.post('/api/projects', {
+    client_id: client.id,
+    name: 'Northstar website',
+    category: 'Website',
+    description: 'Design and development of a responsive company website.',
+    target_date: '2027-02-01'
+  })).json.project;
+  const emptyProject = (await admin.post('/api/projects', {
+    client_id: client.id, name: 'Unspecified work'
+  })).json.project;
+  const unrelated = (await admin.post('/api/clients', {
+    company_name: 'Luna Records',
+    company_number: '1030043889',
+    email: 'office@luna.example',
+    address_line1: 'Moonstraat 5',
+    postal_code: '2000',
+    city: 'Antwerpen'
+  })).json.client;
+  const unrelatedProject = (await admin.post('/api/projects', {
+    client_id: unrelated.id, name: 'Luna website', description: 'Website redesign.'
+  })).json.project;
+
+  assert.equal((await admin.post('/api/contracts/generate', {
+    client_id: incomplete.id, project_id: project.id
+  })).status, 400);
+  assert.equal((await admin.post('/api/contracts/generate', {
+    client_id: client.id, project_id: emptyProject.id
+  })).status, 400);
+  assert.equal((await admin.post('/api/contracts/generate', {
+    client_id: client.id, project_id: unrelatedProject.id
+  })).status, 400);
+
+  const quoteResponse = await admin.post('/api/quotes', {
+    client_id: client.id,
+    title: 'Website design and development',
+    introduction: 'A complete responsive website.',
+    terms: '50% advance payment; balance after delivery.',
+    items: [{ description: 'Design and development', quantity: 1, unit_price: 2000, vat_rate: 21 }]
+  });
+  assert.equal(quoteResponse.status, 201);
+  const quote = quoteResponse.json.quote;
+  await ctx.db.query("UPDATE quotes SET status = 'accepted' WHERE id = $1", [quote.id]);
+
+  const wrongClientQuote = await admin.post('/api/contracts/generate', {
+    client_id: unrelated.id, project_id: unrelatedProject.id, quote_id: quote.id
+  });
+  assert.equal(wrongClientQuote.status, 400);
+
+  const generated = await admin.post('/api/contracts/generate', {
+    client_id: client.id, project_id: project.id, quote_id: quote.id
+  });
+  assert.equal(generated.status, 201);
+  assert.equal(generated.json.contract.status, 'draft');
+  assert.equal(generated.json.contract.client_id, client.id);
+  assert.equal(generated.json.contract.project_id, project.id);
+  assert.equal(generated.json.contract.title, 'Samenwerking overeenkomst - Northstar website');
+
+  const download = await downloadPdf(admin, `/api/contracts/${generated.json.contract.id}/document`);
+  assert.equal(download.status, 200);
+  assert.equal(download.headers.get('content-type'), 'application/pdf');
+  assert.deepEqual(download.body.subarray(0, 5), Buffer.from('%PDF-'));
+  const pdf = extractPdfText(download.body);
+  assert.match(pdf, /SAMENWERKING OVEREENKOMST/);
+  assert.match(pdf, /MAKE IT SO BV/);
+  assert.match(pdf, /BE1030043889/);
+  assert.match(pdf, /Stichelendries 47A/);
+  assert.match(pdf, /Northstar Studio BV/);
+  assert.match(pdf, /0123\.456\.749/);
+  assert.match(pdf, /alex@northstar\.example/);
+  assert.match(pdf, /Northstar website/);
+  assert.match(pdf, /Website design and development/);
+  assert.match(pdf, /50,00/);
+  assert.match(pdf, /AI/);
+
+  const events = await ctx.db.query(
+    'SELECT action, meta FROM activity_log WHERE entity = $1 AND entity_id = $2',
+    ['client_contract', generated.json.contract.id]
+  );
+  assert.equal(events.rows.length, 1);
+  assert.equal(events.rows[0].action, 'contract.created');
+  assert.equal(events.rows[0].meta.generated, true);
+  assert.equal(events.rows[0].meta.quoteId, quote.id);
 });

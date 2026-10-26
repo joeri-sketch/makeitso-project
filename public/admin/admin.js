@@ -1076,11 +1076,22 @@ async function uploadContractDocument(path, file, metadata = {}) {
 }
 
 async function contractsView(view) {
-  const [{ contracts }, { clients }, { projects }] = await Promise.all([
-    get('/contracts'), get('/clients'), get('/projects')
+  const [{ contracts }, { clients }, { projects }, { quotes }] = await Promise.all([
+    get('/contracts'), get('/clients'), get('/projects'), get('/quotes')
   ]);
   show(view, html`
     <header class="page-head"><div><h1>Contracts</h1><p class="muted">Share PDF agreements in the client portal and keep an auditable record of each decision. This records portal approval, not a qualified electronic signature.</p></div></header>
+    <form id="contract-generate" class="card stack">
+      <header><h2>Generate a project contract</h2></header>
+      <p class="muted">The contract uses the client's saved company details, project description, and (optionally) a quote from this dashboard. Scope changes are billed at €50/hour.</p>
+      <div class="form-grid">
+        <label class="field" for="generate-client"><span>Client</span><select id="generate-client" name="client_id" required><option value="">Choose a client</option>${clients.map((client) => html`<option value="${client.id}">${client.company_name}</option>`)}</select></label>
+        <label class="field" for="generate-project"><span>Project</span><select id="generate-project" name="project_id" required disabled><option value="">Choose a project</option>${projects.map((project) => html`<option value="${project.id}" data-client="${project.client_id}">${project.name}</option>`)}</select></label>
+        <label class="field full" for="generate-quote"><span>Quote (optional)</span><select id="generate-quote" name="quote_id" disabled><option value="">Use project description and €50/hour</option>${quotes.map((quote) => html`<option value="${quote.id}" data-client="${quote.client_id}">${quote.quote_number || 'Quote'} · ${quote.title} · ${label(quote.status)}</option>`)}</select><small>If selected, its itemized scope and totals will be inserted into the contract.</small></label>
+      </div>
+      <p class="form-error" role="alert"></p>
+      <div class="actions"><button class="btn primary">Generate contract PDF</button></div>
+    </form>
     <form id="contract-upload" class="card stack">
       <header><h2>Upload a contract</h2></header>
       <div class="form-grid">
@@ -1097,11 +1108,46 @@ async function contractsView(view) {
           <td>${contract.company_name}<span class="sub">${contract.project_name || translateText('Client-wide')}</span></td><td>${chip(contract.status)}</td>
           <td>${contract.version ? `v${contract.version}` : '—'}</td>
           <td>${contract.decision_at ? `${contract.decision_by_name || 'Client'} · ${date(contract.decision_at)}` : '—'}${contract.decision_note ? html`<span class="sub">${contract.decision_note}</span>` : ''}</td>
-          <td><div class="row-actions"><a class="btn small" href="/api/contracts/${contract.id}/document">PDF</a>
+          <td><div class="row-actions"><a class="btn small" href="/api/contracts/${contract.id}/document" ${/^(?:samenwerking-overeenkomst|dienstenovereenkomst)-/.test(contract.file_name || '') ? `data-contract-download="${contract.id}"` : ''}>PDF</a>
             ${['draft', 'changes_requested'].includes(contract.status) ? html`<button class="btn small" data-action="revision" data-id="${contract.id}">Upload version</button><button class="btn small primary" data-action="send" data-id="${contract.id}">Share</button>` : ''}
             ${['sent', 'changes_requested'].includes(contract.status) ? html`<button class="btn small danger" data-action="withdraw" data-id="${contract.id}">Withdraw</button>` : ''}</div></td></tr>`)}</tbody></table></div>`
         : html`<div class="empty">No contracts yet. Upload a PDF to create a draft.</div>`}
     </section>`);
+
+  const generateForm = $('#contract-generate', view);
+  const generateClient = $('#generate-client', generateForm);
+  const generateProject = $('#generate-project', generateForm);
+  const generateQuote = $('#generate-quote', generateForm);
+  generateClient.onchange = () => {
+    const clientId = generateClient.value;
+    for (const option of [...generateProject.options].slice(1)) option.hidden = option.dataset.client !== clientId;
+    for (const option of [...generateQuote.options].slice(1)) option.hidden = option.dataset.client !== clientId;
+    generateProject.value = '';
+    generateQuote.value = '';
+    generateProject.disabled = !clientId;
+    generateQuote.disabled = !clientId;
+  };
+  generateForm.onsubmit = async (event) => {
+    event.preventDefault();
+    const error = $('.form-error', generateForm);
+    error.textContent = '';
+    const button = $('button.primary', generateForm);
+    button.disabled = true;
+    try {
+      const result = await post('/contracts/generate', {
+        client_id: generateClient.value,
+        project_id: generateProject.value,
+        quote_id: generateQuote.value || null
+      });
+      toast('Contract draft created');
+      await contractsView(view);
+      const download = $(`[data-contract-download="${result.contract.id}"]`, view);
+      download?.focus();
+    } catch (exception) {
+      error.textContent = translateText(exception.message);
+      button.disabled = false;
+    }
+  };
 
   const form = $('#contract-upload', view);
   const clientSelect = $('#contract-client', form);

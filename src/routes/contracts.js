@@ -4,6 +4,7 @@ import { hashIp } from '../lib/crypto.js';
 import { HttpError, v } from '../lib/validate.js';
 import { asyncHandler as h } from '../middleware/security.js';
 import { requireAdmin, requireSession } from '../middleware/session.js';
+import { generateContractPdf } from '../lib/contract-pdf.js';
 
 const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
 const pdfBody = express.raw({ type: 'application/pdf', limit: MAX_DOCUMENT_SIZE });
@@ -85,6 +86,90 @@ export function contractRoutes({ db }) {
       );
       await audit(t, req, 'contract.created', {
         entity: 'client_contract', entityId: created.id, clientId, projectId, meta: { title }
+      });
+      return created;
+    });
+    res.status(201).json({ contract: { ...contract, version: 1, file_name: fileName } });
+  }));
+
+  admin.post('/generate', h(async (req, res) => {
+    const clientId = v.id(req.body?.client_id, 'client_id');
+    const projectId = v.id(req.body?.project_id, 'project_id');
+    const quoteId = req.body?.quote_id ? v.id(req.body.quote_id, 'quote_id') : null;
+
+    const client = (await db.query(
+      `SELECT c.*,
+              (SELECT json_build_object('name', ct.name, 'role', ct.role, 'email', ct.email)
+                 FROM contacts ct
+                WHERE ct.client_id = c.id AND ct.is_primary = TRUE
+                ORDER BY ct.id LIMIT 1) AS primary_contact
+         FROM clients c
+        WHERE c.id = $1 AND c.archived_at IS NULL`,
+      [clientId]
+    )).rows[0];
+    if (!client) throw new HttpError(400, 'Choose an active client.', { field: 'client_id' });
+    if (!client.address_line1 || !client.postal_code || !client.city || !(client.company_number || client.vat_number) || !client.email) {
+      throw new HttpError(400, 'Complete the client address, company or VAT number, and email in the client profile before generating a contract.', {
+        field: 'client_id'
+      });
+    }
+
+    const project = (await db.query(
+      `SELECT id, name, category, description, next_step, target_date
+         FROM projects
+        WHERE id = $1 AND client_id = $2 AND archived_at IS NULL`,
+      [projectId, clientId]
+    )).rows[0];
+    if (!project) throw new HttpError(400, 'Choose an active project belonging to this client.', { field: 'project_id' });
+
+    let quote = null;
+    if (quoteId) {
+      quote = (await db.query(
+        `SELECT q.id, q.quote_number, q.title, q.status, q.introduction, q.terms,
+                COALESCE(SUM(ROUND(i.quantity * i.unit_price * 100)), 0)::bigint AS subtotal_cents,
+                COALESCE(SUM(ROUND(i.quantity * i.unit_price * i.vat_rate)), 0)::bigint AS vat_cents
+           FROM quotes q
+           LEFT JOIN quote_items i ON i.quote_id = q.id
+          WHERE q.id = $1 AND q.client_id = $2 AND q.status <> 'declined'
+          GROUP BY q.id`,
+        [quoteId, clientId]
+      )).rows[0];
+      if (!quote) throw new HttpError(400, 'Choose an active quote belonging to this client.', { field: 'quote_id' });
+      quote.items = (await db.query(
+        'SELECT description, quantity, unit_price, vat_rate FROM quote_items WHERE quote_id = $1 ORDER BY sort_order, id',
+        [quoteId]
+      )).rows;
+      if (!quote.items.length) throw new HttpError(400, 'Add at least one item to the selected quote before generating a contract.', { field: 'quote_id' });
+    } else if (!project.description.trim()) {
+      throw new HttpError(400, 'Add a project description or select a quote to define the agreed scope.', { field: 'quote_id' });
+    }
+
+    const contact = client.primary_contact && (typeof client.primary_contact === 'string'
+      ? JSON.parse(client.primary_contact)
+      : client.primary_contact);
+    const document = await generateContractPdf({ client, contact, project, quote });
+    const title = v.str(req.body?.title, 'title', { max: 160 }) || `Samenwerking overeenkomst - ${project.name}`.slice(0, 160);
+    const fileName = `samenwerking-overeenkomst-${project.id}.pdf`;
+
+    const contract = await db.tx(async (t) => {
+      const created = (await t.query(
+        `INSERT INTO client_contracts (client_id, project_id, title, created_by)
+         VALUES ($1, $2, $3, $4) RETURNING *`,
+        [clientId, projectId, title, req.auth.user.id]
+      )).rows[0];
+      await t.query(
+        `INSERT INTO contract_versions (contract_id, version, file_name, document, uploaded_by)
+         VALUES ($1, 1, $2, $3, $4)`,
+        [created.id, fileName, document, req.auth.user.id]
+      );
+      await t.query(
+        `INSERT INTO contract_events (contract_id, version, actor_id, event_type)
+         VALUES ($1, 1, $2, 'created')`,
+        [created.id, req.auth.user.id]
+      );
+      await audit(t, req, 'contract.created', {
+        entity: 'client_contract', entityId: created.id, clientId, projectId,
+        meta: { title, generated: true, quoteId }
       });
       return created;
     });

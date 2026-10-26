@@ -62,3 +62,18 @@ test('admin dialogs and account details have Dutch labels', () => {
   assert.equal(translateText('← All clients'), '← Alle klanten');
   assert.equal(translateMarkup('<h3>Media services &amp; access</h3>'), '<h3>Mediaservices en toegang</h3>');
 });
+
+test('contract generation controls and validation errors have Dutch translations', () => {
+  setLanguage('nl');
+  assert.equal(translateText('Generate a project contract'), 'Projectcontract genereren');
+  assert.equal(translateText('Quote (optional)'), 'Offerte (optioneel)');
+  assert.equal(translateText('Generate contract PDF'), 'Contract-PDF genereren');
+  assert.equal(
+    translateText("The contract uses the client's saved company details, project description, and (optionally) a quote from this dashboard. Scope changes are billed at €50/hour."),
+    'Het contract gebruikt de bedrijfsgegevens van de klant, de projectomschrijving en eventueel een offerte uit het dashboard. Afwijkingen van de afgesproken scope worden aangerekend aan € 50 per uur.'
+  );
+  assert.equal(
+    translateText('Complete the client address, company or VAT number, and email in the client profile before generating a contract.'),
+    'Vul eerst in het klantprofiel het adres, ondernemings- of btw-nummer en e-mailadres aan.'
+  );
+});
