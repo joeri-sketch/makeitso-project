@@ -187,10 +187,18 @@ describe('CRM: clients, contacts, projects, milestones, notes', () => {
   });
 
   it('serves a dashboard summary', async () => {
+    const client = (await api.post('/api/clients', { company_name: 'Dashboard Studio' })).json.client;
+    const project = (await api.post('/api/projects', {
+      client_id: client.id, name: 'Dashboard project', status: 'development', progress: 35
+    })).json.project;
     const res = await api.get('/api/dashboard');
     assert.equal(res.status, 200);
     assert.equal(typeof res.json.counts.active_clients, 'number');
     assert.ok(Array.isArray(res.json.projects_by_status));
+    assert.ok(Array.isArray(res.json.active_projects));
+    assert.ok(res.json.active_projects.some((item) =>
+      item.id === project.id && item.name === project.name && item.company_name === client.company_name && item.progress === project.progress
+    ));
     assert.ok(Array.isArray(res.json.recent_activity));
     assert.ok(res.json.recent_activity.every((a) => !a.action.startsWith('auth.')));
   });

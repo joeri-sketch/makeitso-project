@@ -42,3 +42,12 @@ test('admin theme choices have Dutch labels', () => {
   assert.equal(translateText('Mission Control'), 'Mission Control');
   assert.equal(translateText('Orbit Glass'), 'Orbit Glass');
 });
+
+test('Orbit Glass dashboard labels translate with dynamic admin data', () => {
+  setLanguage('nl');
+  assert.equal(translateText('Your orbit, at a glance'), 'Je studio, in één oogopslag');
+  assert.equal(translateText('Everything in motion, Ellen.'), 'Alles in beweging, Ellen.');
+  assert.equal(translateText('3 items need attention'), '3 items vragen aandacht');
+  assert.equal(translateText('Projects in your orbit'), 'Projecten in jouw universum');
+  assert.equal(translateText('Latest updates'), 'Laatste updates');
+});

@@ -185,8 +185,12 @@ const state = { user: null, auth: 'anonymous', leads: 0, language: 'nl', theme: 
 const brand = html`<span class="brand"><span class="mark"><svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4l3 8.4L28 15l-9 2.6L16 26l-3-8.4L4 15l9-2.6z" fill="#ff6a1f"/></svg></span>${raw('<span class="word">make it so<em>.</em></span>')}<span class="tag">ADMIN</span></span>`;
 
 function readThemePreference() {
-  const theme = localStorage.getItem('makeitso.adminTheme');
-  return ['mission-control', 'orbit-glass'].includes(theme) ? theme : 'classic';
+  try {
+    const theme = localStorage.getItem('makeitso.adminTheme');
+    return ['mission-control', 'orbit-glass'].includes(theme) ? theme : 'classic';
+  } catch {
+    return 'classic';
+  }
 }
 
 async function boot() {
@@ -316,11 +320,28 @@ function applyThemePreference(event) {
   }
 }
 
+const NAV_ICONS = {
+  dashboard: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  projects: '<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/>',
+  work: '<path d="M9 6.5 11.5 9 16 4.5"/><circle cx="10" cy="14" r="7"/><path d="M10 10v4l2.5 1.5"/>',
+  maintenance: '<path d="M14.5 6.5a5 5 0 0 0-6.8 6.8l-4.9 4.9a2 2 0 0 0 2.8 2.8l4.9-4.9a5 5 0 0 0 6.8-6.8l-3.1 3.1-3.5-3.5z"/>',
+  timesheets: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  support: '<path d="M4 5h16v12h-9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
+  clients: '<path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  leads: '<circle cx="10" cy="8" r="4"/><path d="M3 21v-2a7 7 0 0 1 14 0v2M19 8v6M16 11h6"/>',
+  quotes: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+  invoices: '<path d="M5 3h14v18l-3-2-4 2-4-2-3 2z"/><path d="M8 8h8M8 12h8M8 16h4"/>',
+  contracts: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 14l2.5 2.5L16 11"/>',
+  account: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="9" r="3"/><path d="M6.5 19a6 6 0 0 1 11 0"/>',
+  email: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  logout: '<path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/>'
+};
+const navIcon = (name) => raw(`<svg class="nav-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NAV_ICONS[name]}</svg>`);
 const NAV_GROUPS = [
-  ['Work', [['#/projects', 'Projects'], ['#/work', 'Current work'], ['#/maintenance', 'Maintenance'], ['#/timesheets', 'Timesheets'], ['#/tickets', 'Support']]],
-  ['Clients', [['#/clients', 'Clients'], ['#/leads', 'Leads']]],
-  ['Finances', [['#/quotes', 'Quotes'], ['#/invoices', 'Invoices'], ['#/contracts', 'Contracts']]],
-  ['Settings', [['#/account', 'Account'], ['#/settings/email', 'Email settings']]]
+  ['Work', [['#/projects', 'Projects', 'projects'], ['#/work', 'Current work', 'work'], ['#/maintenance', 'Maintenance', 'maintenance'], ['#/timesheets', 'Timesheets', 'timesheets'], ['#/tickets', 'Support', 'support']]],
+  ['Clients', [['#/clients', 'Clients', 'clients'], ['#/leads', 'Leads', 'leads']]],
+  ['Finances', [['#/quotes', 'Quotes', 'quotes'], ['#/invoices', 'Invoices', 'invoices'], ['#/contracts', 'Contracts', 'contracts']]],
+  ['Settings', [['#/account', 'Account', 'account'], ['#/settings/email', 'Email settings', 'email']]]
 ];
 
 function shell() {
@@ -328,17 +349,17 @@ function shell() {
   show(app, html`<div class="shell" data-theme="${state.theme}">
     <aside class="sidebar"><div class="brand-wrap">${brand}</div>
       <nav aria-label="Main">
-        <a class="nav-link dashboard-link" href="#/" data-nav="#/"><span>${translateText('Dashboard')}</span></a>
+        <a class="nav-link dashboard-link" href="#/" data-nav="#/" title="${translateText('Dashboard')}" aria-label="${translateText('Dashboard')}">${navIcon('dashboard')}<span>${translateText('Dashboard')}</span></a>
         ${NAV_GROUPS.map(([group, links]) => html`<section class="nav-group"><h2>${translateText(group)}</h2>
-          ${links.map(([href, text]) => html`<a class="nav-link" href="${href}" data-nav="${href}"><span>${translateText(text)}</span>${href === '#/leads' ? html`<span class="badge" id="lead-badge" hidden></span>` : ''}</a>`)}
+          ${links.map(([href, text, icon]) => html`<a class="nav-link" href="${href}" data-nav="${href}" title="${translateText(text)}" aria-label="${translateText(text)}">${navIcon(icon)}<span>${translateText(text)}</span>${href === '#/leads' ? html`<span class="badge" id="lead-badge" hidden></span>` : ''}</a>`)}
         </section>`)}
       </nav>
       <div class="side-foot"><span class="muted">${state.user.name}</span>
         <div class="side-preferences">
-        <label class="language-picker"><span>Language</span><select id="language-select" aria-label="Language"><option value="nl" ${state.language === 'nl' ? 'selected' : ''}>Nederlands</option><option value="en" ${state.language === 'en' ? 'selected' : ''}>English</option></select></label>
-        <label class="language-picker theme-picker"><span>Theme</span><select id="theme-select" aria-label="Theme"><option value="classic" ${state.theme === 'classic' ? 'selected' : ''}>Classic</option><option value="mission-control" ${state.theme === 'mission-control' ? 'selected' : ''}>Mission Control</option><option value="orbit-glass" ${state.theme === 'orbit-glass' ? 'selected' : ''}>Orbit Glass</option></select></label>
+          <label class="language-picker"><span>Language</span><select id="language-select" aria-label="Language"><option value="nl" ${state.language === 'nl' ? 'selected' : ''}>Nederlands</option><option value="en" ${state.language === 'en' ? 'selected' : ''}>English</option></select></label>
+          <label class="language-picker theme-picker"><span>Theme</span><select id="theme-select" aria-label="Theme"><option value="classic" ${state.theme === 'classic' ? 'selected' : ''}>Classic</option><option value="mission-control" ${state.theme === 'mission-control' ? 'selected' : ''}>Mission Control</option><option value="orbit-glass" ${state.theme === 'orbit-glass' ? 'selected' : ''}>Orbit Glass</option></select></label>
         </div>
-        <button class="btn small" id="logout">Sign out</button></div>
+        <button class="btn small" id="logout" title="${translateText('Sign out')}" aria-label="${translateText('Sign out')}">${navIcon('logout')}<span>${translateText('Sign out')}</span></button></div>
     </aside>
     <main id="view" tabindex="-1"></main>
   </div>`);
@@ -675,34 +696,52 @@ async function dashboardView(view) {
     ['Open support tickets', c.open_tickets, '#/tickets'],
     ['Unanswered leads', c.new_leads, '#/leads'],
     ['Unpaid invoices', c.unpaid_invoices, '#/invoices']
-  ];
+  ].map(([title, count, href], index) => [title, count, href, ['maintenance', 'work', 'support', 'leads', 'invoices'][index]]);
   state.leads = c.new_leads;
   const badge = $('#lead-badge'); if (badge) { badge.textContent = c.new_leads; badge.hidden = !c.new_leads; }
+  const now = new Date();
+  const dateLabel = new Intl.DateTimeFormat(state.language === 'nl' ? 'nl-BE' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(now);
+  const dateValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const activeAttentionCount = attentionItems.reduce((sum, [, count]) => sum + Number(count || 0), 0);
+  const activityIcon = (action) => {
+    if (/invoice|payment/.test(action)) return 'invoices';
+    if (/lead/.test(action)) return 'leads';
+    if (/ticket/.test(action)) return 'support';
+    if (/project|milestone|work_item|maintenance/.test(action)) return 'projects';
+    return 'email';
+  };
   show(view, html`
-    <header class="page-head dashboard-head"><div><p class="dashboard-eyebrow">Make It So · Admin overview</p><h1>Dashboard</h1><p class="muted">Welcome back, ${state.user.name}.</p></div>
-      <div class="actions"><button class="btn" data-action="new-project">+ New project</button><button class="btn primary" data-action="new-client">+ New client</button></div></header>
+    <div class="dashboard-orbit-topbar"><div class="dashboard-wordmark"><strong>make it so</strong><span>.</span><i>/</i><span>${translateText('Your studio cockpit')}</span></div>
+      <div class="dashboard-date"><time datetime="${dateValue}">${dateLabel}</time><span class="dashboard-avatar">${state.user.name.slice(0, 1).toUpperCase()}</span></div></div>
+    <header class="page-head dashboard-head"><div><p class="dashboard-eyebrow">${translateText('Your orbit, at a glance')}</p><h1>${translateText(`Everything in motion, ${state.user.name}.`)}</h1><p class="muted">${translateText('Projects, clients and opportunities — together in one clear overview.')}</p></div>
+      <div class="actions"><button class="btn" data-action="new-client">+ New client</button><button class="btn primary" data-action="new-project">+ New project</button></div></header>
     <div class="grid kpis dashboard-kpis">
-      <div class="card kpi"><span>Active clients</span><strong>${c.active_clients}</strong></div>
-      <div class="card kpi"><span>Prospects</span><strong>${c.prospects}</strong></div>
-      <div class="card kpi"><span>Open projects</span><strong>${c.open_projects}</strong></div>
-      <a class="card kpi" href="#/leads" style="text-decoration:none;color:inherit"><span>New leads</span><strong>${c.new_leads}</strong></a>
+      <div class="card kpi"><span>${translateText('Active clients')}</span><strong>${c.active_clients}</strong><small>${translateText('Clients in your studio')}</small></div>
+      <div class="card kpi"><span>${translateText('Open projects')}</span><strong>${c.open_projects}</strong><small>${translateText('Projects in progress')}</small></div>
+      <div class="card kpi"><span>${translateText('Prospects')}</span><strong>${c.prospects}</strong><small>${translateText('Potential new clients')}</small></div>
+      <a class="card kpi" href="#/leads" style="text-decoration:none;color:inherit"><span>${translateText('New leads')}</span><strong>${c.new_leads}</strong><small>${translateText('Requests to follow up')}</small></a>
     </div>
-    <section class="card attention-card dashboard-attention"><header><div><h2>Needs attention</h2><p class="muted">Items that may need a follow-up.</p></div></header>
-      <ul class="attention-list">${attentionItems.map(([title, count, href]) => html`<li><a href="${href}"><span>${title}</span><strong>${count}</strong></a></li>`)}</ul>
+    <section class="card attention-card dashboard-attention"><header><div><h2>${translateText('Signals in your orbit')}</h2></div><span class="attention-total">${translateText(`${activeAttentionCount} items need attention`)}</span></header>
+      <ul class="attention-list">${attentionItems.map(([title, count, href, icon]) => html`<li><a href="${href}">${navIcon(icon)}<span>${translateText(title)}</span><strong>${count}</strong></a></li>`)}</ul>
     </section>
     <div class="dashboard-content">
       <div class="dashboard-primary">
-        <section class="card"><header><h2>Upcoming milestones</h2></header>
+        <section class="card dashboard-projects"><header><h2>${translateText('Projects in your orbit')}</h2><a href="#/projects">${translateText('View all ↗')}</a></header>
+          ${d.active_projects.length ? html`<div class="orbit-project-list">${d.active_projects.map((project, index) => html`<a class="orbit-project" href="#/projects/${project.id}">
+            <span class="orbit-project-icon orbit-project-icon-${index % 4}">${navIcon(['projects', 'work', 'maintenance', 'support'][index % 4])}</span>
+            <span class="orbit-project-info"><strong>${project.name}</strong><small>${project.company_name} · ${label(project.status)}${project.target_date ? ` · ${date(project.target_date)}` : ''}</small><span class="orbit-progress"><i style="width:${project.progress}%"></i></span></span>
+            <span class="orbit-project-percent">${project.progress}%</span></a>`)}</div>` : html`<p class="muted">${translateText('No projects yet.')}</p>`}
+        </section>
+        <section class="card"><header><h2>${translateText('Upcoming milestones')}</h2><a href="#/projects">${translateText('View projects ↗')}</a></header>
           ${d.upcoming_milestones.length ? html`<ul class="list">${d.upcoming_milestones.map((m) => html`<li><span class="grow"><a href="#/projects/${m.project_id}">${m.title}</a><span class="sub">${m.project_name} · ${m.company_name}</span></span><span class="muted">${m.due_date ? date(m.due_date) : 'No date'}</span></li>`)}</ul>` : html`<p class="muted">No open milestones. Add some on a project page.</p>`}
         </section>
-        <section class="card"><header><h2>Projects by status</h2></header>
-          ${total ? html`<ul class="list status-list">${d.projects_by_status.map((s) => html`<li>${chip(s.status)}<progress max="${total}" value="${s.n}"></progress><strong>${s.n}</strong></li>`)}</ul>` : html`<p class="muted">No projects yet.</p>`}
-        </section>
-        <section class="card maintenance-reminders"><header><div><h2>Maintenance reminders</h2><p class="muted">Recurring client work coming up.</p></div><a class="btn small" href="#/maintenance">Manage plans</a></header>
+        <section class="card maintenance-reminders"><header><div><h2>${translateText('Maintenance reminders')}</h2><p class="muted">${translateText('Recurring client work coming up.')}</p></div><a class="btn small" href="#/maintenance">${translateText('Manage plans')}</a></header>
           ${d.maintenance_reminders.length ? html`<ul class="list">${d.maintenance_reminders.map((plan) => html`<li><span class="grow"><strong>${plan.title}</strong><span class="sub">${plan.project_name} · ${plan.company_name}</span></span><span class="muted">${date(plan.next_due_date)}</span></li>`)}</ul>` : html`<p class="muted">No maintenance tasks are due soon.</p>`}
         </section>
       </div>
-      <section class="card dashboard-activity"><header><h2>Recent activity</h2></header>${activityList(d.recent_activity)}</section>
+      <section class="card dashboard-activity"><header><h2>${translateText('Recent in the studio')}</h2><span class="dashboard-section-label">${translateText('Latest updates')}</span></header>${d.recent_activity.length ? html`<div class="orbit-activity-list">${d.recent_activity.map((item) => html`<div class="orbit-activity"><span class="orbit-activity-icon">${navIcon(activityIcon(item.action))}</span><p><strong>${item.actor_name || 'Website'}</strong><span>${translateText((ACTIVITY[item.action] || (() => item.action))(item.meta || {}))}</span><small>${ago(item.created_at)}</small></p></div>`)}</div>` : html`<p class="muted">Nothing yet.</p>`}
+        ${total ? html`<div class="dashboard-status"><h3>${translateText('Projects by status')}</h3><ul class="list status-list">${d.projects_by_status.map((s) => html`<li>${chip(s.status)}<progress max="${total}" value="${s.n}"></progress><strong>${s.n}</strong></li>`)}</ul></div>` : ''}
+      </section>
     </div>
   `);
   actions(view, { 'new-client': () => newClient(), 'new-project': () => newProject() });

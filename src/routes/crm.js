@@ -163,7 +163,7 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
 
   // ---------------- dashboard + activity ----------------
   r.get('/dashboard', h(async (req, res) => {
-    const [counts, byStatus, milestones, activity, maintenance] = await Promise.all([
+    const [counts, byStatus, projects, milestones, activity, maintenance] = await Promise.all([
       db.query(`SELECT
           (SELECT count(*) FROM clients WHERE archived_at IS NULL AND status = 'active')::int AS active_clients,
           (SELECT count(*) FROM clients WHERE archived_at IS NULL AND status = 'prospect')::int AS prospects,
@@ -180,6 +180,10 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
                               FROM invoice_items i WHERE i.invoice_id = inv.id), 0)
                 > COALESCE((SELECT ROUND(SUM(p.amount) * 100) FROM invoice_payments p WHERE p.invoice_id = inv.id), 0))::int AS unpaid_invoices`),
       db.query(`SELECT status, count(*)::int AS n FROM projects WHERE archived_at IS NULL GROUP BY status`),
+      db.query(`SELECT p.id, p.name, p.category, p.status, p.progress, p.target_date, c.company_name
+                  FROM projects p JOIN clients c ON c.id = p.client_id
+                 WHERE p.archived_at IS NULL AND p.status <> 'launched' AND c.archived_at IS NULL
+                 ORDER BY (p.status = 'on_hold'), p.updated_at DESC, p.id DESC LIMIT 5`),
       db.query(`SELECT m.id, m.title, m.due_date, m.status, p.id AS project_id, p.name AS project_name, c.company_name
                   FROM milestones m JOIN projects p ON p.id = m.project_id JOIN clients c ON c.id = p.client_id
                  WHERE m.status <> 'done' AND p.archived_at IS NULL
@@ -201,6 +205,7 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
     res.json({
       counts: counts.rows[0],
       projects_by_status: byStatus.rows,
+      active_projects: projects.rows,
       upcoming_milestones: milestones.rows,
       maintenance_reminders: maintenance.rows,
       recent_activity: activity.rows
