@@ -309,6 +309,26 @@ dialog::backdrop { background: rgba(5, 8, 23, .6); }
 .shell[data-theme="mission-control"] .lead .msg { background: #151f3b; }
 .shell[data-theme="mission-control"] .table-hint { background: var(--card); }
 html[data-admin-theme="mission-control"] dialog { background: #111a34; color: #f4f7ff; border: 1px solid #273454; }
+html[data-admin-theme="mission-control"] { color-scheme: dark; }
+html[data-admin-theme="mission-control"] dialog::backdrop { background: rgba(3, 7, 20, .78); }
+html[data-admin-theme="mission-control"] dialog .field > span { color: #f4f7ff; }
+html[data-admin-theme="mission-control"] dialog .field small { color: #98a7c7; }
+html[data-admin-theme="mission-control"] dialog input,
+html[data-admin-theme="mission-control"] dialog select,
+html[data-admin-theme="mission-control"] dialog textarea {
+  background: #151f3b; color: #f4f7ff; border-color: #273454;
+}
+html[data-admin-theme="mission-control"] dialog select option { background: #151f3b; color: #f4f7ff; }
+html[data-admin-theme="mission-control"] dialog .btn:not(.primary) {
+  background: #151f3b; color: #f4f7ff; box-shadow: inset 0 0 0 1px #273454;
+}
+html[data-admin-theme="mission-control"] dialog .btn.primary { background: #5385ff; color: #fff; }
+html[data-admin-theme="mission-control"] dialog .form-error { color: #ff9bb2; }
+html[data-admin-theme="mission-control"] dialog input:focus,
+html[data-admin-theme="mission-control"] dialog select:focus,
+html[data-admin-theme="mission-control"] dialog textarea:focus { border-color: #7ea2ff; }
+html[data-admin-theme="mission-control"] dialog .icon-btn { color: #98a7c7; }
+html[data-admin-theme="mission-control"] dialog .icon-btn:hover { background: #1a2746; color: #fff; }
 
 .shell[data-theme="orbit-glass"] {
   --ink: #f6f5ff; --muted: #a4a6c6; --line: rgba(171, 179, 255, .18); --bg: #090b20; --card: rgba(25, 29, 65, .78); --nav: #0b0c25;
@@ -348,60 +368,82 @@ html[data-admin-theme="mission-control"] dialog { background: #111a34; color: #f
 .shell[data-theme="orbit-glass"] .lead .msg { background: rgba(255, 255, 255, .07); }
 .shell[data-theme="orbit-glass"] .table-hint { background: #191d41; }
 html[data-admin-theme="orbit-glass"] dialog { background: #191d41; color: #f6f5ff; border: 1px solid rgba(171, 179, 255, .18); }
+html[data-admin-theme="orbit-glass"] { color-scheme: dark; }
+html[data-admin-theme="orbit-glass"] dialog::backdrop { background: rgba(3, 4, 18, .8); }
+html[data-admin-theme="orbit-glass"] dialog .field > span { color: #f6f5ff; }
+html[data-admin-theme="orbit-glass"] dialog .field small { color: #a4a6c6; }
+html[data-admin-theme="orbit-glass"] dialog input,
+html[data-admin-theme="orbit-glass"] dialog select,
+html[data-admin-theme="orbit-glass"] dialog textarea {
+  background: rgba(255, 255, 255, .07); color: #f6f5ff; border-color: rgba(171, 179, 255, .24);
+}
+html[data-admin-theme="orbit-glass"] dialog select option { background: #191d41; color: #f6f5ff; }
+html[data-admin-theme="orbit-glass"] dialog .btn:not(.primary) {
+  background: rgba(255, 255, 255, .07); color: #f6f5ff; box-shadow: inset 0 0 0 1px rgba(171, 179, 255, .24);
+}
+html[data-admin-theme="orbit-glass"] dialog .btn:not(.primary):hover { background: rgba(255, 255, 255, .13); }
+html[data-admin-theme="orbit-glass"] dialog .btn.primary { background: linear-gradient(110deg, #685eff, #b54cbd); color: #fff; }
+html[data-admin-theme="orbit-glass"] dialog .form-error { color: #ff91bb; }
+html[data-admin-theme="orbit-glass"] dialog input:focus,
+html[data-admin-theme="orbit-glass"] dialog select:focus,
+html[data-admin-theme="orbit-glass"] dialog textarea:focus { border-color: #a99bff; }
+html[data-admin-theme="orbit-glass"] dialog .icon-btn { color: #a4a6c6; }
+html[data-admin-theme="orbit-glass"] dialog .icon-btn:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+
+.shell[data-theme="mission-control"] select,
+.shell[data-theme="orbit-glass"] select { color-scheme: dark; }
+.shell[data-theme="mission-control"] select option { background: #151f3b; color: #f4f7ff; }
+.shell[data-theme="orbit-glass"] select option { background: #191d41; color: #f6f5ff; }
 
 .nav-link .nav-icon { flex: 0 0 18px; }
 
-.shell[data-theme="orbit-glass"] { grid-template-columns: 78px minmax(0, 1fr); min-height: 100vh; }
+.shell[data-theme="orbit-glass"] { grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
 .shell[data-theme="orbit-glass"] > .sidebar {
-  width: 78px; align-items: center; padding: 22px 13px; gap: 0; overflow-x: hidden;
+  width: 220px; align-items: stretch; padding: 22px 14px; gap: 0; overflow-x: hidden;
   background: rgba(7, 9, 28, .82);
 }
-.shell[data-theme="orbit-glass"] .brand-wrap { width: 40px; height: 40px; }
+.shell[data-theme="orbit-glass"] .brand-wrap { width: 100%; height: 40px; }
 .shell[data-theme="orbit-glass"] .sidebar .brand {
-  width: 40px; height: 40px; padding: 0; justify-content: center; overflow: hidden;
+  width: 100%; height: 40px; padding: 0 4px; justify-content: flex-start; overflow: visible;
 }
-.shell[data-theme="orbit-glass"] .sidebar .brand .word,
 .shell[data-theme="orbit-glass"] .sidebar .brand .tag { display: none; }
 .shell[data-theme="orbit-glass"] .sidebar .brand .mark {
-  width: 40px; height: 40px; flex: 0 0 40px; border-radius: 14px;
+  width: 36px; height: 36px; flex: 0 0 36px; border-radius: 12px;
   background: linear-gradient(140deg, #735eff, #d457c1); box-shadow: 0 7px 25px #7557ff55;
 }
 .shell[data-theme="orbit-glass"] .sidebar .brand .mark svg path { fill: #fff; }
-.shell[data-theme="orbit-glass"] .sidebar nav { width: 100%; gap: 12px; margin-top: 42px; }
-.shell[data-theme="orbit-glass"] .nav-group { justify-items: center; gap: 7px; }
+.shell[data-theme="orbit-glass"] .sidebar nav { width: 100%; gap: 15px; margin-top: 30px; }
+.shell[data-theme="orbit-glass"] .nav-group { justify-items: stretch; gap: 4px; }
 .shell[data-theme="orbit-glass"] .nav-group + .nav-group { border-top: 1px solid var(--line); padding-top: 10px; }
-.shell[data-theme="orbit-glass"] .nav-group h2 { display: none; }
+.shell[data-theme="orbit-glass"] .nav-group h2 {
+  display: block; margin: 0 10px 5px; color: #8588b1;
+  font: 700 10px var(--font-display); letter-spacing: .13em; text-transform: uppercase;
+}
 .shell[data-theme="orbit-glass"] .nav-link {
-  position: relative; width: 43px; height: 43px; padding: 0; justify-content: center;
+  position: relative; width: 100%; min-height: 42px; padding: 0 11px; justify-content: flex-start;
   border: 1px solid transparent; border-radius: 13px; color: #9b9fc7;
 }
-.shell[data-theme="orbit-glass"] .nav-link > span:first-of-type { display: none; }
+.shell[data-theme="orbit-glass"] .nav-link > span:first-of-type {
+  display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px;
+}
 .shell[data-theme="orbit-glass"] .nav-link .nav-icon { width: 18px; height: 18px; }
 .shell[data-theme="orbit-glass"] .nav-link[aria-current="page"] {
   color: #fff; background: linear-gradient(135deg, #6159d5, #a244a5); box-shadow: 0 7px 24px #6f55db55;
 }
 .shell[data-theme="orbit-glass"] .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, .08); }
-.shell[data-theme="orbit-glass"] .nav-link::after {
-  content: attr(title); position: absolute; z-index: 30; left: calc(100% + 10px); top: 50%;
-  transform: translateY(-50%); white-space: nowrap; padding: 6px 9px; border: 1px solid var(--line);
-  border-radius: 8px; background: #191d41; color: var(--ink); font-size: 11px;
-  opacity: 0; pointer-events: none; transition: opacity .12s;
-}
-.shell[data-theme="orbit-glass"] .nav-link:hover::after,
-.shell[data-theme="orbit-glass"] .nav-link:focus-visible::after { opacity: 1; }
-.shell[data-theme="orbit-glass"] .nav-link .badge { position: absolute; top: -3px; right: -4px; min-width: 17px; padding: 0 4px; font-size: 9px; }
+.shell[data-theme="orbit-glass"] .nav-link .badge { min-width: 19px; padding: 0 5px; font-size: 10px; }
 .shell[data-theme="orbit-glass"] .side-foot {
-  width: 100%; justify-items: center; gap: 8px; padding: 0; border: 0; margin-top: auto;
+  width: 100%; justify-items: stretch; gap: 8px; padding: 12px 2px 0; border: 0; margin-top: auto;
 }
-.shell[data-theme="orbit-glass"] .side-foot > .muted,
-.shell[data-theme="orbit-glass"] .side-preferences .language-picker > span,
-.shell[data-theme="orbit-glass"] #logout > span { display: none; }
+.shell[data-theme="orbit-glass"] .side-foot > .muted { display: block; }
+.shell[data-theme="orbit-glass"] .side-preferences .language-picker > span { display: block; }
 .shell[data-theme="orbit-glass"] .side-preferences { width: 100%; grid-template-columns: 1fr; gap: 5px; }
-.shell[data-theme="orbit-glass"] .side-preferences .language-picker { width: 100%; }
+.shell[data-theme="orbit-glass"] .side-preferences .language-picker { width: 100%; gap: 2px; font-size: 10px; }
 .shell[data-theme="orbit-glass"] .side-preferences select {
-  width: 52px; min-height: 29px; padding: 3px 4px; border-radius: 9px; font-size: 9px; text-align: center;
+  width: 100%; min-height: 32px; padding: 4px 8px; border-radius: 9px; font-size: 11px; text-align: left;
 }
-.shell[data-theme="orbit-glass"] #logout { width: 40px; min-height: 38px; padding: 0; display: grid; place-items: center; }
+.shell[data-theme="orbit-glass"] #logout { width: 100%; min-height: 38px; padding: 0 10px; display: inline-flex; justify-content: flex-start; }
 .shell[data-theme="orbit-glass"] #logout .nav-icon { width: 17px; height: 17px; }
 .shell[data-theme="orbit-glass"] > main { max-width: 1500px; padding: 30px clamp(22px, 4vw, 58px) 52px; }
 
@@ -498,11 +540,11 @@ html[data-admin-theme="orbit-glass"] dialog { background: #191d41; color: #f6f5f
   .shell[data-theme="orbit-glass"] .sidebar .brand .word { display: inline; }
   .shell[data-theme="orbit-glass"] .sidebar nav { display: flex; width: 100%; overflow-x: auto; gap: 12px; margin-top: 0; }
   .shell[data-theme="orbit-glass"] .nav-group { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; }
+  .shell[data-theme="orbit-glass"] .nav-group h2 { display: none; }
   .shell[data-theme="orbit-glass"] .nav-group + .nav-group { border-top: 0; padding-top: 0; }
   .shell[data-theme="orbit-glass"] .nav-group .nav-link,
   .shell[data-theme="orbit-glass"] .dashboard-link { width: auto; height: auto; min-height: 38px; padding: 7px 10px; }
   .shell[data-theme="orbit-glass"] .nav-link > span:first-of-type { display: inline; }
-  .shell[data-theme="orbit-glass"] .nav-link::after { display: none; }
   .shell[data-theme="orbit-glass"] .side-foot { width: auto; margin: 0; padding: 4px 0 0; display: flex; justify-content: flex-end; }
   .shell[data-theme="orbit-glass"] .side-preferences { width: auto; display: flex; flex: 1; }
   .shell[data-theme="orbit-glass"] .side-preferences .language-picker { flex: 1; }

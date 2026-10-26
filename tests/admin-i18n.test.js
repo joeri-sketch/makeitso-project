@@ -51,3 +51,14 @@ test('Orbit Glass dashboard labels translate with dynamic admin data', () => {
   assert.equal(translateText('Projects in your orbit'), 'Projecten in jouw universum');
   assert.equal(translateText('Latest updates'), 'Laatste updates');
 });
+
+test('admin dialogs and account details have Dutch labels', () => {
+  setLanguage('nl');
+  assert.equal(translateText('Client portal access'), 'Toegang tot het klantenportaal');
+  assert.equal(translateText('Invitation links are one-time and expire after 7 days. Share them with the client yourself.'), 'Uitnodigingslinks kunnen één keer worden gebruikt en verlopen na 7 dagen. Deel ze zelf met de klant.');
+  assert.equal(translateText('Last check: 26 Oct 2026'), 'Laatste controle: 26 Oct 2026');
+  assert.equal(translateText('Issue invoice'), 'Factuur versturen');
+  assert.equal(translateText('Show archived'), 'Gearchiveerde items tonen');
+  assert.equal(translateText('← All clients'), '← Alle klanten');
+  assert.equal(translateMarkup('<h3>Media services &amp; access</h3>'), '<h3>Mediaservices en toegang</h3>');
+});

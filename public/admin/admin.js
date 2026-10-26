@@ -808,7 +808,7 @@ async function clientView(view, id) {
           </form>
           <hr><header><h3>Media services &amp; access</h3></header>
           <p class="muted">Configured services are checked automatically every 60 seconds. Ubuntu checks TCP port reachability only, not OS health or remote-desktop sign-in. Share dedicated client accounts, never root or administrator credentials.</p>
-          <ul class="list">${media.services.map((s) => html`<li><span class="grow"><strong>${mediaServiceName(s.service)}</strong><span class="sub">${mediaStatusLabel(s.status)} · ${s.status_source === 'automatic' ? 'Automatic check' : 'Manual status'} · ${s.share_access ? 'Client access shared' : 'Access not shared'}${s.has_password ? ' · Password stored securely' : ''}</span>${s.status_source === 'automatic' ? html`<span class="sub">${s.checked_at ? `Last check: ${new Date(s.checked_at).toLocaleString('en-GB')}` : 'First check pending'}${s.stale && s.checked_at ? ' · No recent measurement' : ''}</span>` : ''}</span><button class="btn small" data-action="edit-media" data-service="${s.service}">Manage</button></li>`)}</ul>
+          <ul class="list">${media.services.map((s) => html`<li><span class="grow"><strong>${mediaServiceName(s.service)}</strong><span class="sub">${mediaStatusLabel(s.status)} · ${s.status_source === 'automatic' ? 'Automatic check' : 'Manual status'} · ${s.share_access ? 'Client access shared' : 'Access not shared'}${s.has_password ? ' · Password stored securely' : ''}</span>${s.status_source === 'automatic' ? html`<span class="sub">${s.checked_at ? `Last check: ${new Date(s.checked_at).toLocaleString(state.language === 'en' ? 'en-GB' : 'nl-BE')}` : 'First check pending'}${s.stale && s.checked_at ? ' · No recent measurement' : ''}</span>` : ''}</span><button class="btn small" data-action="edit-media" data-service="${s.service}">Manage</button></li>`)}</ul>
         </section>` : ''}
         <section class="card"><header><h2>Activity</h2></header>${activityList(d.activity)}</section>
       </div>
@@ -1411,7 +1411,7 @@ async function showQuoteForm(quote = null) {
   dlg.showModal();
 }
 
-const quoteMoney = (cents) => new Intl.NumberFormat('en-BE', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
+const quoteMoney = (cents) => new Intl.NumberFormat(state.language === 'en' ? 'en-BE' : 'nl-BE', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
 
 async function quotesView(view) {
   const { quotes } = await get('/quotes');
@@ -1470,7 +1470,7 @@ async function quoteView(view, id) {
 }
 
 /* ---------------- invoices ---------------- */
-const invoiceMoney = (cents) => new Intl.NumberFormat('en-BE', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
+const invoiceMoney = (cents) => new Intl.NumberFormat(state.language === 'en' ? 'en-BE' : 'nl-BE', { style: 'currency', currency: 'EUR' }).format(Number(cents) / 100);
 const invoiceToday = () => new Date().toISOString().slice(0, 10);
 
 async function invoiceProfileForm() {
