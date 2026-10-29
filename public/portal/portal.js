@@ -3,7 +3,7 @@ import { createMediaPanel, mediaTabLabel } from './media.js';
 const $ = (selector, root = document) => root.querySelector(selector);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const app = $('#app');
-const state = { user: null, overview: null, invoices: [], tickets: [], contracts: [], language: 'en', activeTab: 'projects' };
+const state = { user: null, overview: null, invoices: [], tickets: [], contracts: [], language: 'en', activeTab: 'overview' };
 let mediaPanel;
 const COPY = {
   en: { portal: 'Client portal', signIn: 'Sign in', email: 'Email', password: 'Password', continue: 'Continue', dashboard: 'Your projects', signOut: 'Sign out', quotes: 'Quotes', milestones: 'Milestones', workItems: 'Current work', updates: 'Project updates', noProjects: 'No active projects yet.', noNotes: 'No shared updates yet.', noQuotes: 'No quotes yet.', progress: 'Progress', next: 'Next step', target: 'Target date', accept: 'Accept quote', decline: 'Decline quote', decision: 'Your decision', valid: 'Valid until', invitation: 'Set up your client account', setPassword: 'Create password', activate: 'Activate account', passwordHelp: 'Use at least 12 characters.', invitationBad: 'This invitation is invalid or expired. Ask your contact for a new one.', admin: 'This is an admin account. Go to the admin area.', quote: 'Quote', subtotal: 'Subtotal', vat: 'VAT', total: 'Total', response: 'Message (optional)', noMilestones: 'No milestones yet.', status: 'Status', description: 'Description', tax: 'VAT', terms: 'Terms', error: 'Something went wrong.', invoices: 'Invoices', noInvoices: 'No invoices yet.', downloadPdf: 'Download PDF', due: 'Due', balance: 'Balance due', tickets: 'Support', noTickets: 'No support tickets yet.', newTicket: 'Create a support ticket', subject: 'Subject', message: 'Message', send: 'Send', reply: 'Reply', closed: 'This ticket is closed.', priority: 'Priority', feedbackNeeded: 'Feedback needed', noMessages: 'No messages yet.', addMessage: 'Add a message', sendMessage: 'Send message', you: 'You', studio: 'Make It So', workDescription: 'Feature details', testSite: 'Test site', testSiteReady: 'A preview is ready for you to explore.', testSitePending: 'Your preview link will appear here when it is ready to share.', openTestSite: 'Open test site', projectConversation: 'Project conversation', projectConversationIntro: 'Questions or feedback? Keep the conversation with the studio here.', featureLabel: 'Feature', sendProjectMessage: 'Send message' },
@@ -68,6 +68,11 @@ Object.assign(COPY.fr, {
 Object.assign(COPY.en, {
   loginWelcome: 'Welcome to your workspace',
   loginDescription: 'Follow your projects, services and invoices in one clear place.',
+  overviewTab: 'Overview', workspace: 'Workspace', welcomeBack: 'Welcome back', workspaceIntro: 'Here is the latest overview of your projects and services.',
+  today: 'Today', activeServices: 'Active services', activeProjects: 'In progress', openInvoices: 'Open invoices',
+  serviceSummary: 'Your domains, hosting and email at a glance.', projectSummary: 'A quick look at your current work.',
+  invoiceSummary: 'Recent invoices and outstanding balances.', viewAll: 'View all', noProjectSummary: 'No projects to show yet.',
+  noOpenInvoices: 'No open invoices.', updated: 'Updated',
   services: 'Your services', servicesTab: 'Services', noServices: 'No active services are listed yet.',
   serviceType: 'Service', serviceName: 'Name', serviceStatus: 'Status', serviceStarted: 'Started',
   serviceRenewal: 'Next renewal', serviceNotes: 'Notes', noRenewal: 'No renewal scheduled',
@@ -77,6 +82,11 @@ Object.assign(COPY.en, {
 Object.assign(COPY.nl, {
   loginWelcome: 'Welkom in je klantomgeving',
   loginDescription: 'Volg je projecten, diensten en facturen op één overzichtelijke plek.',
+  overviewTab: 'Overzicht', workspace: 'Klantomgeving', welcomeBack: 'Welkom terug', workspaceIntro: 'Hier zie je de actuele stand van je projecten en diensten.',
+  today: 'Vandaag', activeServices: 'Actieve diensten', activeProjects: 'Lopende projecten', openInvoices: 'Open facturen',
+  serviceSummary: 'Je domeinen, hosting en e-mail in één overzicht.', projectSummary: 'Een blik op je lopende werk.',
+  invoiceSummary: 'Recente facturen en openstaande bedragen.', viewAll: 'Bekijk alles', noProjectSummary: 'Er zijn nog geen projecten.',
+  noOpenInvoices: 'Geen open facturen.', updated: 'Bijgewerkt',
   services: 'Jouw diensten', servicesTab: 'Diensten', noServices: 'Er zijn nog geen actieve diensten geregistreerd.',
   serviceType: 'Dienst', serviceName: 'Naam', serviceStatus: 'Status', serviceStarted: 'Gestart',
   serviceRenewal: 'Volgende verlenging', serviceNotes: 'Opmerkingen', noRenewal: 'Geen verlenging gepland',
@@ -86,6 +96,11 @@ Object.assign(COPY.nl, {
 Object.assign(COPY.fr, {
   loginWelcome: 'Bienvenue dans votre espace',
   loginDescription: 'Suivez vos projets, services et factures au même endroit.',
+  overviewTab: 'Aperçu', workspace: 'Espace client', welcomeBack: 'Bon retour', workspaceIntro: 'Voici un aperçu récent de vos projets et services.',
+  today: 'Aujourd’hui', activeServices: 'Services actifs', activeProjects: 'Projets en cours', openInvoices: 'Factures ouvertes',
+  serviceSummary: 'Vos domaines, hébergements et e-mails en un coup d’œil.', projectSummary: 'Un aperçu de vos projets en cours.',
+  invoiceSummary: 'Factures récentes et soldes à régler.', viewAll: 'Tout afficher', noProjectSummary: 'Aucun projet pour le moment.',
+  noOpenInvoices: 'Aucune facture ouverte.', updated: 'Mis à jour',
   services: 'Vos services', servicesTab: 'Services', noServices: 'Aucun service actif n’est encore répertorié.',
   serviceType: 'Service', serviceName: 'Nom', serviceStatus: 'Statut', serviceStarted: 'Début',
   serviceRenewal: 'Prochain renouvellement', serviceNotes: 'Notes', noRenewal: 'Aucun renouvellement prévu',
@@ -191,7 +206,7 @@ function renderDashboard() {
   mediaPanel?.destroy();
   mediaPanel = null;
   const data = state.overview;
-  if (state.activeTab === 'media' && !data.client.media_enabled) state.activeTab = 'projects';
+  if (state.activeTab === 'media' && !data.client.media_enabled) state.activeTab = 'overview';
   const projects = data.projects.length
     ? data.projects.map((project) => {
       const projectId = Number(project.id);
@@ -314,8 +329,22 @@ function renderDashboard() {
           <td data-label="${t('serviceRenewal')}">${service.renewal_date ? date(service.renewal_date) : t('noRenewal')}</td>
         </tr>`).join('')}</tbody></table></div>`
     : `<p class="empty service-empty">${t('noServices')}</p>`;
+  const activeServices = data.services.filter((service) => service.status === 'active');
+  const activeProjects = data.projects.filter((project) => project.status !== 'launched');
+  const openInvoices = state.invoices.filter((invoice) => !['paid', 'void'].includes(invoice.display_status));
+  const projectSummary = activeProjects.length
+    ? `<ul class="overview-list">${activeProjects.slice(0, 3).map((project) => {
+      const progress = Math.max(0, Math.min(100, Number(project.progress) || 0));
+      return `<li><span class="overview-project-icon" aria-hidden="true">▦</span><span class="grow"><strong>${esc(project.name)}</strong><small>${esc(project.category || STATUS[state.language]?.[project.status] || project.status)} · ${t('updated')} ${date(project.updated_at)}</small></span><span class="overview-progress" role="progressbar" aria-label="${t('overallProgress')}" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"><i style="width:${progress}%"></i></span><b class="overview-percent">${progress}%</b></li>`;
+    }).join('')}</ul>`
+    : `<p class="empty">${t('noProjectSummary')}</p>`;
+  const invoiceSummary = openInvoices.length
+    ? `<ul class="overview-list overview-invoices">${openInvoices.slice(0, 3).map((invoice) => `<li><span class="overview-invoice-icon" aria-hidden="true">▤</span><span class="grow"><strong>${esc(invoice.invoice_number)} · ${esc(invoice.title)}</strong><small>${t('due')} ${date(invoice.due_date)} · ${t('balance')} ${money(invoice.balance_cents)}</small></span>${status(invoice.display_status)}<a class="overview-download" href="/api/portal/invoices/${esc(invoice.id)}/pdf" aria-label="${t('downloadPdf')} ${esc(invoice.invoice_number)}">↓</a></li>`).join('')}</ul>`
+    : `<p class="empty">${t('noOpenInvoices')}</p>`;
+  const firstName = state.user.name.trim().split(/\s+/)[0];
   app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 1.75 15.1 8.9 22.25 12l-7.15 3.1L12 22.25 8.9 15.1 1.75 12 8.9 8.9z"/></svg></span><span>make it so<em>.</em></span></a>
       <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
+        <button type="button" role="tab" id="tab-overview" data-tab="overview" aria-controls="portal-tab-overview" aria-selected="${state.activeTab === 'overview'}" tabindex="${state.activeTab === 'overview' ? '0' : '-1'}">${t('overviewTab')}</button>
         <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
         <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="portal-tab-services" aria-selected="${state.activeTab === 'services'}" tabindex="${state.activeTab === 'services' ? '0' : '-1'}">${t('servicesTab')}</button>
         <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>
@@ -326,7 +355,22 @@ function renderDashboard() {
       </nav>
       <div class="portal-account"><span class="account-initials" aria-hidden="true">${esc(state.user.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase())}</span><span class="account-name">${esc(state.user.name)}</span><button id="logout" class="btn">${t('signOut')}</button></div>
     </header>
-    <main class="wrap portal-wrap"><header class="portal-welcome"><div><span class="eyebrow">${t('portal')}</span><h1>${esc(data.client.company_name)}</h1><p>${t('loginDescription')}</p></div></header>
+    <main class="wrap portal-wrap"><header class="portal-welcome dashboard-greeting"><div><span class="eyebrow">${t('workspace')} · ${esc(data.client.company_name)}</span><h1>${t('welcomeBack')}, ${esc(firstName)}.</h1><p>${t('workspaceIntro')}</p></div><div class="dashboard-today"><span>${t('today')}</span><strong>${date(new Date().toISOString())}</strong></div></header>
+      <section class="portal-tab-panel portal-overview" id="portal-tab-overview" role="tabpanel" aria-labelledby="tab-overview"${state.activeTab === 'overview' ? '' : ' hidden'}>
+        <div class="overview-stats">
+          <article class="overview-stat"><span class="overview-stat-icon service-stat-icon" aria-hidden="true">◈</span><div><strong>${activeServices.length}</strong><span>${t('activeServices')}</span></div></article>
+          <article class="overview-stat"><span class="overview-stat-icon project-stat-icon" aria-hidden="true">▦</span><div><strong>${activeProjects.length}</strong><span>${t('activeProjects')}</span></div></article>
+          <article class="overview-stat"><span class="overview-stat-icon invoice-stat-icon" aria-hidden="true">▤</span><div><strong>${openInvoices.length}</strong><span>${t('openInvoices')}</span></div></article>
+        </div>
+        <section class="card overview-services">
+          <header class="overview-card-heading"><div><h2>${t('services')}</h2><p>${t('serviceSummary')}</p></div><button class="overview-view-all" type="button" data-portal-tab="services">${t('viewAll')} <span aria-hidden="true">→</span></button></header>
+          ${services}
+        </section>
+        <div class="overview-lower">
+          <section class="card overview-card"><header class="overview-card-heading"><div><h2>${t('projectsTab')}</h2><p>${t('projectSummary')}</p></div><button class="overview-view-all" type="button" data-portal-tab="projects">${t('viewAll')} <span aria-hidden="true">→</span></button></header>${projectSummary}</section>
+          <section class="card overview-card"><header class="overview-card-heading"><div><h2>${t('invoicesTab')}</h2><p>${t('invoiceSummary')}</p></div><button class="overview-view-all" type="button" data-portal-tab="invoices">${t('viewAll')} <span aria-hidden="true">→</span></button></header>${invoiceSummary}</section>
+        </div>
+      </section>
       <section class="portal-tab-panel status-project-list" id="portal-tab-projects" role="tabpanel" aria-labelledby="tab-projects"${state.activeTab === 'projects' ? '' : ' hidden'}>${projects}</section>
       <section class="portal-tab-panel portal-extras" id="portal-tab-services" role="tabpanel" aria-labelledby="tab-services"${state.activeTab === 'services' ? '' : ' hidden'}>
         <header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('services')}</h2></div><span class="eyebrow">${data.services.length} ${t('servicesTab').toLowerCase()}</span></header>
@@ -420,7 +464,7 @@ function renderDashboard() {
 }
 
 function setPortalTab(tabName) {
-  if (!['projects', 'services', 'quotes', 'contracts', 'invoices', 'support', 'media'].includes(tabName)) return;
+  if (!['overview', 'projects', 'services', 'quotes', 'contracts', 'invoices', 'support', 'media'].includes(tabName)) return;
   if (tabName === 'media' && !state.overview?.client.media_enabled) return;
   mediaPanel?.conceal();
   state.activeTab = tabName;
@@ -435,6 +479,12 @@ function setPortalTab(tabName) {
 }
 
 async function handlePortalClick(event) {
+  const dashboardTab = event.target.closest('[data-portal-tab]');
+  if (dashboardTab) {
+    setPortalTab(dashboardTab.dataset.portalTab);
+    $('#tab-' + dashboardTab.dataset.portalTab)?.focus();
+    return;
+  }
   const decisionButton = event.target.closest('[data-contract-decision]');
   if (decisionButton) {
     const form = decisionButton.closest('[data-contract-response]');

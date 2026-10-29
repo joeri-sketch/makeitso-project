@@ -341,3 +341,53 @@ button, input, textarea { font: inherit; color: inherit; }
   .auth-intro { min-height: 230px; padding: 25px; }
   .portal-nav { justify-content: flex-start; }
 }
+.dashboard-greeting { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 14px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 17px; background: #fff; }
+.dashboard-greeting .eyebrow { color: #777f94; }
+.dashboard-greeting h1 { margin-top: 5px; font-size: clamp(24px, 3vw, 32px); }
+.dashboard-greeting > div > p { margin-top: 5px; color: var(--muted); font-size: 13px; }
+.dashboard-today { display: grid; gap: 3px; flex: none; text-align: right; }
+.dashboard-today span { color: var(--muted); font-size: 12px; }
+.dashboard-today strong { color: var(--ink); font: 600 14px var(--font-display); }
+.portal-overview { display: grid; gap: 14px; }
+.overview-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+.overview-stat { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.overview-stat-icon { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 11px; font-size: 18px; font-style: normal; }
+.service-stat-icon { color: #6965ed; background: #f0efff; }
+.project-stat-icon { color: #2879a8; background: #eaf5fb; }
+.invoice-stat-icon { color: #a5781e; background: #fff5df; }
+.overview-stat strong { display: block; color: var(--ink); font: 700 19px var(--font-display); line-height: 1.15; }
+.overview-stat div > span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.overview-services, .overview-card { min-width: 0; padding: 18px; }
+.overview-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 13px; }
+.overview-card-heading h2 { font-size: 17px; }
+.overview-card-heading p { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.overview-view-all { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 6px 0 6px 8px; border: 0; color: #6965ed; background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+.overview-view-all:hover { color: var(--blue-deep); }
+.overview-lower { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 12px; }
+.overview-list { list-style: none; padding: 0; margin: 0; }
+.overview-list > li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 11px 0; border-top: 1px solid #eff0f4; }
+.overview-project-icon, .overview-invoice-icon { display: grid; place-items: center; flex: none; width: 33px; height: 33px; border-radius: 10px; color: #555ed1; background: #edf0ff; font-size: 15px; }
+.overview-invoice-icon { color: #9a6d12; background: #fff5df; }
+.overview-list .grow { min-width: 0; }
+.overview-list strong { display: block; overflow: hidden; color: var(--ink); font: 600 12px var(--font-display); text-overflow: ellipsis; white-space: nowrap; }
+.overview-list small { display: block; overflow: hidden; margin-top: 2px; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.overview-progress { display: block; flex: none; width: 76px; height: 5px; overflow: hidden; border-radius: 9px; background: #ececf2; }
+.overview-progress i { display: block; height: 100%; border-radius: inherit; background: #6965ed; }
+.overview-percent { flex: none; color: var(--muted); font-size: 10px; }
+.overview-invoices .chip { font-size: 10px; }
+.overview-download { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 8px; color: #6965ed; font-size: 16px; }
+.overview-download:hover { background: #f0efff; }
+@media (max-width: 760px) {
+  .dashboard-greeting { align-items: flex-start; padding: 16px; }
+  .overview-lower { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .dashboard-today { text-align: left; }
+  .overview-stats { gap: 6px; }
+  .overview-stat { align-items: flex-start; flex-direction: column; gap: 8px; padding: 10px; }
+  .overview-stat-icon { width: 32px; height: 32px; }
+  .overview-stat strong { font-size: 16px; }
+  .overview-stat div > span { font-size: 9px; }
+  .overview-services, .overview-card { padding: 13px; }
+  .overview-progress { width: 48px; }
+}
