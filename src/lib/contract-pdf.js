@@ -30,6 +30,14 @@ const date = (value) => value
   ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })
   : 'Niet opgegeven';
 const clean = (value, fallback = 'Niet opgegeven in het klantprofiel') => String(value || '').trim() || fallback;
+function clientDisplayName(client) {
+  const name = clean(client.company_name, '');
+  const legalForm = clean(client.legal_form, '');
+  const tokens = name.toLocaleLowerCase('nl-BE').split(/[\s.,()]+/);
+  return legalForm && !tokens.includes(legalForm.toLocaleLowerCase('nl-BE'))
+    ? `${name} ${legalForm}`.trim()
+    : name;
+}
 
 function collectPdf(doc) {
   const chunks = [];
@@ -59,29 +67,43 @@ export async function generateContractPdf({ client, contact, project, quote }) {
   const left = 54;
   const right = doc.page.width - 54;
   const width = right - left;
-  const bottom = doc.page.height - doc.page.margins.bottom;
   const clientAddress = [
     client.address_line1,
     client.address_line2,
     [client.postal_code, client.city].filter(Boolean).join(' '),
     client.country === 'BE' ? 'België' : client.country
-  ].filter(Boolean).join(', ');
+  ].filter(Boolean);
   const quoteTotal = quote
     ? euro((Number(quote.subtotal_cents) + Number(quote.vat_cents)) / 100)
     : null;
 
   function keepSpace(height) {
-    if (doc.y + height > bottom) doc.addPage();
+    const bottom = doc.page.height - doc.page.margins.bottom;
+    if (height <= bottom - doc.page.margins.top && doc.y + height > bottom) doc.addPage();
   }
 
   function paragraph(text, { size = 9.5, color = colors.ink, bold = false, after = 7, x = left } = {}) {
-    doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(size).fillColor(color)
+    const font = bold ? 'Helvetica-Bold' : 'Helvetica';
+    const textHeight = doc.heightOfString(text, {
+      width: right - x,
+      font,
+      fontSize: size,
+      lineGap: 3
+    });
+    keepSpace(textHeight + after + 3);
+    doc.font(font).fontSize(size).fillColor(color)
       .text(text, x, doc.y, { width: right - x, lineGap: 3 });
     doc.moveDown(after / 12);
   }
 
   function section(number, title, text) {
-    keepSpace(78);
+    const textHeight = doc.heightOfString(text, {
+      width: width - 36,
+      font: 'Helvetica',
+      fontSize: 9.5,
+      lineGap: 3
+    });
+    keepSpace(34 + textHeight + 10);
     const y = doc.y;
     doc.roundedRect(left, y, 26, 24, 7).fill(colors.blue);
     doc.font('Helvetica-Bold').fontSize(8).fillColor(colors.white)
@@ -103,46 +125,71 @@ export async function generateContractPdf({ client, contact, project, quote }) {
     doc.y = y + 34;
   }
 
-  function cardTextHeight(text, cardWidth) {
-    return doc.heightOfString(text, {
-      width: cardWidth - 28,
-      font: 'Helvetica',
-      fontSize: 8.8,
-      lineGap: 2.5
-    });
-  }
-
   function partiesCard() {
     const gap = 14;
     const cardWidth = (width - gap) / 2;
-    const sellerDetails = [
-      seller.companyNumber,
-      seller.address,
-      seller.email,
-      `Vertegenwoordigd door ${seller.representative}`
-    ].join('\n');
-    const clientDetails = [
-      client.company_number || client.vat_number,
-      clientAddress,
-      client.email,
-      contact?.name ? `Contactpersoon ${contact.name}${contact.role ? `, ${contact.role}` : ''}` : '',
-      contact?.email && contact.email !== client.email ? contact.email : ''
-    ].filter(Boolean).join('\n');
-    const height = Math.max(108, cardTextHeight(sellerDetails, cardWidth), cardTextHeight(clientDetails, cardWidth)) + 48;
+    const sellerName = seller.name;
+    const clientName = clientDisplayName(client);
+    const sellerRows = [
+      { label: 'Ondernemingsnummer', value: seller.companyNumber },
+      { label: 'Maatschappelijke zetel', value: 'Stichelendries 47A\n9340 Oordegem\nBelgië' },
+      { label: 'E-mail', value: seller.email },
+      { label: 'Vertegenwoordiger', value: seller.representative }
+    ];
+    const clientRows = [
+      { label: 'Ondernemingsnummer', value: client.company_number || client.vat_number },
+      ...(clientAddress.length ? [{ label: 'Adres', value: clientAddress.join('\n') }] : []),
+      { label: 'E-mail', value: client.email },
+      ...(contact?.name ? [{
+        label: 'Contactpersoon',
+        value: [contact.name, contact.role].filter(Boolean).join(' · ')
+      }] : []),
+      ...(contact?.email && contact.email !== client.email ? [{ label: 'E-mail contactpersoon', value: contact.email }] : [])
+    ].filter((row) => row.value);
+    const parties = [
+      { x: left, title: 'DIENSTVERLENER', name: sellerName, rows: sellerRows },
+      { x: left + cardWidth + gap, title: 'OPDRACHTGEVER', name: clientName, rows: clientRows }
+    ];
+    const nameHeight = (name) => doc.heightOfString(name, {
+      width: cardWidth - 28,
+      font: 'Helvetica-Bold',
+      fontSize: 10.5,
+      lineGap: 1.5
+    });
+    const rowHeight = ({ value }) => doc.heightOfString(value, {
+      width: cardWidth - 28,
+      font: 'Helvetica',
+      fontSize: 8.5,
+      lineGap: 2
+    }) + 18;
+    const height = Math.max(132, ...parties.map(({ name, rows }) =>
+      51 + nameHeight(name) + rows.reduce((total, row) => total + rowHeight(row), 0) + 10
+    ));
     keepSpace(height + 8);
     const y = doc.y;
 
-    for (const [x, title, name, details] of [
-      [left, 'DIENSTVERLENER', seller.name, sellerDetails],
-      [left + cardWidth + gap, 'OPDRACHTGEVER', `${clean(client.legal_form, '')} ${client.company_name}`.trim(), clientDetails]
-    ]) {
+    for (const { x, title, name, rows } of parties) {
       doc.roundedRect(x, y, cardWidth, height, 10).fill(colors.pale);
       doc.font('Helvetica-Bold').fontSize(7.5).fillColor(colors.muted)
         .text(title, x + 14, y + 13, { width: cardWidth - 28, lineBreak: false });
-      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(colors.navy)
-        .text(name, x + 14, y + 28, { width: cardWidth - 28 });
-      doc.font('Helvetica').fontSize(8.8).fillColor(colors.ink)
-        .text(details, x + 14, y + 48, { width: cardWidth - 28, lineGap: 2.5 });
+      doc.font('Helvetica-Bold').fontSize(10.5).fillColor(colors.navy)
+        .text(name, x + 14, y + 29, { width: cardWidth - 28, lineGap: 1.5 });
+      let rowY = y + 35 + nameHeight(name);
+      doc.moveTo(x + 14, rowY).lineTo(x + cardWidth - 14, rowY).lineWidth(0.5).stroke(colors.line);
+      rowY += 8;
+      for (const row of rows) {
+        doc.font('Helvetica-Bold').fontSize(6.5).fillColor(colors.muted)
+          .text(row.label.toLocaleUpperCase('nl-BE'), x + 14, rowY, { width: cardWidth - 28, lineBreak: false });
+        rowY += 9;
+        doc.font('Helvetica').fontSize(8.5).fillColor(colors.ink)
+          .text(row.value, x + 14, rowY, { width: cardWidth - 28, lineGap: 2 });
+        rowY += doc.heightOfString(row.value, {
+          width: cardWidth - 28,
+          font: 'Helvetica',
+          fontSize: 8.5,
+          lineGap: 2
+        }) + 8;
+      }
     }
     doc.y = y + height + 13;
   }
@@ -192,9 +239,15 @@ export async function generateContractPdf({ client, contact, project, quote }) {
     }
 
     for (const [index, item] of quote.items.entries()) {
-      keepSpace(34);
+      const descriptionHeight = doc.heightOfString(item.description, {
+        width: width - 216,
+        font: 'Helvetica',
+        fontSize: 8.8
+      });
+      const rowHeight = Math.max(25, descriptionHeight + 14);
+      keepSpace(rowHeight + 5);
       const y = doc.y;
-      if (index % 2 === 0) doc.roundedRect(left, y, width, 25, 5).fill(colors.pale);
+      if (index % 2 === 0) doc.roundedRect(left, y, width, rowHeight, 5).fill(colors.pale);
       doc.font('Helvetica').fontSize(8.8).fillColor(colors.ink)
         .text(item.description, left + 9, y + 7, { width: width - 216 });
       doc.text(`${item.quantity} x ${euro(item.unit_price)}`, right - 194, y + 7, {
@@ -207,7 +260,7 @@ export async function generateContractPdf({ client, contact, project, quote }) {
         align: 'right',
         lineBreak: false
       });
-      doc.y = y + 30;
+      doc.y = y + rowHeight + 5;
     }
     paragraph(`Subtotaal excl. btw: ${euro(Number(quote.subtotal_cents) / 100)}   |   Btw: ${euro(Number(quote.vat_cents) / 100)}   |   Totaal incl. btw: ${quoteTotal}`, {
       size: 8.8,
@@ -325,11 +378,11 @@ export async function generateContractPdf({ client, contact, project, quote }) {
     'Hosting, domeinen, externe licenties, doorlopende ondersteuning en onderhoud zijn niet inbegrepen tenzij ze uitdrukkelijk in de opdracht of offerte staan. Make It So voert het overeengekomen werk professioneel uit en herstelt aantoonbare afwijkingen van de specificaties binnen een redelijke termijn. De beschikbaarheid van externe platformen valt buiten de controle van Make It So.');
   section(13, 'Aansprakelijkheid en overmacht',
     'Voor zover wettelijk toegestaan is een Partij alleen aansprakelijk voor voorzienbare, rechtstreekse schade die het onmiddellijke gevolg is van een toerekenbare tekortkoming. Aansprakelijkheid voor indirecte schade is uitgesloten voor zover de wet dit toestaat. De totale aansprakelijkheid van Make It So is, voor zover wettelijk toegestaan, beperkt tot de vergoeding voor deze opdracht. Deze beperking geldt niet waar dwingend recht beperking verbiedt. Een Partij is niet aansprakelijk voor vertraging door omstandigheden buiten haar redelijke controle en meldt die omstandigheden zo spoedig mogelijk.');
-  keepSpace(150);
+  keepSpace(180);
   section(14, 'Toepasselijk recht en akkoord',
     'Op deze overeenkomst is Belgisch recht van toepassing. Partijen proberen geschillen eerst in onderling overleg op te lossen; daarna gelden de wettelijke bevoegdheidsregels. Wijzigingen zijn alleen geldig wanneer beide Partijen ze schriftelijk bevestigen. Door ondertekening bevestigen Partijen akkoord te gaan met deze overeenkomst en de hierboven opgenomen project- en offertegegevens. De ondertekening via het portaal registreert de goedkeuring en wordt niet voorgesteld als een gekwalificeerde elektronische handtekening.');
 
-  keepSpace(144);
+  keepSpace(180);
   sectionHeading(15, 'Ondertekening');
   paragraph('Opgemaakt in twee exemplaren of digitaal goedgekeurd. Beide Partijen ontvangen een exemplaar.', {
     size: 8.8,
