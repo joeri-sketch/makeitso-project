@@ -7,6 +7,8 @@ import { requireAdmin } from '../middleware/session.js';
 
 const LANGS = ['nl', 'fr', 'en'];
 const CLIENT_STATUS = ['prospect', 'active', 'inactive'];
+const CLIENT_SERVICE_TYPES = ['domain', 'web_hosting', 'email_hosting'];
+const CLIENT_SERVICE_STATUSES = ['active', 'pending', 'suspended', 'ended'];
 const PROJECT_STATUS = ['discovery', 'wireframing', 'development', 'review', 'launched', 'on_hold'];
 const MILESTONE_STATUS = ['todo', 'doing', 'done'];
 const LEAD_STATUS = ['new', 'contacted', 'qualified', 'converted', 'lost'];
@@ -49,6 +51,21 @@ const contactSchema = {
   role: (x) => v.str(x, 'role', { max: 80 }),
   is_primary: (x) => v.bool(x)
 };
+
+const clientServiceSchema = {
+  service_type: (x) => v.oneOf(x, 'service_type', CLIENT_SERVICE_TYPES, { required: true }),
+  name: (x) => v.str(x, 'name', { required: true, min: 1, max: 180 }),
+  status: (x) => v.oneOf(x, 'status', CLIENT_SERVICE_STATUSES) ?? 'active',
+  start_date: (x) => v.date(x, 'start_date', { required: true }),
+  renewal_date: (x) => v.date(x, 'renewal_date'),
+  notes: (x) => v.str(x, 'notes', { max: 1000 }) ?? ''
+};
+
+function validateClientServiceDates(startDate, renewalDate) {
+  if (renewalDate && startDate && renewalDate < startDate) {
+    throw new HttpError(400, 'renewal_date must be on or after start_date.', { field: 'renewal_date' });
+  }
+}
 
 const projectSchema = {
   client_id: (x) => v.id(x, 'client_id'),
@@ -262,7 +279,7 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
     const id = v.id(req.params.id);
     const { rows } = await db.query('SELECT * FROM clients WHERE id = $1', [id]);
     if (!rows[0]) throw new HttpError(404, 'Client not found.');
-    const [contacts, projects, notes, activity, accounts] = await Promise.all([
+    const [contacts, projects, notes, activity, accounts, services] = await Promise.all([
       db.query('SELECT * FROM contacts WHERE client_id = $1 ORDER BY is_primary DESC, id', [id]),
       db.query('SELECT * FROM projects WHERE client_id = $1 ORDER BY archived_at NULLS FIRST, updated_at DESC', [id]),
       db.query(`SELECT n.*, u.name AS author_name FROM notes n LEFT JOIN users u ON u.id = n.author_id
@@ -270,9 +287,76 @@ export function crmRoutes({ db, config, mailer, log = () => {} }) {
       db.query(`SELECT a.id, a.action, a.entity, a.meta, a.created_at, u.name AS actor_name
                   FROM activity_log a LEFT JOIN users u ON u.id = a.actor_id
                  WHERE a.client_id = $1 ORDER BY a.created_at DESC, a.id DESC LIMIT 25`, [id]),
-      db.query('SELECT id, email, name, active, created_at FROM users WHERE client_id = $1 ORDER BY created_at', [id])
+      db.query('SELECT id, email, name, active, created_at FROM users WHERE client_id = $1 ORDER BY created_at', [id]),
+      db.query(
+        `SELECT id, service_type, name, status, start_date, renewal_date, notes, created_at, updated_at
+           FROM client_hosting_services WHERE client_id = $1
+          ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'pending' THEN 1 WHEN 'suspended' THEN 2 ELSE 3 END,
+                   renewal_date NULLS LAST, id`,
+        [id]
+      )
     ]);
-    res.json({ client: rows[0], contacts: contacts.rows, projects: projects.rows, notes: notes.rows, activity: activity.rows, accounts: accounts.rows });
+    res.json({ client: rows[0], contacts: contacts.rows, projects: projects.rows, notes: notes.rows, activity: activity.rows, accounts: accounts.rows, services: services.rows });
+  }));
+
+  r.post('/clients/:id/services', h(async (req, res) => {
+    const clientId = v.id(req.params.id);
+    const data = parse(req.body, clientServiceSchema);
+    validateClientServiceDates(data.start_date, data.renewal_date);
+    const service = await db.tx(async (t) => {
+      const client = (await t.query(
+        'SELECT id FROM clients WHERE id = $1 AND archived_at IS NULL FOR UPDATE',
+        [clientId]
+      )).rows[0];
+      if (!client) throw new HttpError(404, 'Active client not found.');
+      const created = await insertRow(t, 'client_hosting_services', { ...data, client_id: clientId });
+      await audit(t, req, 'client_service.created', {
+        entity: 'client_service', entityId: created.id, clientId, meta: { service_type: created.service_type, name: created.name }
+      });
+      return created;
+    });
+    res.status(201).json({ service });
+  }));
+
+  r.patch('/clients/:id/services/:serviceId', h(async (req, res) => {
+    const clientId = v.id(req.params.id);
+    const serviceId = v.id(req.params.serviceId, 'service_id');
+    const data = parse(req.body, clientServiceSchema, { partial: true });
+    const service = await db.tx(async (t) => {
+      const current = (await t.query(
+        'SELECT * FROM client_hosting_services WHERE id = $1 AND client_id = $2 FOR UPDATE',
+        [serviceId, clientId]
+      )).rows[0];
+      if (!current) throw new HttpError(404, 'Client service not found.');
+      const startDate = data.start_date ?? String(current.start_date).slice(0, 10);
+      const renewalDate = Object.hasOwn(data, 'renewal_date')
+        ? data.renewal_date
+        : current.renewal_date ? String(current.renewal_date).slice(0, 10) : null;
+      validateClientServiceDates(startDate, renewalDate);
+      const updated = await updateRow(t, 'client_hosting_services', serviceId, data, ', updated_at = now()');
+      await audit(t, req, 'client_service.updated', {
+        entity: 'client_service', entityId: serviceId, clientId, meta: { fields: Object.keys(data) }
+      });
+      return updated;
+    });
+    res.json({ service });
+  }));
+
+  r.delete('/clients/:id/services/:serviceId', h(async (req, res) => {
+    const clientId = v.id(req.params.id);
+    const serviceId = v.id(req.params.serviceId, 'service_id');
+    const service = await db.tx(async (t) => {
+      const removed = (await t.query(
+        'DELETE FROM client_hosting_services WHERE id = $1 AND client_id = $2 RETURNING id, service_type, name',
+        [serviceId, clientId]
+      )).rows[0];
+      if (!removed) throw new HttpError(404, 'Client service not found.');
+      await audit(t, req, 'client_service.deleted', {
+        entity: 'client_service', entityId: serviceId, clientId, meta: { service_type: removed.service_type, name: removed.name }
+      });
+      return removed;
+    });
+    res.json({ service });
   }));
 
   r.post('/clients/:id/invitations', h(async (req, res) => {

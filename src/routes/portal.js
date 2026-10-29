@@ -70,7 +70,7 @@ export function portalRoutes({ db, config, limits }) {
 
   r.get('/overview', h(async (req, res) => {
     const clientId = req.auth.clientId;
-    const [client, projects, workItems, projectMessages, milestones, notes, quotes] = await Promise.all([
+    const [client, projects, workItems, projectMessages, milestones, notes, quotes, services] = await Promise.all([
       db.query('SELECT company_name, language, media_enabled FROM clients WHERE id = $1 AND archived_at IS NULL', [clientId]),
       db.query(
         `SELECT p.id, p.name, p.category, p.status, p.created_at, p.preview_url,
@@ -126,6 +126,14 @@ export function portalRoutes({ db, config, limits }) {
           WHERE q.client_id = $1 AND q.status <> 'draft'
           GROUP BY q.id ORDER BY q.created_at DESC, q.id DESC`,
         [clientId]
+      ),
+      db.query(
+        `SELECT id, service_type, name, status, start_date, renewal_date, notes
+           FROM client_hosting_services
+          WHERE client_id = $1 AND status <> 'ended'
+          ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'pending' THEN 1 ELSE 2 END,
+                   renewal_date NULLS LAST, id`,
+        [clientId]
       )
     ]);
     if (!client.rows[0]) throw new HttpError(404, 'Client account is no longer active.');
@@ -136,7 +144,8 @@ export function portalRoutes({ db, config, limits }) {
       project_messages: projectMessages.rows,
       milestones: milestones.rows,
       notes: notes.rows,
-      quotes: quotes.rows.map((quote) => ({ ...quote, total: CURRENCY.format(Number(quote.total_cents) / 100) }))
+      quotes: quotes.rows.map((quote) => ({ ...quote, total: CURRENCY.format(Number(quote.total_cents) / 100) })),
+      services: services.rows
     });
   }));
 

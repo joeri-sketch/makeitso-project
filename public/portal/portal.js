@@ -65,11 +65,38 @@ Object.assign(COPY.fr, {
   approveContract: 'Approuver le contrat', requestChanges: 'Demander des modifications', changeNote: 'Décrivez les modifications souhaitées',
   version: 'Version', decisionRecorded: 'Décision enregistrée'
 });
+Object.assign(COPY.en, {
+  loginWelcome: 'Welcome to your workspace',
+  loginDescription: 'Follow your projects, services and invoices in one clear place.',
+  services: 'Your services', servicesTab: 'Services', noServices: 'No active services are listed yet.',
+  serviceType: 'Service', serviceName: 'Name', serviceStatus: 'Status', serviceStarted: 'Started',
+  serviceRenewal: 'Next renewal', serviceNotes: 'Notes', noRenewal: 'No renewal scheduled',
+  domain: 'Web domain', web_hosting: 'Web hosting / server', email_hosting: 'Email hosting',
+  active: 'Active', pending: 'Pending', suspended: 'Suspended', ended: 'Ended'
+});
+Object.assign(COPY.nl, {
+  loginWelcome: 'Welkom in je klantomgeving',
+  loginDescription: 'Volg je projecten, diensten en facturen op één overzichtelijke plek.',
+  services: 'Jouw diensten', servicesTab: 'Diensten', noServices: 'Er zijn nog geen actieve diensten geregistreerd.',
+  serviceType: 'Dienst', serviceName: 'Naam', serviceStatus: 'Status', serviceStarted: 'Gestart',
+  serviceRenewal: 'Volgende verlenging', serviceNotes: 'Opmerkingen', noRenewal: 'Geen verlenging gepland',
+  domain: 'Webdomein', web_hosting: 'Webhosting / server', email_hosting: 'E-mailhosting',
+  active: 'Actief', pending: 'In afwachting', suspended: 'Opgeschort', ended: 'Beëindigd'
+});
+Object.assign(COPY.fr, {
+  loginWelcome: 'Bienvenue dans votre espace',
+  loginDescription: 'Suivez vos projets, services et factures au même endroit.',
+  services: 'Vos services', servicesTab: 'Services', noServices: 'Aucun service actif n’est encore répertorié.',
+  serviceType: 'Service', serviceName: 'Nom', serviceStatus: 'Statut', serviceStarted: 'Début',
+  serviceRenewal: 'Prochain renouvellement', serviceNotes: 'Notes', noRenewal: 'Aucun renouvellement prévu',
+  domain: 'Domaine web', web_hosting: 'Hébergement web / serveur', email_hosting: 'Hébergement e-mail',
+  active: 'Actif', pending: 'En attente', suspended: 'Suspendu', ended: 'Terminé'
+});
 const t = (key) => COPY[state.language]?.[key] || COPY.en[key] || key;
 const STATUS = {
-  en: { discovery: 'Discovery', wireframing: 'Wireframes', development: 'In progress', review: 'In review', launched: 'Launched', on_hold: 'On hold', todo: 'Up next', doing: 'In progress', in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked', done: 'Done', sent: 'Sent', accepted: 'Accepted', declined: 'Declined', expired: 'Expired', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn' },
-  nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', in_progress: 'Bezig', in_review: 'Ter controle', blocked: 'Geblokkeerd', done: 'Klaar', sent: 'Verzonden', accepted: 'Goedgekeurd', declined: 'Afgewezen', expired: 'Verlopen', approved: 'Goedgekeurd', changes_requested: 'Wijzigingen gevraagd', withdrawn: 'Ingetrokken' },
-  fr: { discovery: 'Découverte', wireframing: 'Maquettes', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', in_progress: 'En cours', in_review: 'À vérifier', blocked: 'Bloqué', done: 'Terminé', sent: 'Envoyé', accepted: 'Accepté', declined: 'Refusé', expired: 'Expiré', approved: 'Approuvé', changes_requested: 'Modifications demandées', withdrawn: 'Retiré' }
+  en: { discovery: 'Discovery', wireframing: 'Wireframes', development: 'In progress', review: 'In review', launched: 'Launched', on_hold: 'On hold', todo: 'Up next', doing: 'In progress', in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked', done: 'Done', sent: 'Sent', accepted: 'Accepted', declined: 'Declined', expired: 'Expired', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn', active: 'Active', pending: 'Pending', suspended: 'Suspended', ended: 'Ended' },
+  nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', in_progress: 'Bezig', in_review: 'Ter controle', blocked: 'Geblokkeerd', done: 'Klaar', sent: 'Verzonden', accepted: 'Goedgekeurd', declined: 'Afgewezen', expired: 'Verlopen', approved: 'Goedgekeurd', changes_requested: 'Wijzigingen gevraagd', withdrawn: 'Ingetrokken', active: 'Actief', pending: 'In afwachting', suspended: 'Opgeschort', ended: 'Beëindigd' },
+  fr: { discovery: 'Découverte', wireframing: 'Maquettes', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', in_progress: 'En cours', in_review: 'À vérifier', blocked: 'Bloqué', done: 'Terminé', sent: 'Envoyé', accepted: 'Accepté', declined: 'Refusé', expired: 'Expiré', approved: 'Approuvé', changes_requested: 'Modifications demandées', withdrawn: 'Retiré', active: 'Actif', pending: 'En attente', suspended: 'Suspendu', ended: 'Terminé' }
 };
 
 async function api(method, path, body) {
@@ -95,11 +122,14 @@ function brand() {
 function showLogin(message = '') {
   mediaPanel?.destroy();
   mediaPanel = null;
-  app.innerHTML = `<main class="auth"><section class="auth-card">${brand()}<h1>${t('signIn')}</h1><p class="muted">${t('portal')}</p>
+  app.innerHTML = `<main class="auth auth-studio"><div class="auth-shell">
+    <section class="auth-intro"><span class="eyebrow">${t('portal')}</span><h1>${t('loginWelcome')}</h1><p>${t('loginDescription')}</p>
+      <div class="auth-orbit" aria-hidden="true"><span></span><i></i><b></b></div></section>
+    <section class="auth-card">${brand()}<div><h2>${t('signIn')}</h2><p class="muted">${t('portal')}</p></div>
     <form id="login"><label class="field">${t('email')}<input type="email" name="email" autocomplete="username" required></label>
       <label class="field">${t('password')}<input type="password" name="password" autocomplete="current-password" required></label>
       <p class="error" role="alert">${esc(message)}</p><button class="btn primary">${t('continue')}</button></form>
-    </section></main>`;
+    </section></div></main>`;
   $('#login').onsubmit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -273,9 +303,21 @@ function renderDashboard() {
   const tickets = state.tickets.length
     ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noTickets')}</p>`;
+  const services = data.services.length
+    ? `<div class="service-table-wrap"><table class="service-table">
+        <thead><tr><th scope="col">${t('serviceType')}</th><th scope="col">${t('serviceName')}</th><th scope="col">${t('serviceStatus')}</th><th scope="col">${t('serviceStarted')}</th><th scope="col">${t('serviceRenewal')}</th></tr></thead>
+        <tbody>${data.services.map((service) => `<tr>
+          <td data-label="${t('serviceType')}">${esc(t(service.service_type))}</td>
+          <td data-label="${t('serviceName')}"><strong>${esc(service.name)}</strong>${service.notes ? `<span class="service-note">${esc(service.notes)}</span>` : ''}</td>
+          <td data-label="${t('serviceStatus')}">${status(service.status)}</td>
+          <td data-label="${t('serviceStarted')}">${date(service.start_date)}</td>
+          <td data-label="${t('serviceRenewal')}">${service.renewal_date ? date(service.renewal_date) : t('noRenewal')}</td>
+        </tr>`).join('')}</tbody></table></div>`
+    : `<p class="empty service-empty">${t('noServices')}</p>`;
   app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 1.75 15.1 8.9 22.25 12l-7.15 3.1L12 22.25 8.9 15.1 1.75 12 8.9 8.9z"/></svg></span><span>make it so<em>.</em></span></a>
       <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
         <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
+        <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="portal-tab-services" aria-selected="${state.activeTab === 'services'}" tabindex="${state.activeTab === 'services' ? '0' : '-1'}">${t('servicesTab')}</button>
         <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>
         <button type="button" role="tab" id="tab-contracts" data-tab="contracts" aria-controls="portal-tab-contracts" aria-selected="${state.activeTab === 'contracts'}" tabindex="${state.activeTab === 'contracts' ? '0' : '-1'}">${t('contractsTab')}</button>
         <button type="button" role="tab" id="tab-invoices" data-tab="invoices" aria-controls="portal-tab-invoices" aria-selected="${state.activeTab === 'invoices'}" tabindex="${state.activeTab === 'invoices' ? '0' : '-1'}">${t('invoicesTab')}</button>
@@ -284,8 +326,12 @@ function renderDashboard() {
       </nav>
       <div class="portal-account"><span class="account-initials" aria-hidden="true">${esc(state.user.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase())}</span><span class="account-name">${esc(state.user.name)}</span><button id="logout" class="btn">${t('signOut')}</button></div>
     </header>
-    <main class="wrap portal-wrap"><header class="portal-welcome"><div><span class="eyebrow">${t('portal')}</span><h1>${esc(data.client.company_name)}</h1></div></header>
+    <main class="wrap portal-wrap"><header class="portal-welcome"><div><span class="eyebrow">${t('portal')}</span><h1>${esc(data.client.company_name)}</h1><p>${t('loginDescription')}</p></div></header>
       <section class="portal-tab-panel status-project-list" id="portal-tab-projects" role="tabpanel" aria-labelledby="tab-projects"${state.activeTab === 'projects' ? '' : ' hidden'}>${projects}</section>
+      <section class="portal-tab-panel portal-extras" id="portal-tab-services" role="tabpanel" aria-labelledby="tab-services"${state.activeTab === 'services' ? '' : ' hidden'}>
+        <header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('services')}</h2></div><span class="eyebrow">${data.services.length} ${t('servicesTab').toLowerCase()}</span></header>
+        <section class="card service-card">${services}</section>
+      </section>
       <section class="portal-tab-panel portal-extras" id="portal-tab-quotes" role="tabpanel" aria-labelledby="tab-quotes"${state.activeTab === 'quotes' ? '' : ' hidden'}><header class="status-section-heading"><div><span class="eyebrow">${t('portal')}</span><h2>${t('quotes')}</h2></div></header>
         <section class="card"><header><h2>${t('quotes')}</h2></header>${quotes}</section>
         <section id="quote-detail" class="card" hidden style="margin-top:16px"></section>
@@ -374,7 +420,7 @@ function renderDashboard() {
 }
 
 function setPortalTab(tabName) {
-  if (!['projects', 'quotes', 'contracts', 'invoices', 'support', 'media'].includes(tabName)) return;
+  if (!['projects', 'services', 'quotes', 'contracts', 'invoices', 'support', 'media'].includes(tabName)) return;
   if (tabName === 'media' && !state.overview?.client.media_enabled) return;
   mediaPanel?.conceal();
   state.activeTab = tabName;

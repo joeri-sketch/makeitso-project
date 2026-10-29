@@ -59,6 +59,8 @@ const LABEL = {
   low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent',
   monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly',
   sent: 'Awaiting client', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn',
+  pending: 'Pending', suspended: 'Suspended', ended: 'Ended',
+  domain: 'Web domain', web_hosting: 'Web hosting / server', email_hosting: 'Email hosting',
   nl: 'Nederlands', fr: 'Français', en: 'English'
 };
 const label = (k) => translateText(LABEL[k] ?? k);
@@ -69,6 +71,10 @@ const PROJECT_STATUS = options(['discovery', 'wireframing', 'development', 'revi
 const LANGUAGES = options(['nl', 'fr', 'en']);
 const WORK_ITEM_STATUS = options(['todo', 'in_progress', 'in_review', 'done', 'blocked']);
 const PRIORITIES = options(['low', 'normal', 'high', 'urgent']);
+const CLIENT_SERVICE_TYPES = [
+  ['domain', 'Web domain'], ['web_hosting', 'Web hosting / server'], ['email_hosting', 'Email hosting']
+];
+const CLIENT_SERVICE_STATUSES = options(['active', 'pending', 'suspended', 'ended']);
 
 /* ---------------- API ---------------- */
 async function api(method, path, body) {
@@ -790,6 +796,11 @@ async function clientView(view, id) {
           ${detail('Website', c.website && html`<a href="${c.website}" target="_blank" rel="noopener noreferrer">${c.website}</a>`)}
           ${detail('Address', [c.address_line1, [c.postal_code, c.city].filter(Boolean).join(' '), c.country].filter(Boolean).join(', '))}
         </dl></section>
+        <section class="card"><header><h2>Hosting &amp; domain services</h2><button class="btn small primary" data-action="new-client-service" ${c.archived_at ? 'disabled' : ''}>+ Add service</button></header>
+          <p class="muted">Services listed here are visible to this client in their portal. Add domains, web hosting and email services with their service dates.</p>
+          ${d.services.length ? html`<ul class="list">${d.services.map((service) => html`<li><span class="grow"><strong>${service.name}</strong> ${chip(service.status)}<span class="sub">${label(service.service_type)} · Started ${date(service.start_date) || '—'} · Renewal ${date(service.renewal_date) || 'Not scheduled'}</span>${service.notes ? html`<span class="sub">${service.notes}</span>` : ''}</span>
+            <span class="row-actions"><button class="btn small" data-action="edit-client-service" data-id="${service.id}">Edit</button><button class="btn small danger" data-action="delete-client-service" data-id="${service.id}">Remove</button></span></li>`)}</ul>` : html`<p class="muted" style="margin-top:12px">No hosting or domain services have been added.</p>`}
+        </section>
         <section class="card"><header><h2>Contacts</h2><button class="btn small" data-action="add-contact">+ Add</button></header>
           ${d.contacts.length ? html`<ul class="list">${d.contacts.map((k) => html`<li><span class="grow"><strong>${k.name}</strong> ${k.is_primary ? html`<span class="chip s-active">Primary</span>` : ''}<span class="sub">${[k.role, k.email, k.phone].filter(Boolean).join(' · ')}</span></span>
             <span class="row-actions"><button class="btn small" data-action="edit-contact" data-id="${k.id}">Edit</button><button class="btn small danger" data-action="delete-contact" data-id="${k.id}">Remove</button></span></li>`)}</ul>` : html`<p class="muted">No contacts yet.</p>`}
@@ -883,12 +894,45 @@ async function clientView(view, id) {
       reload();
     },
     'new-project': () => newProject(reload, id),
+    'new-client-service': () => editClientService(id, null, reload),
+    'edit-client-service': (_, serviceId) => editClientService(id, d.services.find((service) => service.id === serviceId), reload),
+    'delete-client-service': async (_, serviceId) => {
+      if (!confirm('Remove this client service?')) return;
+      await del(`/clients/${id}/services/${serviceId}`);
+      toast('Client service removed');
+      await reload();
+    },
     'add-contact': () => openForm({ title: 'Add contact', fields: contactFields, values: { is_primary: !d.contacts.length }, submit: 'Add contact', onSubmit: async (v) => { await post(`/clients/${id}/contacts`, v); reload(); } }),
     'edit-contact': (_, cid) => openForm({ title: 'Edit contact', fields: contactFields, values: contact(cid), onSubmit: async (v) => { await patch(`/contacts/${cid}`, v); reload(); } }),
     'delete-contact': async (_, cid) => { if (confirm('Remove this contact?')) { await del(`/contacts/${cid}`); reload(); } },
     'pin-note': async (el, nid) => { await patch(`/notes/${nid}`, { pinned: el.dataset.pinned !== 'true' }); reload(); },
     'toggle-note-visibility': async (el, nid) => { await patch(`/notes/${nid}`, { client_visible: el.dataset.visible !== 'true' }); reload(); },
     'delete-note': async (_, nid) => { if (confirm('Delete this note?')) { await del(`/notes/${nid}`); reload(); } }
+  });
+}
+
+function editClientService(clientId, service, reload) {
+  openForm({
+    title: service ? 'Edit client service' : 'Add client service',
+    fields: [
+      { name: 'service_type', label: 'Service type', type: 'select', options: CLIENT_SERVICE_TYPES, required: true, full: true },
+      { name: 'name', label: 'Name or domain', required: true, full: true },
+      { name: 'status', label: 'Status', type: 'select', options: CLIENT_SERVICE_STATUSES, required: true },
+      { name: 'start_date', label: 'Start date', type: 'date', required: true },
+      { name: 'renewal_date', label: 'Next renewal / end date', type: 'date', hint: 'Leave blank when the service has no scheduled renewal.' },
+      { name: 'notes', label: 'Notes for the client', type: 'textarea', max: 1000, full: true }
+    ],
+    values: service || { service_type: 'domain', status: 'active' },
+    onSubmit: async (values) => {
+      if (service) {
+        await patch(`/clients/${clientId}/services/${service.id}`, values);
+        toast('Client service saved');
+      } else {
+        await post(`/clients/${clientId}/services`, values);
+        toast('Client service added');
+      }
+      await reload();
+    }
   });
 }
 

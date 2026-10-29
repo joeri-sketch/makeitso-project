@@ -287,3 +287,57 @@ button, input, textarea { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+.auth-studio { background: radial-gradient(ellipse at 12% 8%, rgba(11,59,255,.07), transparent 35%), var(--bg); }
+.auth-shell { width: min(100%, 980px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, .82fr); align-items: stretch; gap: 22px; }
+.auth-intro { position: relative; min-height: 490px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; padding: clamp(32px, 6vw, 64px); border: 1px solid #dfe5f5; border-radius: 26px; background: linear-gradient(145deg, #fff 0%, #edf1ff 100%); }
+.auth-intro .eyebrow { color: var(--blue); }
+.auth-intro h1 { max-width: 470px; margin-top: 18px; color: var(--ink); font-size: clamp(38px, 5vw, 60px); line-height: 1.02; letter-spacing: -.055em; }
+.auth-intro > p { max-width: 410px; margin-top: 18px; color: var(--muted); font-size: 16px; }
+.auth-orbit { position: absolute; right: -42px; bottom: -96px; width: 310px; height: 310px; border: 1px solid #173bdb24; border-radius: 50%; box-shadow: 0 0 0 28px #173bdb0a, 0 0 0 64px #173bdb07; }
+.auth-orbit::before, .auth-orbit::after { position: absolute; inset: 30px; border: 1px solid #173bdb20; border-radius: 50%; content: ""; }
+.auth-orbit::after { inset: 72px; border-color: #ff6a1f40; }
+.auth-orbit span { position: absolute; top: 50px; left: 58px; width: 12px; height: 12px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 8px #ff6a1f20; }
+.auth-orbit i, .auth-orbit b { position: absolute; z-index: 1; width: 5px; height: 5px; border-radius: 50%; background: #5370ed; }
+.auth-orbit i { top: 92px; right: 70px; }
+.auth-orbit b { right: 110px; bottom: 76px; background: #ff9a51; }
+.auth-card { position: relative; z-index: 1; align-content: center; }
+.auth-card h2 { color: var(--ink); font-size: 28px; }
+.auth-card > div .muted { margin-top: 4px; }
+.auth-card .btn { width: 100%; }
+.portal-top { border-color: var(--line); color: var(--ink); background: rgba(255,255,255,.96); box-shadow: 0 12px 30px -22px rgba(7,16,58,.32); backdrop-filter: blur(14px); }
+.portal-top .brand { color: var(--ink); }
+.brand-mark { border-color: #e6e9f2; background: #fff; }
+.portal-nav [role="tab"] { color: #65708a; }
+.portal-nav [role="tab"]:hover, .portal-nav [role="tab"][aria-selected="true"] { border-bottom-color: var(--orange); color: var(--ink); }
+.portal-nav [role="tab"]:focus-visible { outline-color: var(--blue); }
+.account-initials { border-color: #e4e8f0; color: var(--blue-deep); background: #eef1ff; }
+.account-name { color: #535c73; }
+.portal-top .btn { color: var(--ink); background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+.portal-top .btn:hover { background: #f4f6fc; }
+.portal-welcome > div > p { margin-top: 8px; color: var(--muted); }
+.service-card { padding: clamp(16px, 3vw, 28px); }
+.service-table-wrap { width: 100%; overflow-x: auto; }
+.service-table { width: 100%; border-collapse: collapse; text-align: left; }
+.service-table th { padding: 0 14px 13px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.service-table td { padding: 16px 14px; border-top: 1px solid var(--line); color: #25304b; font-size: 13px; vertical-align: middle; }
+.service-table td:first-child { font-weight: 700; }
+.service-table td:nth-child(2) { min-width: 180px; }
+.service-note { display: block; max-width: 340px; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 400; white-space: pre-wrap; overflow-wrap: anywhere; }
+.service-empty { padding: 30px 12px; }
+.chip.s-active { color: #08714f; background: #ddfff3; }
+.chip.s-pending { color: #7b5500; background: #fff3d0; }
+.chip.s-suspended, .chip.s-ended { color: #6d5260; background: #f0e9ed; }
+@media (max-width: 760px) {
+  .auth-shell { grid-template-columns: 1fr; max-width: 480px; }
+  .auth-intro { min-height: 270px; padding: 30px; border-radius: 22px; }
+  .auth-intro h1 { max-width: 340px; font-size: clamp(34px, 9vw, 46px); }
+  .auth-orbit { right: -126px; bottom: -182px; transform: scale(.8); }
+  .portal-nav { border-top-color: var(--line); }
+  .service-table { min-width: 620px; }
+}
+@media (max-width: 600px) {
+  .auth { padding: 14px; }
+  .auth-shell { gap: 14px; }
+  .auth-intro { min-height: 230px; padding: 25px; }
+  .portal-nav { justify-content: flex-start; }
+}
