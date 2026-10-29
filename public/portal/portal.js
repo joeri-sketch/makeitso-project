@@ -68,11 +68,14 @@ Object.assign(COPY.fr, {
 Object.assign(COPY.en, {
   loginWelcome: 'Welcome to your workspace',
   loginDescription: 'Follow your projects, services and invoices in one clear place.',
-  overviewTab: 'Overview', workspace: 'Workspace', welcomeBack: 'Welcome back', workspaceIntro: 'Here is the latest overview of your projects and services.',
-  today: 'Today', activeServices: 'Active services', activeProjects: 'In progress', openInvoices: 'Open invoices',
-  serviceSummary: 'Your domains, hosting and email at a glance.', projectSummary: 'A quick look at your current work.',
+  overviewTab: 'Overview', workspace: 'Workspace', workspaceNav: 'Workspace', welcomeBack: 'Welcome back', workspaceIntro: 'Here is the latest overview of your projects and services.',
+  today: 'Today', activeServices: 'active', activeProjects: 'in progress', openInvoices: 'open', servicesTitle: 'Active services',
+  serviceSummary: 'Start and renewal dates for your digital services.', projectSummary: 'Your current projects.',
   invoiceSummary: 'Recent invoices and outstanding balances.', viewAll: 'View all', noProjectSummary: 'No projects to show yet.',
-  noOpenInvoices: 'No open invoices.', updated: 'Updated',
+  noOpenInvoices: 'No open invoices.', updated: 'Updated', domainService: 'Domain registration',
+  hostingService: 'Website server', emailService: 'Business mailboxes', supportTitle: 'Personal support',
+  supportIntro: 'Questions about your services? Send us a message.', contactUs: 'Contact us',
+  renewalHint: 'Renewal information when scheduled', projectWaiting: 'Waiting to start',
   services: 'Your services', servicesTab: 'Services', noServices: 'No active services are listed yet.',
   serviceType: 'Service', serviceName: 'Name', serviceStatus: 'Status', serviceStarted: 'Started',
   serviceRenewal: 'Next renewal', serviceNotes: 'Notes', noRenewal: 'No renewal scheduled',
@@ -82,11 +85,14 @@ Object.assign(COPY.en, {
 Object.assign(COPY.nl, {
   loginWelcome: 'Welkom in je klantomgeving',
   loginDescription: 'Volg je projecten, diensten en facturen op één overzichtelijke plek.',
-  overviewTab: 'Overzicht', workspace: 'Klantomgeving', welcomeBack: 'Welkom terug', workspaceIntro: 'Hier zie je de actuele stand van je projecten en diensten.',
-  today: 'Vandaag', activeServices: 'Actieve diensten', activeProjects: 'Lopende projecten', openInvoices: 'Open facturen',
-  serviceSummary: 'Je domeinen, hosting en e-mail in één overzicht.', projectSummary: 'Een blik op je lopende werk.',
+  overviewTab: 'Overzicht', workspace: 'Klantomgeving', workspaceNav: 'Werkruimte', welcomeBack: 'Dag', workspaceIntro: 'Dit is de actuele stand van je Make It So-diensten.',
+  today: 'Vandaag', activeServices: 'actief', activeProjects: 'lopend', openInvoices: 'open', servicesTitle: 'Actieve diensten',
+  serviceSummary: 'Start- en verlengdata van je digitale diensten.', projectSummary: 'Je lopende projecten.',
   invoiceSummary: 'Recente facturen en openstaande bedragen.', viewAll: 'Bekijk alles', noProjectSummary: 'Er zijn nog geen projecten.',
-  noOpenInvoices: 'Geen open facturen.', updated: 'Bijgewerkt',
+  noOpenInvoices: 'Geen open facturen.', updated: 'Bijgewerkt', domainService: 'Domeinregistratie',
+  hostingService: 'Websiteserver', emailService: 'Zakelijke mailboxen', supportTitle: 'Persoonlijke hulp',
+  supportIntro: 'Een vraag over je diensten? Stuur ons een bericht.', contactUs: 'Contact opnemen',
+  renewalHint: 'Verlengingsinformatie indien gepland', projectWaiting: 'Wacht op start',
   services: 'Jouw diensten', servicesTab: 'Diensten', noServices: 'Er zijn nog geen actieve diensten geregistreerd.',
   serviceType: 'Dienst', serviceName: 'Naam', serviceStatus: 'Status', serviceStarted: 'Gestart',
   serviceRenewal: 'Volgende verlenging', serviceNotes: 'Opmerkingen', noRenewal: 'Geen verlenging gepland',
@@ -96,11 +102,14 @@ Object.assign(COPY.nl, {
 Object.assign(COPY.fr, {
   loginWelcome: 'Bienvenue dans votre espace',
   loginDescription: 'Suivez vos projets, services et factures au même endroit.',
-  overviewTab: 'Aperçu', workspace: 'Espace client', welcomeBack: 'Bon retour', workspaceIntro: 'Voici un aperçu récent de vos projets et services.',
-  today: 'Aujourd’hui', activeServices: 'Services actifs', activeProjects: 'Projets en cours', openInvoices: 'Factures ouvertes',
-  serviceSummary: 'Vos domaines, hébergements et e-mails en un coup d’œil.', projectSummary: 'Un aperçu de vos projets en cours.',
+  overviewTab: 'Aperçu', workspace: 'Espace client', workspaceNav: 'Espace client', welcomeBack: 'Bon retour', workspaceIntro: 'Voici un aperçu récent de vos projets et services.',
+  today: 'Aujourd’hui', activeServices: 'actifs', activeProjects: 'en cours', openInvoices: 'ouvertes', servicesTitle: 'Services actifs',
+  serviceSummary: 'Dates de début et de renouvellement de vos services.', projectSummary: 'Vos projets en cours.',
   invoiceSummary: 'Factures récentes et soldes à régler.', viewAll: 'Tout afficher', noProjectSummary: 'Aucun projet pour le moment.',
-  noOpenInvoices: 'Aucune facture ouverte.', updated: 'Mis à jour',
+  noOpenInvoices: 'Aucune facture ouverte.', updated: 'Mis à jour', domainService: 'Enregistrement du domaine',
+  hostingService: 'Serveur du site', emailService: 'Boîtes e-mail professionnelles', supportTitle: 'Assistance personnelle',
+  supportIntro: 'Une question sur vos services ? Envoyez-nous un message.', contactUs: 'Nous contacter',
+  renewalHint: 'Détails de renouvellement si prévus', projectWaiting: 'En attente de démarrage',
   services: 'Vos services', servicesTab: 'Services', noServices: 'Aucun service actif n’est encore répertorié.',
   serviceType: 'Service', serviceName: 'Nom', serviceStatus: 'Statut', serviceStarted: 'Début',
   serviceRenewal: 'Prochain renouvellement', serviceNotes: 'Notes', noRenewal: 'Aucun renouvellement prévu',
@@ -109,9 +118,9 @@ Object.assign(COPY.fr, {
 });
 const t = (key) => COPY[state.language]?.[key] || COPY.en[key] || key;
 const STATUS = {
-  en: { discovery: 'Discovery', wireframing: 'Wireframes', development: 'In progress', review: 'In review', launched: 'Launched', on_hold: 'On hold', todo: 'Up next', doing: 'In progress', in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked', done: 'Done', sent: 'Sent', accepted: 'Accepted', declined: 'Declined', expired: 'Expired', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn', active: 'Active', pending: 'Pending', suspended: 'Suspended', ended: 'Ended' },
-  nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', in_progress: 'Bezig', in_review: 'Ter controle', blocked: 'Geblokkeerd', done: 'Klaar', sent: 'Verzonden', accepted: 'Goedgekeurd', declined: 'Afgewezen', expired: 'Verlopen', approved: 'Goedgekeurd', changes_requested: 'Wijzigingen gevraagd', withdrawn: 'Ingetrokken', active: 'Actief', pending: 'In afwachting', suspended: 'Opgeschort', ended: 'Beëindigd' },
-  fr: { discovery: 'Découverte', wireframing: 'Maquettes', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', in_progress: 'En cours', in_review: 'À vérifier', blocked: 'Bloqué', done: 'Terminé', sent: 'Envoyé', accepted: 'Accepté', declined: 'Refusé', expired: 'Expiré', approved: 'Approuvé', changes_requested: 'Modifications demandées', withdrawn: 'Retiré', active: 'Actif', pending: 'En attente', suspended: 'Suspendu', ended: 'Terminé' }
+  en: { discovery: 'Discovery', wireframing: 'Wireframes', development: 'In progress', review: 'In review', launched: 'Launched', on_hold: 'On hold', todo: 'Up next', doing: 'In progress', in_progress: 'In progress', in_review: 'In review', blocked: 'Blocked', done: 'Done', sent: 'Sent', issued: 'Issued', paid: 'Paid', overdue: 'Overdue', void: 'Void', accepted: 'Accepted', declined: 'Declined', expired: 'Expired', approved: 'Approved', changes_requested: 'Changes requested', withdrawn: 'Withdrawn', active: 'Active', pending: 'Pending', suspended: 'Suspended', ended: 'Ended' },
+  nl: { discovery: 'Verkenning', wireframing: 'Wireframes', development: 'Ontwikkeling', review: 'Review', launched: 'Gelanceerd', on_hold: 'On hold', todo: 'Te doen', doing: 'Bezig', in_progress: 'Bezig', in_review: 'Ter controle', blocked: 'Geblokkeerd', done: 'Klaar', sent: 'Verzonden', issued: 'Verzonden', paid: 'Betaald', overdue: 'Te laat', void: 'Vervallen', accepted: 'Goedgekeurd', declined: 'Afgewezen', expired: 'Verlopen', approved: 'Goedgekeurd', changes_requested: 'Wijzigingen gevraagd', withdrawn: 'Ingetrokken', active: 'Actief', pending: 'In afwachting', suspended: 'Opgeschort', ended: 'Beëindigd' },
+  fr: { discovery: 'Découverte', wireframing: 'Maquettes', development: 'Développement', review: 'Révision', launched: 'Lancé', on_hold: 'En pause', todo: 'À faire', doing: 'En cours', in_progress: 'En cours', in_review: 'À vérifier', blocked: 'Bloqué', done: 'Terminé', sent: 'Envoyé', issued: 'Émise', paid: 'Payée', overdue: 'En retard', void: 'Annulée', accepted: 'Accepté', declined: 'Refusé', expired: 'Expiré', approved: 'Approuvé', changes_requested: 'Modifications demandées', withdrawn: 'Retiré', active: 'Actif', pending: 'En attente', suspended: 'Suspendu', ended: 'Terminé' }
 };
 
 async function api(method, path, body) {
@@ -318,6 +327,7 @@ function renderDashboard() {
   const tickets = state.tickets.length
     ? `<ul class="list">${state.tickets.map((ticket) => `<li><span class="grow"><strong>#${esc(ticket.id)} · ${esc(ticket.subject)}</strong><span class="sub">${date(ticket.updated_at)} · ${esc(ticket.message_count)} ${t('message').toLowerCase()}s</span></span>${status(ticket.status)}<a class="btn small" href="#ticket-${esc(ticket.id)}">${t('reply')}</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noTickets')}</p>`;
+  const activeServices = data.services.filter((service) => service.status === 'active');
   const services = data.services.length
     ? `<div class="service-table-wrap"><table class="service-table">
         <thead><tr><th scope="col">${t('serviceType')}</th><th scope="col">${t('serviceName')}</th><th scope="col">${t('serviceStatus')}</th><th scope="col">${t('serviceStarted')}</th><th scope="col">${t('serviceRenewal')}</th></tr></thead>
@@ -329,33 +339,61 @@ function renderDashboard() {
           <td data-label="${t('serviceRenewal')}">${service.renewal_date ? date(service.renewal_date) : t('noRenewal')}</td>
         </tr>`).join('')}</tbody></table></div>`
     : `<p class="empty service-empty">${t('noServices')}</p>`;
-  const activeServices = data.services.filter((service) => service.status === 'active');
+  const serviceDetails = {
+    domain: { name: t('domain'), detail: t('domainService'), icon: '◎' },
+    web_hosting: { name: t('web_hosting'), detail: t('hostingService'), icon: '▤' },
+    email_hosting: { name: t('email_hosting'), detail: t('emailService'), icon: '✉' }
+  };
+  const overviewServices = activeServices.length
+    ? `<div class="service-table-wrap"><table class="service-table studio-service-table">
+          <thead><tr><th scope="col">${t('serviceType')}</th><th scope="col">${t('serviceName')}</th><th scope="col">${t('serviceStatus')}</th><th scope="col">${t('serviceStarted')}</th><th scope="col">${t('serviceRenewal')}</th><th scope="col"><span class="sr-only">${t('supportTab')}</span></th></tr></thead>
+          <tbody>${activeServices.map((service) => {
+            const details = serviceDetails[service.service_type] || { name: t(service.service_type), detail: '', icon: '◈' };
+            return `<tr>
+              <td><span class="studio-service-type"><i aria-hidden="true">${details.icon}</i><span><strong>${esc(details.name)}</strong><small>${esc(details.detail)}</small></span></span></td>
+              <td class="studio-service-name">${esc(service.name)}</td>
+              <td>${status(service.status)}</td>
+              <td>${date(service.start_date)}</td>
+              <td class="studio-renewal"><strong>${service.renewal_date ? date(service.renewal_date) : t('noRenewal')}</strong>${service.notes ? `<small>${esc(service.notes)}</small>` : ''}</td>
+              <td><button class="studio-details-link" type="button" data-portal-tab="support">${t('supportTab')} ↗</button></td>
+            </tr>`;
+          }).join('')}</tbody></table></div>`
+    : `<p class="empty service-empty">${t('noServices')}</p>`;
   const activeProjects = data.projects.filter((project) => project.status !== 'launched');
   const openInvoices = state.invoices.filter((invoice) => !['paid', 'void'].includes(invoice.display_status));
   const projectSummary = activeProjects.length
     ? `<ul class="overview-list">${activeProjects.slice(0, 3).map((project) => {
       const progress = Math.max(0, Math.min(100, Number(project.progress) || 0));
-      return `<li><span class="overview-project-icon" aria-hidden="true">▦</span><span class="grow"><strong>${esc(project.name)}</strong><small>${esc(project.category || STATUS[state.language]?.[project.status] || project.status)} · ${t('updated')} ${date(project.updated_at)}</small></span><span class="overview-progress" role="progressbar" aria-label="${t('overallProgress')}" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"><i style="width:${progress}%"></i></span><b class="overview-percent">${progress}%</b></li>`;
+      const projectState = project.status === 'discovery' ? t('projectWaiting') : STATUS[state.language]?.[project.status] || project.status;
+      const projectTarget = project.target_date ? `${projectState} · ${t('target')} ${date(project.target_date)}` : projectState;
+      return `<li><span class="overview-project-icon" aria-hidden="true">▦</span><span class="grow"><strong>${esc(project.name)}</strong><small>${esc(projectTarget)}</small></span><span class="overview-progress" role="progressbar" aria-label="${t('overallProgress')}" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"><i style="width:${progress}%"></i></span><b class="overview-percent">${progress}%</b></li>`;
     }).join('')}</ul>`
     : `<p class="empty">${t('noProjectSummary')}</p>`;
   const invoiceSummary = openInvoices.length
     ? `<ul class="overview-list overview-invoices">${openInvoices.slice(0, 3).map((invoice) => `<li><span class="overview-invoice-icon" aria-hidden="true">▤</span><span class="grow"><strong>${esc(invoice.invoice_number)} · ${esc(invoice.title)}</strong><small>${t('due')} ${date(invoice.due_date)} · ${t('balance')} ${money(invoice.balance_cents)}</small></span>${status(invoice.display_status)}<a class="overview-download" href="/api/portal/invoices/${esc(invoice.id)}/pdf" aria-label="${t('downloadPdf')} ${esc(invoice.invoice_number)}">↓</a></li>`).join('')}</ul>`
     : `<p class="empty">${t('noOpenInvoices')}</p>`;
   const firstName = state.user.name.trim().split(/\s+/)[0];
+  const sidebarTab = (name, label, icon) => `<button type="button" role="tab" id="tab-${name}" data-tab="${name}" aria-controls="portal-tab-${name}" aria-selected="${state.activeTab === name}" tabindex="${state.activeTab === name ? '0' : '-1'}"><i aria-hidden="true">${icon}</i>${label}</button>`;
   app.innerHTML = `<header class="portal-top"><a class="brand" href="/" aria-label="Make It So home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 1.75 15.1 8.9 22.25 12l-7.15 3.1L12 22.25 8.9 15.1 1.75 12 8.9 8.9z"/></svg></span><span>make it so<em>.</em></span></a>
-      <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
-        <button type="button" role="tab" id="tab-overview" data-tab="overview" aria-controls="portal-tab-overview" aria-selected="${state.activeTab === 'overview'}" tabindex="${state.activeTab === 'overview' ? '0' : '-1'}">${t('overviewTab')}</button>
-        <button type="button" role="tab" id="tab-projects" data-tab="projects" aria-controls="portal-tab-projects" aria-selected="${state.activeTab === 'projects'}" tabindex="${state.activeTab === 'projects' ? '0' : '-1'}">${t('projectsTab')}</button>
-        <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="portal-tab-services" aria-selected="${state.activeTab === 'services'}" tabindex="${state.activeTab === 'services' ? '0' : '-1'}">${t('servicesTab')}</button>
-        <button type="button" role="tab" id="tab-quotes" data-tab="quotes" aria-controls="portal-tab-quotes" aria-selected="${state.activeTab === 'quotes'}" tabindex="${state.activeTab === 'quotes' ? '0' : '-1'}">${t('quotesTab')}</button>
-        <button type="button" role="tab" id="tab-contracts" data-tab="contracts" aria-controls="portal-tab-contracts" aria-selected="${state.activeTab === 'contracts'}" tabindex="${state.activeTab === 'contracts' ? '0' : '-1'}">${t('contractsTab')}</button>
-        <button type="button" role="tab" id="tab-invoices" data-tab="invoices" aria-controls="portal-tab-invoices" aria-selected="${state.activeTab === 'invoices'}" tabindex="${state.activeTab === 'invoices' ? '0' : '-1'}">${t('invoicesTab')}</button>
-        <button type="button" role="tab" id="tab-support" data-tab="support" aria-controls="portal-tab-support" aria-selected="${state.activeTab === 'support'}" tabindex="${state.activeTab === 'support' ? '0' : '-1'}">${t('supportTab')}</button>
-        ${data.client.media_enabled ? `<button type="button" role="tab" id="tab-media" data-tab="media" aria-controls="portal-tab-media" aria-selected="${state.activeTab === 'media'}" tabindex="${state.activeTab === 'media' ? '0' : '-1'}">${esc(mediaTabLabel(state.language))}</button>` : ''}
-      </nav>
       <div class="portal-account"><span class="account-initials" aria-hidden="true">${esc(state.user.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase())}</span><span class="account-name">${esc(state.user.name)}</span><button id="logout" class="btn">${t('signOut')}</button></div>
     </header>
-    <main class="wrap portal-wrap"><header class="portal-welcome dashboard-greeting"><div><span class="eyebrow">${t('workspace')} · ${esc(data.client.company_name)}</span><h1>${t('welcomeBack')}, ${esc(firstName)}.</h1><p>${t('workspaceIntro')}</p></div><div class="dashboard-today"><span>${t('today')}</span><strong>${date(new Date().toISOString())}</strong></div></header>
+    <div class="portal-layout">
+      <aside class="portal-sidebar">
+        <div class="sidebar-brand"><i aria-hidden="true">✦</i><span>Make It So</span></div>
+        <p class="sidebar-label">${t('workspaceNav')}</p>
+        <nav class="portal-nav" id="portal-tabs" role="tablist" aria-label="${t('portal')}">
+          ${sidebarTab('overview', t('overviewTab'), '⌂')}
+          ${sidebarTab('services', t('servicesTab'), '◈')}
+          ${sidebarTab('projects', t('projectsTab'), '▦')}
+          ${sidebarTab('invoices', t('invoicesTab'), '▤')}
+          ${sidebarTab('quotes', t('quotesTab'), '◇')}
+          ${sidebarTab('contracts', t('contractsTab'), '▧')}
+          ${sidebarTab('support', t('supportTab'), '✉')}
+          ${data.client.media_enabled ? sidebarTab('media', mediaTabLabel(state.language), '◉') : ''}
+        </nav>
+        <section class="sidebar-support"><strong>${t('supportTitle')}</strong><p>${t('supportIntro')}</p><button type="button" data-portal-tab="support">${t('contactUs')} →</button></section>
+      </aside>
+      <main class="wrap portal-wrap"><header class="portal-welcome dashboard-greeting"><div><span class="eyebrow">${t('workspace')} · ${esc(data.client.company_name)}</span><h1>${t('welcomeBack')}, ${esc(firstName)}.</h1><p>${t('workspaceIntro')}</p></div><div class="dashboard-today"><span>${t('today')}</span><strong>${date(new Date().toISOString())}</strong></div></header>
       <section class="portal-tab-panel portal-overview" id="portal-tab-overview" role="tabpanel" aria-labelledby="tab-overview"${state.activeTab === 'overview' ? '' : ' hidden'}>
         <div class="overview-stats">
           <article class="overview-stat"><span class="overview-stat-icon service-stat-icon" aria-hidden="true">◈</span><div><strong>${activeServices.length}</strong><span>${t('activeServices')}</span></div></article>
@@ -363,8 +401,8 @@ function renderDashboard() {
           <article class="overview-stat"><span class="overview-stat-icon invoice-stat-icon" aria-hidden="true">▤</span><div><strong>${openInvoices.length}</strong><span>${t('openInvoices')}</span></div></article>
         </div>
         <section class="card overview-services">
-          <header class="overview-card-heading"><div><h2>${t('services')}</h2><p>${t('serviceSummary')}</p></div><button class="overview-view-all" type="button" data-portal-tab="services">${t('viewAll')} <span aria-hidden="true">→</span></button></header>
-          ${services}
+          <header class="studio-services-heading"><div><h2>${t('servicesTitle')}</h2><p>${t('serviceSummary')}</p></div><span>${t('renewalHint')}</span></header>
+          ${overviewServices}
         </section>
         <div class="overview-lower">
           <section class="card overview-card"><header class="overview-card-heading"><div><h2>${t('projectsTab')}</h2><p>${t('projectSummary')}</p></div><button class="overview-view-all" type="button" data-portal-tab="projects">${t('viewAll')} <span aria-hidden="true">→</span></button></header>${projectSummary}</section>
@@ -396,7 +434,8 @@ function renderDashboard() {
         <section id="ticket-detail" class="card" hidden style="margin-top:16px"></section>
       </section>
       ${data.client.media_enabled ? `<section class="portal-tab-panel" id="portal-tab-media" role="tabpanel" aria-labelledby="tab-media"${state.activeTab === 'media' ? '' : ' hidden'}></section>` : ''}
-    </main>`;
+      </main>
+    </div>`;
   if (data.client.media_enabled) {
     mediaPanel = createMediaPanel({
       container: $('#portal-tab-media'), language: state.language, api,
