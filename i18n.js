@@ -42,7 +42,6 @@
     ['Mission log', 'Missielogboek', 'Journal de mission'],
     ['Process', 'Aanpak', 'Méthode'],
     ['Hail us', 'Contact', 'Contact'],
-    ['Client login', 'Klantlogin', 'Connexion client'],
     ['Engage', 'Vooruit', 'Engagez'],
     ['Build a PC', 'Bouw een pc', 'Configurer un PC'],
 
