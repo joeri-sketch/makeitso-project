@@ -3,6 +3,7 @@
 Website, admin area, client portal and quotes for the creative marketing agency **Make It So**.
 
 - **Website** (`public/`): the animated NL / FR / EN site, with six color-matched department detail pages, concept examples, an About page, a project approach page with engagement options, and practical FAQs.
+- **PC configurator** (`public/pc-builder/`): step-by-step component guidance, euro estimates, compatibility checks and email quote requests.
 - **Admin area** (`/admin`): clients, contacts, projects, milestones, work-item status boards, project timesheets, notes, leads and an activity log, behind password + two-factor login. Project progress is calculated from work items when present; otherwise it can be updated manually.
 - **Client portal** (`/portal/`): invited clients can follow project progress, milestones and explicitly shared work items, reply in shared feature discussions, review quotes and invoices, download invoice PDFs, and manage support conversations. Time entries and internal notes remain admin-only.
 - **Quotes**: prepare and revise drafts, share a quote in the client portal, and track accept/decline decisions with timestamps.
@@ -65,3 +66,5 @@ tests/             node:test suites (auth, CRM, security, portal, invoices and s
 ```
 
 The contact form on the website posts to `/api/public/leads`. If the backend is unreachable (static hosting, offline), it falls back to opening the visitor's mail app, so no message is lost.
+
+Configurator prices are sample estimates and must be replaced with actual product, inventory and pricing data. Quote requests open the visitor's email app; checkout is not connected.

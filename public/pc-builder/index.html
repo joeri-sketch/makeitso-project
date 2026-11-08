@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PC configurator · Make It So</title>
+  <meta name="description" content="Choose compatible components, see your euro total update instantly, and request a custom build.">
+  <meta name="theme-color" content="#0b3bff">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="builder.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="cosmos" aria-hidden="true"><i class="nebula n1"></i><i class="nebula n2"></i><i class="nebula n3"></i></div>
+  <main class="pc-shell" id="main">
+    <header class="pc-hero panel">
+      <i class="pc-glow pc-glow-a" aria-hidden="true"></i><i class="pc-glow pc-glow-b" aria-hidden="true"></i>
+      <nav class="pc-nav" aria-label="Main navigation">
+        <a class="pc-brand" href="../index.html" aria-label="Make It So home"><svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="#fff"/><path d="M16 5l2.6 7.4L26 15l-7.4 2.6L16 25l-2.6-7.4L6 15l7.4-2.6z" fill="#ff6a1f"/></svg><span>make it so<em>.</em></span></a>
+        <div class="pc-nav-links"><a href="../index.html#departments">What we do</a><a href="../index.html#missions">Mission log</a><a href="../index.html#warp">Process</a><a href="#components" aria-current="page">Build a PC</a></div>
+        <div class="lang pc-lang" role="group" aria-label="Language"><button type="button" data-lang="en" lang="en" aria-label="English" aria-pressed="true">EN</button><button type="button" data-lang="nl" lang="nl" aria-label="Nederlands" aria-pressed="false">NL</button><button type="button" data-lang="fr" lang="fr" aria-label="Français" aria-pressed="false">FR</button></div>
+        <a class="btn btn-white btn-sm pc-nav-cta" href="../index.html#contact">Hail us</a>
+      </nav>
+      <section class="pc-intro" aria-labelledby="page-title">
+        <p class="logline"><span class="pulse" aria-hidden="true"></span>Captain's log · Your build bay</p>
+        <div class="pc-intro-row"><h1 id="page-title">Build your PC.<br><span>Make it so.</span></h1><p>One choice at a time. We’ll explain each part and keep your custom gaming PC on track.</p></div>
+        <div class="pc-progress" aria-label="Build progress"><span class="pc-progress-active"><i>01</i> Choose components</span><span></span><span><i>02</i> Review your build</span><span></span><span><i>03</i> Request a quote</span></div>
+      </section>
+    </header>
+    <section class="pc-workspace" id="components" aria-label="PC components and build summary">
+      <form class="pc-controls" id="build-form">
+        <div class="pc-step-meta"><p class="pc-kicker">01 · Build components</p><span id="step-count" aria-live="polite">Step 1 of 10</span></div>
+        <div class="pc-stepbar" role="progressbar" aria-label="Build questions" aria-valuemin="1" aria-valuemax="10" aria-valuenow="1"><i id="step-progress"></i></div>
+        <section class="pc-step-panel" id="step-panel" aria-labelledby="step-question">
+          <p class="pc-step-eyebrow" id="step-eyebrow">PART 01</p>
+          <h2 id="step-question" tabindex="-1" aria-live="polite" aria-atomic="true">Which processor should power your PC?</h2>
+          <div class="pc-help-box"><span aria-hidden="true">i</span><p id="step-help">The processor runs game logic and background tasks. More cores help when you game, stream and multitask at once.</p></div>
+          <fieldset class="pc-step-fieldset"><legend id="step-legend">Choose one option</legend><div class="pc-options" id="step-options"></div></fieldset>
+        </section>
+        <section class="pc-review-panel" id="review-panel" aria-labelledby="review-title" hidden>
+          <p class="pc-step-eyebrow" id="review-eyebrow">Final check</p>
+          <h2 id="review-title" tabindex="-1">Review your build<span>.</span></h2>
+          <p class="pc-review-intro">Here’s everything you selected. Your request opens in your email app so our team can confirm availability and final pricing.</p>
+          <button class="pc-back pc-review-back" id="review-back" type="button">← Previous</button>
+          <ul class="pc-review-items" id="review-items"></ul><p class="pc-review-office" id="review-office" hidden></p>
+          <a class="btn btn-orange btn-lg pc-request" id="review-request" href="mailto:hello@makeitso.studio">Send build request <span class="chip" aria-hidden="true">→</span></a>
+        </section>
+        <div class="pc-step-actions" id="step-actions"><button class="pc-back" id="back-step" type="button">← Previous</button><button class="pc-reset" id="reset-build" type="button">Reset build</button><button class="btn btn-orange pc-next" id="next-step" type="button">Next component <span aria-hidden="true">→</span></button></div>
+      </form>
+      <aside class="pc-summary panel" aria-labelledby="summary-title">
+        <div class="pc-summary-top"><p class="pc-kicker">Live build preview</p><span class="pc-live"><i></i> Build bay online</span></div>
+        <div class="pc-preview" id="case-preview" aria-label="Preview of your gaming PC case"><div class="pc-aura"></div><div class="pc-tower" aria-hidden="true"><div class="pc-glass"><div class="pc-board"><i class="pc-ram"></i><i class="pc-gpu"></i><i class="pc-fan pc-fan-one"></i><i class="pc-fan pc-fan-two"></i><i class="pc-fan pc-fan-three"></i></div></div><div class="pc-tower-side"></div><div class="pc-tower-base"></div></div><span class="pc-preview-caption">CUSTOM GAMING PC</span></div>
+        <div class="pc-summary-heading"><div><h2 id="summary-title">Your build</h2><p>Saved on this device</p></div><span class="pc-count">EUR</span></div>
+        <div class="pc-compatibility is-compatible" id="compatibility-status" role="status" aria-live="polite">All selected parts are compatible</div>
+        <ul class="pc-summary-items" id="build-summary-items"></ul><div class="pc-total"><span>Estimated total</span><strong id="build-total"></strong></div>
+        <p class="pc-annual" id="build-annual" hidden><span>Microsoft 365</span><strong id="build-annual-price"></strong></p><p class="pc-price-note">Sample prices incl. VAT · EUR</p>
+        <p class="pc-support">Your choices and estimated price update as you go.</p><p class="pc-estimate-note">Prices shown are estimates for this mock catalog and may change.</p>
+      </aside>
+    </section>
+    <footer class="pc-footer"><a href="../index.html">← Back to Make It So</a><span>MAKE IT SO · CUSTOM PC BUILDER</span><a href="../index.html#contact">Hail us</a></footer>
+  </main>
+  <script src="../i18n.js"></script><script src="builder.js"></script>
+</body>
+</html>
